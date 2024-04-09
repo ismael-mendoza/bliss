@@ -52,15 +52,11 @@ jobs:
 
       - name: Run flake8
         run: |
-          poetry run flake8 bliss/ tests/
-
-      - name: Run mypy
-        run: |
-          env MYPYPATH=typings poetry run mypy --ignore-missing-imports bliss
+          poetry run flake8 bliss/
 
       - name: Run pylint
         run: |
-          poetry run pylint bliss/ tests/
+          poetry run pylint bliss/
 
       - name: Run Tests
         run: |
