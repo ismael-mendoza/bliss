@@ -168,7 +168,7 @@ class Encoder(nn.Module):
 
         if self.binary_encoder is not None:
             assert not self.binary_encoder.training
-            galaxy_probs = self.binary_encoder.forward(image_ptiles, locs)
+            galaxy_probs = self.binary_encoder.encode(image_ptiles, locs)
             galaxy_probs *= is_on_array.unsqueeze(-1)
             if deterministic:
                 galaxy_bools = galaxy_probs.ge(0.5).float() * is_on_array.unsqueeze(-1)
