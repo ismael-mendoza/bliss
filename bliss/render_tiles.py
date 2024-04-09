@@ -1,6 +1,7 @@
 """Functions from producing images from tiled parameters of galaxies or stars."""
 
-import numpy as np
+import math
+
 import torch
 from einops import rearrange, reduce
 from torch import Tensor
@@ -205,7 +206,7 @@ def trim_source(source: Tensor, ptile_slen: int) -> Tensor:
 
     assert source_slen >= local_slen
 
-    r = np.floor(local_slen / 2)
+    r = math.floor(local_slen / 2)
     l_indx = int(source_center - r)
     u_indx = int(source_center + r + 1)
 
