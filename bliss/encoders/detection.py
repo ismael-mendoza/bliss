@@ -168,8 +168,8 @@ class DetectionEncoder(pl.LightningModule):
 
         return {
             "loss": loss,
-            "counter_loss": counter_loss.detach().mean().item(),
-            "locs_loss": locs_loss.detach().mean().item(),
+            "counter_loss": counter_loss.detach().mean(),
+            "locs_loss": locs_loss.detach().mean(),
         }
 
     # pytorch lightning
@@ -190,13 +190,14 @@ class DetectionEncoder(pl.LightningModule):
         images, background, truth_cat = parse_dataset(batch, self.tile_slen)
         batch_size = truth_cat.batch_size
         out = self.get_loss(images, background, truth_cat)
-        pred_cat = self.variational_mode(images, background)
 
-        # compute tiled metrics
-        tiled_metrics = _compute_tiled_metrics(truth_cat, pred_cat, tile_slen=self.tile_slen)
+        pred_cat = self.variational_mode(images, background)
 
         # compute full metrics with matching
         self.val_detection_metrics.update(truth_cat.to_full_params(), pred_cat.to_full_params())
+
+        # compute tiled metrics
+        tiled_metrics = _compute_tiled_metrics(truth_cat, pred_cat, tile_slen=self.tile_slen)
 
         # logging
         self.log("val/loss", out["loss"], batch_size=batch_size)
@@ -228,12 +229,12 @@ def _compute_tiled_metrics(
 
     # recall
     mask1 = n_sources1 > 0
-    n_match = torch.eq(n_sources1[mask1], n_sources2[mask1]).sum().item()
+    n_match = torch.eq(n_sources1[mask1], n_sources2[mask1]).sum()
     recall = n_match / n_sources1.sum()
 
     # precision
     mask2 = n_sources2 > 0
-    n_match = torch.eq(n_sources1[mask2], n_sources2[mask2]).sum().item()
+    n_match = torch.eq(n_sources1[mask2], n_sources2[mask2]).sum()
     precision = n_match / n_sources2.sum()
 
     # f1
