@@ -60,13 +60,4 @@ jobs:
 
       - name: Run Tests
         run: |
-          poetry run pytest --cov=./bliss --cov-report=xml --durations=0
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          files: ./coverage.xml
-          flags: unittests
-          env_vars: OS,PYTHON
-          name: codecov-umbrella
-          fail_ci_if_error: true
+          poetry run pytest
