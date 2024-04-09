@@ -91,14 +91,17 @@ class BinaryEncoder(nn.Module):
 
         galaxy_probs_flat = self.forward(images, background, locs)
 
-        # accuracy
-        hits = galaxy_probs_flat.ge(0.5).eq(galaxy_bools_flat.bool())
-        hits_with_one_source = hits.logical_and(n_sources_flat.eq(1))
-        acc = hits_with_one_source.sum() / n_sources_flat.sum()
-
         # we need to calculate cross entropy loss, only for "on" sources
         raw_loss = BCELoss(reduction="none")(galaxy_probs_flat, galaxy_bools_flat.float())
-        return (raw_loss * n_sources_flat.float()).sum(), acc
+        loss = (raw_loss * n_sources_flat.float()).sum()
+
+        # accuracy
+        with torch.no_grad():
+            hits = galaxy_probs_flat.ge(0.5).eq(galaxy_bools_flat.bool())
+            hits_with_one_source = hits.logical_and(n_sources_flat.eq(1))
+            acc = hits_with_one_source.sum() / n_sources_flat.sum()
+
+        return loss, acc
 
     def training_step(self, batch, batch_idx):
         """Pytorch lightning method."""
