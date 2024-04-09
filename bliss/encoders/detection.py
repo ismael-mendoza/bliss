@@ -76,6 +76,9 @@ class DetectionEncoder(pl.LightningModule):
         self.val_detection_metrics = DetectionMetrics(slack=1.0)
 
     def forward(self, images: Tensor, background: Tensor):
+        return self.encode(images, background)
+
+    def encode(self, images: Tensor, background: Tensor):
 
         # prepare padded tiles with background
         images_with_background, _ = pack([images, background], "b * h w")
@@ -106,7 +109,7 @@ class DetectionEncoder(pl.LightningModule):
         """Compute the variational mode."""
         _, _, h, w = images.shape
         nth, ntw = get_n_padded_tiles_hw(h, w, self.ptile_slen, self.tile_slen)
-        n_source_probs, locs_mean, _ = self.forward(images, background)
+        n_source_probs, locs_mean, _ = self.encode(images, background)
         flat_tile_n_sources = n_source_probs.ge(0.5).long()
         flat_tile_locs = locs_mean * rearrange(flat_tile_n_sources, "np -> np 1")
 
@@ -131,7 +134,7 @@ class DetectionEncoder(pl.LightningModule):
             A dictionary of tensors with shape `n_samples * n_ptiles * ...`.
             Consists of "n_sources" and "locs".
         """
-        n_source_probs, locs_mean, locs_sd = self.forward(images, background)
+        n_source_probs, locs_mean, locs_sd = self.encode(images, background)
 
         # sample counts per tile
         tile_n_sources = Categorical(probs=n_source_probs).sample((n_samples,))
@@ -150,7 +153,8 @@ class DetectionEncoder(pl.LightningModule):
         assert images.device == background.device == true_catalog.device
 
         # encode
-        n_source_probs, locs_mean, locs_sd = self.forward(images, background)
+        out: tuple[Tensor, Tensor, Tensor] = self(images, background)
+        n_source_probs, locs_mean, locs_sd = out
 
         # loss from detection count encoding
         n_true_sources_flat = rearrange(true_catalog.n_sources, "b nth ntw -> (b nth ntw)")
