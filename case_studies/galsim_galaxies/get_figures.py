@@ -198,7 +198,7 @@ class AutoEncoderFigures(BlissFigure):
         n_iters = int(np.ceil(n_images // 128)) + 1
         for i in range(n_iters):  # in batches otherwise GPU error.
             bimages = images[batch_size * i : batch_size * (i + 1)].to(device)
-            recon_mean, _ = autoencoder.forward(bimages, background)
+            recon_mean: Tensor = autoencoder(bimages, background)[0]
             recon_mean = recon_mean.detach().to("cpu")
             recon_means = torch.cat((recon_means, recon_mean))
         residuals = (recon_means - images) / recon_means.sqrt()
