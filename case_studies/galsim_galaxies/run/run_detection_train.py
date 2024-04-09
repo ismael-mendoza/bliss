@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import pytorch_lightning as L
+
 from bliss.encoders.detection import DetectionEncoder
 from bliss.encoders.layers import ConcatBackgroundTransform
 from case_studies.galsim_galaxies.run.training_functions import (
@@ -22,6 +24,9 @@ VAL_DS_FILE = f"val_ds_{VERSION}.pt"
 VALIDATE_EVERY_N_EPOCH = 1
 VAL_CHECK_INTERVAL = 32
 ADD_PADDING_GALAXIES = False
+SEED = 42
+
+L.seed_everything(SEED)
 
 
 # setup model to train
