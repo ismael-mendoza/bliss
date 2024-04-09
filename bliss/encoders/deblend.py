@@ -55,7 +55,10 @@ class GalaxyEncoder(pl.LightningModule):
         self._dec.requires_grad_(False)
         self._dec.eval()
 
-    def forward(self, image_ptiles_flat: Tensor, tile_locs_flat: Tensor) -> tuple[Tensor, Tensor]:
+    def forward(self, image_ptiles: Tensor, tile_locs: Tensor) -> tuple[Tensor, Tensor]:
+        return self.encode(image_ptiles, tile_locs)
+
+    def encode(self, image_ptiles_flat: Tensor, tile_locs_flat: Tensor) -> tuple[Tensor, Tensor]:
         """Runs galaxy encoder on input image ptiles (with bg substracted)."""
         centered_ptiles = self._get_centered_padded_tiles(image_ptiles_flat, tile_locs_flat)
         assert centered_ptiles.shape[-1] == centered_ptiles.shape[-2] == self.final_slen
@@ -72,7 +75,8 @@ class GalaxyEncoder(pl.LightningModule):
         )
         image_ptiles_flat = rearrange(image_ptiles, "n nth ntw c h w -> (n nth ntw) c h w")
         tile_locs_flat = rearrange(tile_catalog.locs, "n nth ntw xy -> (n nth ntw) xy")
-        galaxy_params_flat, pq_divergence_flat = self.forward(image_ptiles_flat, tile_locs_flat)
+        out: tuple[Tensor, Tensor] = self(image_ptiles_flat, tile_locs_flat)
+        galaxy_params_flat, pq_divergence_flat = out
         assert galaxy_params_flat.ndim == 2 and pq_divergence_flat.ndim == 1
 
         # draw fully reconstructed image.

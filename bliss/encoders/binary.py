@@ -58,6 +58,9 @@ class BinaryEncoder(nn.Module):
         self._enc_final = make_enc_final(channel * 4 * dim_enc_conv_out**2, hidden, 1, dropout)
 
     def forward(self, images: Tensor, background: Tensor, locs: Tensor) -> Tensor:
+        return self.encode(images, background, locs)
+
+    def encode(self, images: Tensor, background: Tensor, locs: Tensor) -> Tensor:
         """Runs the binary encoder on centered_ptiles."""
         flat_locs = rearrange(locs, "n nth ntw xy -> (n nth ntw) xy", xy=2)
         npt, _ = flat_locs.shape
@@ -89,7 +92,7 @@ class BinaryEncoder(nn.Module):
         n_sources_flat = rearrange(n_sources, "b ntw ntw -> (b nth ntw)")
         galaxy_bools_flat = rearrange(galaxy_bools, "b nth ntw 1 -> (b nth ntw 1)")
 
-        galaxy_probs_flat = self.forward(images, background, locs)
+        galaxy_probs_flat: Tensor = self(images, background, locs)
 
         # we need to calculate cross entropy loss, only for "on" sources
         raw_loss = BCELoss(reduction="none")(galaxy_probs_flat, galaxy_bools_flat.float())
