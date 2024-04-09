@@ -56,7 +56,7 @@ def _render_centered_galaxies_ptiles(
     gal = torch.zeros(n_ptiles, n_bands, slen, slen, device=galaxy_params.device)
 
     # forward only galaxies that are on!
-    gal_on = galaxy_decoder(galaxy_params[is_gal])
+    gal_on: Tensor = galaxy_decoder(galaxy_params[is_gal])
 
     # size the galaxy (either trims or crops to the size of ptile)
     sized_gal_on = size_galaxy(gal_on, ptile_slen)
@@ -250,7 +250,7 @@ def get_galaxy_ellips(
     galaxy_bools_flat = rearrange(galaxy_bools, "b nth ntw 1 -> (b nth ntw 1)")
     is_gal = torch.gt(galaxy_bools_flat, 0.5).bool()
     galaxy_params = rearrange(galaxy_params_in, "b nth ntw d -> (b nth ntw) d")
-    galaxy_shapes = galaxy_decoder.forward(galaxy_params[is_gal]).detach().cpu()
+    galaxy_shapes: Tensor = galaxy_decoder(galaxy_params[is_gal]).detach().cpu()
     sized_galaxy_shapes = size_galaxy(galaxy_shapes, ptile_slen)
     single_galaxies = rearrange(sized_galaxy_shapes, "n 1 h w -> n h w")
 
