@@ -27,6 +27,7 @@ def create_dataset(
     log_file: TextIO = sys.stdout,
 ):
     print("INFO: Overwriting dataset...", file=log_file)
+
     # prepare bigger dataset
     catsim_table = Table.read(catsim_file)
     all_star_mags = column_to_tensor(Table.read(stars_mag_file), "i_ab")
