@@ -18,12 +18,12 @@ NUM_WORKERS = 0
 
 @click.command()
 @click.option("-s", "--seed", default=42, type=int)
-@click.option("-n", "--n-samples", default=1028 * 20)
-@click.option("-s", "--split", default=1028 * 15)
+@click.option("-n", "--n-samples", default=1028 * 20, type=int)
+@click.option("--split", default=1028 * 15, type=int)
 @click.option("-b", "--batch-size", default=32)
 @click.option("-e", "--n-epochs", default=25)
 @click.option("--validate-every-n-epoch", default=1, type=int)
-@click.option("--val-check-interval", default=64, type=int, help="Validate every given # batches")
+@click.option("--val-check-interval", default=0.15, type=float, help="Fraction of training epoch")
 @click.option("-o", "--overwrite", is_flag=True, default=False)
 @click.option("-t", "--tag", required=True, type=str, help="Dataset tag")
 @click.option("--only-bright", is_flag=True, default=False)
@@ -52,7 +52,9 @@ def main(
         log_msg = f"""Run training detection script...
         With tag {tag} and seed {seed} at {now}
         Galaxy density {galaxy_density}, star_density {star_density}, and
-        "Only bright '{only_bright}', no padding galaxies '{no_padding_galaxies}'.
+        Only bright '{only_bright}', no padding galaxies '{no_padding_galaxies}'.
+        n_samples {n_samples}, split {split}, validate_every_n_epoch {validate_every_n_epoch},
+        val_check_interval {val_check_interval}, batch_size {batch_size}, n_epochs {n_epochs}
         """
         print(log_msg, file=f)
 
@@ -68,12 +70,12 @@ def main(
     if overwrite:
         with open("log.txt", "a") as f:
             create_dataset(
-                "../../../data/OneDegSq.fits",
-                "../../../data/stars_med_june2018.fits",
-                n_samples,
-                split,
-                train_ds_file,
-                val_ds_file,
+                catsim_file="../../../data/OneDegSq.fits",
+                stars_mag_file="../../../data/stars_med_june2018.fits",
+                n_samples=n_samples,
+                train_val_split=split,
+                train_ds_file=train_ds_file,
+                val_ds_file=val_ds_file,
                 only_bright=only_bright,
                 add_galaxies_in_padding=not no_padding_galaxies,
                 galaxy_density=galaxy_density,
