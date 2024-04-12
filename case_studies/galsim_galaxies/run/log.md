@@ -1,4 +1,4 @@
-- **v10**: No stars, but with padding (all galaxy types)
+- **v10-11**: No stars, but with padding (all galaxy types)
 
 - **v9**: No stars and no padding
 
