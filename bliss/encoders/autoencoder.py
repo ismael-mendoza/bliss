@@ -1,14 +1,16 @@
 from pathlib import Path
 from typing import Tuple
 
+import pytorch_lightning as pl
 import torch
 from einops import reduce
 from torch import Tensor, nn
 from torch.distributions import Normal
 from torch.nn.functional import relu
+from torch.optim import Adam
 
 
-class OneCenteredGalaxyAE(nn.Module):
+class OneCenteredGalaxyAE(pl.LightningModule):
     def __init__(
         self,
         slen: int = 53,
@@ -66,6 +68,9 @@ class OneCenteredGalaxyAE(nn.Module):
         self.log("val/mean_max_residual", mean_max_residual)
         self.log("val/max_residual", res.max())
         return loss
+
+    def configure_optimizers(self):
+        return Adam(self.parameters(), lr=1e-3)
 
 
 class CenteredGalaxyEncoder(nn.Module):
