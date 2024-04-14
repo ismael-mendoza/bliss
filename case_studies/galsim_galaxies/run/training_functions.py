@@ -87,6 +87,7 @@ def setup_training_objects(
     validate_every_n_epoch: int,
     val_check_interval: float,
     model_name: str,
+    log_every_n_steps: int = 16,
     log_file: TextIO = sys.stdout,
 ):
     train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers)
@@ -112,7 +113,7 @@ def setup_training_objects(
         callbacks=[ccb],
         accelerator="gpu",
         devices=1,
-        log_every_n_steps=16,
+        log_every_n_steps=log_every_n_steps,
         check_val_every_n_epoch=validate_every_n_epoch,
         val_check_interval=val_check_interval,
     )
