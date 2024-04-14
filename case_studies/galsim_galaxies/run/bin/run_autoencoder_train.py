@@ -18,12 +18,11 @@ NUM_WORKERS = 0
 
 @click.command()
 @click.option("-s", "--seed", default=42, type=int)
-@click.option("-n", "--n-samples", default=1028 * 20, type=int)
-@click.option("--split", default=1028 * 15, type=int)
-@click.option("-b", "--batch-size", default=32)
-@click.option("-e", "--n-epochs", default=25)
+@click.option("-n", "--n-samples", default=1028 * 100, type=int)
+@click.option("--split", default=1028 * 75, type=int)
+@click.option("-b", "--batch-size", default=256)
+@click.option("-e", "--n-epochs", default=1001)
 @click.option("--validate-every-n-epoch", default=1, type=int)
-@click.option("--val-check-interval", default=0.15, type=float, help="Fraction of training epoch")
 @click.option("-o", "--overwrite", is_flag=True, default=False)
 @click.option("-t", "--tag", required=True, type=str, help="Dataset tag")
 @click.option("--only-bright", is_flag=True, default=False)
@@ -34,7 +33,6 @@ def main(
     batch_size: int,
     n_epochs: int,
     validate_every_n_epoch: int,
-    val_check_interval: int,
     overwrite: bool,
     tag: str,
     only_bright: bool,
@@ -47,7 +45,7 @@ def main(
         With tag {tag} and seed {seed} at {now}
         Only bright '{only_bright}',
         n_samples {n_samples}, split {split}, validate_every_n_epoch {validate_every_n_epoch},
-        val_check_interval {val_check_interval}, batch_size {batch_size}, n_epochs {n_epochs}
+        batch_size {batch_size}, n_epochs {n_epochs}
         """
         print(log_msg, file=f)
 
@@ -92,8 +90,9 @@ def main(
             NUM_WORKERS,
             n_epochs,
             validate_every_n_epoch,
-            val_check_interval,
+            val_check_interval=None,
             model_name="autoencoder",
+            log_every_n_steps=100,
             log_file=g,
         )
 
