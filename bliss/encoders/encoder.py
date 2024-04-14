@@ -134,21 +134,29 @@ class Encoder(nn.Module):
     def device(self):
         return self._dummy_param.device
 
-    def _encode_ptiles(self, image_ptiles_flat: Tensor):
-        tiled_params = self.detection_encoder.variational_model_tiled(image_ptiles_flat)
-        locs = tiled_params["locs"]
-        n_sources = tiled_params["n_sources"]
-        tile_is_on = rearrange(n_sources, "b -> b 1")
+    def _encode_ptiles(self, flat_image_ptiles: Tensor):
+        tiled_params: dict[str, Tensor] = {}
+
+        n_source_probs, locs_mean, locs_sd_raw = self.detection_encoder.encode_tiled(
+            flat_image_ptiles
+        )
+        n_sources = n_source_probs.ge(0.5).long()
+        tile_is_on = rearrange(n_sources, "np -> np 1")
+        tiled_params.update({"n_sources": n_sources, "n_source_probs": n_source_probs})
+
+        locs = locs_mean * tile_is_on
+        locs_sd = locs_sd_raw * tile_is_on
+        tiled_params.update({"locs": locs, "locs_sd": locs_sd})
 
         if self.binary_encoder is not None:
             assert not self.binary_encoder.training
-            galaxy_probs = self.binary_encoder.encode_tiled(image_ptiles_flat, locs)
+            galaxy_probs = self.binary_encoder.encode_tiled(flat_image_ptiles, locs)
             galaxy_bools_flat = galaxy_probs.ge(0.5).float() * n_sources.float()
             galaxy_bools = rearrange(galaxy_bools_flat, "b -> b 1")
             tiled_params.update({"galaxy_bools": galaxy_bools})
 
             if self.galaxy_encoder is not None:
-                galaxy_params, _ = self.galaxy_encoder.forward(image_ptiles_flat, locs)
+                galaxy_params, _ = self.galaxy_encoder.forward(flat_image_ptiles, locs)
                 galaxy_params *= tile_is_on * galaxy_bools
                 tiled_params.update({"galaxy_params": galaxy_params})
 
