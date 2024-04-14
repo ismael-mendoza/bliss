@@ -6,9 +6,9 @@ import torch
 from astropy.table import Table
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 
-from bliss.datasets.galsim_blends import SavedGalsimBlends, generate_dataset
+from bliss.datasets.galsim_blends import generate_dataset
 from bliss.datasets.lsst import get_default_lsst_psf
 from bliss.datasets.table_utils import column_to_tensor
 
@@ -79,10 +79,8 @@ def create_dataset(
 
 
 def setup_training_objects(
-    train_ds_file: str,
-    val_ds_file: str,
-    n_samples: int,
-    train_val_split: int,
+    train_ds: Dataset,
+    val_ds: Dataset,
     batch_size: int,
     num_workers: int,
     n_epochs: int,
@@ -91,12 +89,8 @@ def setup_training_objects(
     model_name: str,
     log_file: TextIO = sys.stdout,
 ):
-    train_dataset = SavedGalsimBlends(train_ds_file, train_val_split)
-    validation_dataset = SavedGalsimBlends(val_ds_file, n_samples - train_val_split)
-    train_dl = DataLoader(
-        train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers
-    )
-    val_dl = DataLoader(validation_dataset, batch_size=batch_size, num_workers=num_workers)
+    train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    val_dl = DataLoader(val_ds, batch_size=batch_size, num_workers=num_workers)
 
     ccb = ModelCheckpoint(
         filename="epoch={epoch}-val_loss={val/loss:.3f}",
