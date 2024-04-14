@@ -20,6 +20,10 @@ def create_dataset(
     train_val_split: int,
     train_ds_file: str,
     val_ds_file: str,
+    max_shift: float,
+    max_n_sources: int,
+    slen: int = 40,
+    bp: int = 24,
     only_bright=False,
     add_galaxies_in_padding=True,
     galaxy_density: float = 185,
@@ -56,13 +60,13 @@ def create_dataset(
         new_table,
         all_star_mags,
         psf=psf,
-        max_n_sources=15,  # https://www.wolframalpha.com/input?i=Poisson+distribution+with+mean+4
-        slen=40,
-        bp=24,
-        max_shift=0.5,
-        add_galaxies_in_padding=add_galaxies_in_padding,
+        max_n_sources=max_n_sources,
         galaxy_density=galaxy_density,
         star_density=star_density,
+        slen=slen,
+        bp=bp,
+        max_shift=max_shift,
+        add_galaxies_in_padding=add_galaxies_in_padding,
     )
 
     # train, test split
@@ -84,6 +88,7 @@ def setup_training_objects(
     n_epochs: int,
     validate_every_n_epoch: int,
     val_check_interval: float,
+    model_name: str,
     log_file: TextIO = sys.stdout,
 ):
     train_dataset = SavedGalsimBlends(train_ds_file, train_val_split)
@@ -103,7 +108,7 @@ def setup_training_objects(
         auto_insert_metric_name=False,
     )
 
-    logger = TensorBoardLogger(save_dir="out", name="detection", default_hp_metric=False)
+    logger = TensorBoardLogger(save_dir="out", name=model_name, default_hp_metric=False)
     print(f"INFO: Saving model as version {logger.version}", file=log_file)
 
     trainer = L.Trainer(
