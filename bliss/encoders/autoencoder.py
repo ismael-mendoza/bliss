@@ -64,6 +64,7 @@ class OneCenteredGalaxyAE(nn.Module):
 
         self.log("val/loss", loss)
         self.log("val/mean_max_residual", mean_max_residual)
+        self.log("val/max_residual", res.max())
         return loss
 
 
