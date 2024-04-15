@@ -6,6 +6,8 @@ import click
 import pytorch_lightning as pl
 import torch
 from astropy.table import Table
+from einops import reduce
+from torch import Tensor
 
 from bliss.datasets.galsim_blends import generate_dataset
 from bliss.datasets.lsst import get_default_lsst_psf
@@ -17,21 +19,29 @@ cat = Table.read(HOME_DIR / "data/OneDegSq.fits")
 CATSIM_TABLE = cat[cat["i_ab"] < 27.3]
 STAR_MAGS = column_to_tensor(Table.read(HOME_DIR / "data/stars_med_june2018.fits"), "i_ab")
 PSF = get_default_lsst_psf()
-SEED = 1
 
-pl.seed_everything(SEED)
+
+def _get_snr(noiseless: Tensor, background: Tensor) -> float:
+    image_with_background = noiseless + background
+    snr2 = reduce(noiseless**2 / image_with_background, "b c h w -> b", "sum")
+    return torch.sqrt(snr2)
 
 
 @click.command()
 @click.option("--n-samples", default=10000, type=int)
 @click.option("-s", "--seed", default=1, type=int)
 @click.option("--mode", type=str, required=True)
-def main(n_samples: int, seed: int, mode: str):
+@click.option("-o", "--overwrite", is_flag=True, default=False)
+def main(n_samples: int, seed: int, mode: str, overwrite: bool):
     assert mode in {"single", "blend"}
 
     pl.seed_everything(seed)
 
     if mode == "single":
+        dataset_file = DATA_DIR / "single_galaxies_test.pt"
+        if not overwrite and Path(dataset_file).exists():
+            raise IOError("File already exists and overwrite flag is 'False'.")
+
         dataset = generate_dataset(
             n_samples,
             CATSIM_TABLE,
@@ -46,9 +56,31 @@ def main(n_samples: int, seed: int, mode: str):
             add_galaxies_in_padding=False,
         )
 
-        torch.save(dataset, DATA_DIR / "single_galaxies_test.pt")
+        # compute SNR
+        dataset["snr"] = _get_snr(dataset["noiseless"], dataset["background"])
+
+        # convert everything to float and remove useless params
+        params_to_remove = {
+            "individuals",
+            "galaxy_params",
+            "star_fluxes",
+            "plocs",
+            "n_sources",
+            "fluxes",
+            "star_bools",
+            "galaxy_bools",
+        }
+        for p in params_to_remove:
+            dataset.pop(p)
+
+        for p1, q in dataset.items():
+            dataset[p1] = q.float()
 
     else:
+        dataset_file = DATA_DIR / "blends_test.pt"
+        if not overwrite and Path(dataset_file).exists():
+            raise IOError("File already exists and overwrite flag is 'False'.")
+
         dataset = generate_dataset(
             n_samples,
             CATSIM_TABLE,
@@ -57,7 +89,7 @@ def main(n_samples: int, seed: int, mode: str):
             max_n_sources=15,
         )
 
-        torch.save(dataset, DATA_DIR / "blends_test.pt")
+        torch.save(dataset, dataset_file)
 
 
 if __name__ == "__main__":
