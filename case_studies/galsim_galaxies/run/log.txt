@@ -108,3 +108,17 @@ Run training autoencoder script...
         batch_size 256, n_epochs 1001
 
 INFO: Saving model as version 2
+
+./bin/run_autoencoder_train.py -s 42 -t 2
+
+./bin/run_autoencoder_train.py -o -s 42 -t 2
+
+Run training autoencoder script...
+        With tag 2 and seed 42 at 2024-04-15 10:59:29.884042
+        Only bright 'False',
+        n_samples 204800, split 153600, validate_every_n_epoch 1,
+        batch_size 256, n_epochs 3001
+
+INFO: Overwriting dataset...
+INFO: Complete catalog with only i < 27.3 magnitude of length: 666475
+INFO: Saving model as version 3
