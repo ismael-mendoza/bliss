@@ -1,8 +1,6 @@
-from pathlib import Path
 from typing import Tuple
 
 import pytorch_lightning as pl
-import torch
 from einops import reduce
 from torch import Tensor, nn
 from torch.distributions import Normal
@@ -17,16 +15,12 @@ class OneCenteredGalaxyAE(pl.LightningModule):
         latent_dim: int = 8,
         hidden: int = 256,
         n_bands: int = 1,
-        ckpt: str | Path | None = None,
     ):
         super().__init__()
 
         self.enc = self.make_encoder(slen, latent_dim, n_bands, hidden)
         self.dec = self.make_decoder(slen, latent_dim, n_bands, hidden)
         self.latent_dim = latent_dim
-
-        if ckpt is not None:
-            self.load_state_dict(torch.load(ckpt, map_location=self.device))
 
     def make_encoder(
         self, slen: int, latent_dim: int, n_bands: int, hidden: int
