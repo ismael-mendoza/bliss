@@ -76,6 +76,8 @@ def main(n_samples: int, seed: int, mode: str, overwrite: bool):
         for p1, q in dataset.items():
             dataset[p1] = q.float()
 
+        torch.save(dataset, dataset_file)
+
     else:
         dataset_file = DATA_DIR / "blends_test.pt"
         if not overwrite and Path(dataset_file).exists():
