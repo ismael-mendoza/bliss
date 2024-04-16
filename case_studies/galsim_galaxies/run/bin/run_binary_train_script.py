@@ -66,7 +66,7 @@ def main(
 
     # setup model to train
     input_transform = ConcatBackgroundTransform()
-    detection_encoder = BinaryEncoder(input_transform)
+    binary_encoder = BinaryEncoder(input_transform)
 
     if overwrite:
         with open("log.txt", "a") as f:
@@ -106,7 +106,7 @@ def main(
             log_file=g,
         )
 
-    trainer.fit(model=detection_encoder, train_dataloaders=train_dl, val_dataloaders=val_dl)
+    trainer.fit(model=binary_encoder, train_dataloaders=train_dl, val_dataloaders=val_dl)
 
 
 if __name__ == "__main__":
