@@ -1,3 +1,4 @@
+import pytorch_lightning as L
 import torch
 from einops import pack, rearrange
 from torch import Tensor, nn
@@ -11,7 +12,7 @@ from bliss.grid import center_ptiles
 from bliss.render_tiles import get_images_in_tiles, validate_border_padding
 
 
-class BinaryEncoder(nn.Module):
+class BinaryEncoder(L.LightningModule):
     def __init__(
         self,
         input_transform: ConcatBackgroundTransform,
