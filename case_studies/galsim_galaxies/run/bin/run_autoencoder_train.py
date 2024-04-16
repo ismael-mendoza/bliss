@@ -18,8 +18,8 @@ NUM_WORKERS = 0
 
 @click.command()
 @click.option("-s", "--seed", default=42, type=int)
-@click.option("-n", "--n-samples", default=2048 * 100, type=int)
-@click.option("--split", default=2048 * 75, type=int)
+@click.option("-n", "--n-samples", default=1028 * 100, type=int)
+@click.option("--split", default=1028 * 75, type=int)
 @click.option("-b", "--batch-size", default=256)
 @click.option("-e", "--n-epochs", default=3001)
 @click.option("--validate-every-n-epoch", default=1, type=int)
