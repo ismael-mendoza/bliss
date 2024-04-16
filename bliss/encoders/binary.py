@@ -1,7 +1,7 @@
-import pytorch_lightning as L
+import pytorch_lightning as pl
 import torch
 from einops import pack, rearrange
-from torch import Tensor, nn
+from torch import Tensor
 from torch.nn import BCELoss
 from torch.optim import Adam
 
@@ -12,7 +12,7 @@ from bliss.grid import center_ptiles
 from bliss.render_tiles import get_images_in_tiles, validate_border_padding
 
 
-class BinaryEncoder(L.LightningModule):
+class BinaryEncoder(pl.LightningModule):
     def __init__(
         self,
         input_transform: ConcatBackgroundTransform,
@@ -79,7 +79,7 @@ class BinaryEncoder(L.LightningModule):
         h = self._enc_conv(x)
         h2 = self._enc_final(h)
         galaxy_probs = torch.sigmoid(h2).clamp(1e-4, 1 - 1e-4)
-        return rearrange(galaxy_probs, "npt -> npt", npt=npt)
+        return rearrange(galaxy_probs, "npt 1 -> npt", npt=npt)
 
     def get_loss(self, images: Tensor, background: Tensor, tile_catalog: TileCatalog):
         """Return loss, accuracy, binary probabilities, and MAP classifications for given batch."""
@@ -88,7 +88,7 @@ class BinaryEncoder(L.LightningModule):
         locs = tile_catalog.locs
         galaxy_bools = tile_catalog["galaxy_bools"]
 
-        n_sources_flat = rearrange(n_sources, "b ntw ntw -> (b nth ntw)")
+        n_sources_flat = rearrange(n_sources, "b nth ntw -> (b nth ntw)")
         galaxy_bools_flat = rearrange(galaxy_bools, "b nth ntw 1 -> (b nth ntw 1)")
 
         galaxy_probs_flat = self.forward(images, background, locs)
