@@ -30,7 +30,6 @@ class GalaxyEncoder(pl.LightningModule):
         n_bands: int = 1,
         latent_dim: int = 8,
         hidden: int = 256,
-        crop_loss_at_border: bool = False,
     ):
         super().__init__()
 
@@ -40,8 +39,6 @@ class GalaxyEncoder(pl.LightningModule):
         self.ptile_slen = ptile_slen
         self.bp = validate_border_padding(tile_slen, ptile_slen)
         self.final_slen = self.ptile_slen - 2 * self.tile_slen  # will always crop 2 * tile_slen
-
-        self._crop_loss_at_border = crop_loss_at_border
 
         # encoder (to be trained)
         self._latent_dim = latent_dim
@@ -94,10 +91,7 @@ class GalaxyEncoder(pl.LightningModule):
         assert recon_mean.ndim == 4 and recon_mean.shape[-1] == images.shape[-1]
         assert not torch.any(torch.logical_or(torch.isnan(recon_mean), torch.isinf(recon_mean)))
 
-        recon_losses = -Normal(recon_mean, recon_mean.sqrt()).log_prob(images)
-        if self._crop_loss_at_border:
-            bp = self.bp * 2
-            recon_losses = recon_losses[:, :, :, bp:(-bp), bp:(-bp)]
+        recon_losses: Tensor = -Normal(recon_mean, recon_mean.sqrt()).log_prob(images)
         assert not torch.any(torch.logical_or(torch.isnan(recon_losses), torch.isinf(recon_losses)))
 
         return recon_losses.sum()
