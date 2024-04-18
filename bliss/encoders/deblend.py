@@ -59,7 +59,6 @@ class GalaxyEncoder(pl.LightningModule):
     def forward(self, image_ptiles_flat: Tensor, tile_locs_flat: Tensor) -> Tensor:
         """Runs galaxy encoder on input image ptiles (with bg substracted)."""
         centered_ptiles = self._get_centered_padded_tiles(image_ptiles_flat, tile_locs_flat)
-        assert centered_ptiles.shape[-1] == centered_ptiles.shape[-2] == self.final_slen
         return self._enc(centered_ptiles)
 
     def get_loss(self, images: Tensor, background: Tensor, tile_catalog: TileCatalog):
