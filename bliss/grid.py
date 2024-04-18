@@ -25,7 +25,7 @@ def swap_locs_columns(locs: Tensor) -> Tensor:
 
 
 def shift_sources_in_ptiles(
-    image_ptiles: Tensor, tile_locs_flat: Tensor, tile_slen: int, bp: int, center=False
+    image_ptiles_flat: Tensor, tile_locs_flat: Tensor, tile_slen: int, bp: int, center=False
 ) -> Tensor:
     """Shift sources at given padded tiles to given locations.
 
@@ -35,13 +35,13 @@ def shift_sources_in_ptiles(
     Default is `False`.
 
     """
-    npt, _, _, ptile_slen = image_ptiles.shape
-    assert ptile_slen == image_ptiles.shape[-2]
+    npt, _, _, ptile_slen = image_ptiles_flat.shape
+    assert ptile_slen == image_ptiles_flat.shape[-2]
     assert bp == (ptile_slen - tile_slen) // 2
     assert tile_locs_flat.shape[0] == npt
 
     # get new locs to do the shift
-    grid = get_mgrid(ptile_slen, image_ptiles.device)
+    grid = get_mgrid(ptile_slen, image_ptiles_flat.device)
     ptile_locs = (tile_locs_flat * tile_slen + bp) / ptile_slen
     sgn = 1 if center else -1
     offsets_hw = sgn * (torch.tensor(1.0) - 2 * ptile_locs)
@@ -50,4 +50,4 @@ def shift_sources_in_ptiles(
     offsets_xy_inflated = rearrange(offsets_xy, "npt xy -> npt 1 1 xy", xy=2)
     grid_loc = grid_inflated - offsets_xy_inflated
 
-    return grid_sample(image_ptiles, grid_loc, align_corners=True)
+    return grid_sample(image_ptiles_flat, grid_loc, align_corners=True)
