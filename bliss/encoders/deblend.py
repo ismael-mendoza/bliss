@@ -60,7 +60,7 @@ class GalaxyEncoder(pl.LightningModule):
     def get_loss(
         self, images: Tensor, paddings: Tensor, background: Tensor, tile_catalog: TileCatalog
     ):
-        _, nth, ntw, _ = tile_catalog.locs
+        _, nth, ntw, _ = tile_catalog.locs.shape
 
         images_with_background, _ = pack([images, background], "b * h w")
         image_ptiles = get_images_in_tiles(
