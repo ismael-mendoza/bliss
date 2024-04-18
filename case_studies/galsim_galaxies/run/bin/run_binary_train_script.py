@@ -24,7 +24,7 @@ NUM_WORKERS = 0
 @click.option("-b", "--batch-size", default=32)
 @click.option("-e", "--n-epochs", default=10)
 @click.option("--validate-every-n-epoch", default=1, type=int)
-@click.option("--val-check-interval", default=0.2, type=float, help="Fraction of training epoch")
+@click.option("--val-check-interval", default=0.1, type=float, help="Fraction of training epoch")
 @click.option("-o", "--overwrite", is_flag=True, default=False)
 @click.option("-t", "--tag", required=True, type=str, help="Dataset tag")
 @click.option("--only-bright", is_flag=True, default=False)
