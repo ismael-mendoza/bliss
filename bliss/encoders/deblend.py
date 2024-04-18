@@ -23,11 +23,11 @@ from bliss.render_tiles import (
 class GalaxyEncoder(pl.LightningModule):
     def __init__(
         self,
-        tile_slen: int,
-        ptile_slen: int,
         ae_state_dict: str,
-        decoder_slen: int = 53,
         n_bands: int = 1,
+        tile_slen: int = 4,
+        ptile_slen: int = 52,
+        decoder_slen: int = 53,
         latent_dim: int = 8,
         hidden: int = 256,
     ):
