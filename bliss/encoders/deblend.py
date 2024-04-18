@@ -86,6 +86,7 @@ class GalaxyEncoder(pl.LightningModule):
             self.tile_slen,
             self.n_bands,
         )
+        assert recon_ptiles.shape[-1] == recon_ptiles.shape[-2] == self.ptile_slen
         recon_mean = reconstruct_image_from_ptiles(recon_ptiles, self.tile_slen, self.bp)
         recon_mean += background
         assert recon_mean.ndim == 4 and recon_mean.shape[-1] == images.shape[-1]
