@@ -92,15 +92,13 @@ class GalaxyEncoder(pl.LightningModule):
         recon_mean = reconstruct_image_from_ptiles(recon_ptiles, self.tile_slen, self.bp)
         recon_mean += background
         assert recon_mean.ndim == 4 and recon_mean.shape[-1] == images.shape[-1]
+        assert not torch.any(torch.logical_or(torch.isnan(recon_mean), torch.isinf(recon_mean)))
 
-        assert not torch.any(torch.isnan(recon_mean))
-        assert not torch.any(torch.isinf(recon_mean))
         recon_losses = -Normal(recon_mean, recon_mean.sqrt()).log_prob(images)
         if self._crop_loss_at_border:
             bp = self.bp * 2
             recon_losses = recon_losses[:, :, :, bp:(-bp), bp:(-bp)]
-        assert not torch.any(torch.isnan(recon_losses))
-        assert not torch.any(torch.isinf(recon_losses))
+        assert not torch.any(torch.logical_or(torch.isnan(recon_losses), torch.isinf(recon_losses)))
 
         return recon_losses.sum()
 
