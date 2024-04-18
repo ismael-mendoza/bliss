@@ -4,13 +4,32 @@ import numpy as np
 import torch
 from einops import rearrange, reduce
 from torch import Tensor
-from torch.nn.functional import fold, grid_sample, unfold
+from torch.nn.functional import fold, unfold
 from tqdm import tqdm
 
 from bliss.datasets.lsst import PIXEL_SCALE
 from bliss.encoders.autoencoder import CenteredGalaxyDecoder
-from bliss.grid import get_mgrid, swap_locs_columns
+from bliss.grid import shift_sources_in_ptiles
 from bliss.reporting import get_single_galaxy_ellipticities
+
+
+def validate_border_padding(tile_slen: int, ptile_slen: int, bp: float = None) -> int:
+    # Border Padding
+    # Images are first rendered on *padded* tiles (aka ptiles).
+    # The padded tile consists of the tile and neighboring tiles
+    # The width of the padding is given by ptile_slen.
+    # border_padding is the amount of padding we leave in the final image. Useful for
+    # avoiding sources getting too close to the edges.
+    if bp is None:
+        # default value matches encoder default.
+        bp = (ptile_slen - tile_slen) / 2
+
+    n_tiles_of_padding = (ptile_slen / tile_slen - 1) / 2
+    ptile_padding = n_tiles_of_padding * tile_slen
+    assert float(bp).is_integer(), "amount of border padding must be an integer"
+    assert n_tiles_of_padding.is_integer(), "n_tiles_of_padding must be an integer"
+    assert bp <= ptile_padding, "Too much border, increase ptile_slen"
+    return int(bp)
 
 
 def render_galaxy_ptiles(
@@ -24,6 +43,7 @@ def render_galaxy_ptiles(
 ) -> Tensor:
     """Render padded tiles of galaxies from tiled tensors."""
     assert galaxy_bools.le(1).all(), "At most one source can be rendered per tile."
+    bp = validate_border_padding(tile_slen, ptile_slen)
 
     locs = rearrange(locs, "b nth ntw xy -> (b nth ntw) xy", xy=2)
     galaxy_bools = rearrange(galaxy_bools, "b nth ntw 1 -> (b nth ntw) 1")
@@ -34,7 +54,9 @@ def render_galaxy_ptiles(
     )
 
     # render galaxies in correct location within padded tile
-    uncentered_galaxies = _shift_sources_in_ptiles(locs, centered_galaxies, ptile_slen, tile_slen)
+    uncentered_galaxies = shift_sources_in_ptiles(
+        centered_galaxies, locs, tile_slen, bp, center=False
+    )
 
     return rearrange(uncentered_galaxies, "(b nth ntw) c h w -> b nth ntw c h w")
 
@@ -65,30 +87,6 @@ def _render_centered_galaxies_ptiles(
 
     # be extra careful
     return gal * rearrange(is_gal, "npt -> npt 1 1 1")
-
-
-def _shift_sources_in_ptiles(
-    locs: Tensor, source: Tensor, ptile_slen: int, tile_slen: int
-) -> Tensor:
-    """Renders one source at location (per tile) using `grid_sample`."""
-    assert source.ndim == 4
-    assert source.shape[2] == source.shape[3]
-    assert locs.shape[1] == 2 and locs.ndim == 2
-    assert locs.device == source.device
-
-    # scale so that they land in the tile within the padded tile
-    padding = (ptile_slen - tile_slen) / 2
-    ptile_locs = (locs * tile_slen + padding) / ptile_slen
-    scaled_locs = (ptile_locs - 0.5) * 2  # between -1 and 1 (needed for grid_sample)
-    locs_swapped = swap_locs_columns(scaled_locs)
-    locs_swapped = rearrange(locs_swapped, "np xy -> np 1 1 xy")
-
-    # get grid
-    mgrid = get_mgrid(ptile_slen, locs.device)
-    local_grid = rearrange(mgrid, "s1 s2 xy -> 1 s1 s2 xy", s1=ptile_slen, s2=ptile_slen, xy=2)
-    grid_loc = local_grid - locs_swapped
-
-    return grid_sample(source, grid_loc, align_corners=True)
 
 
 def reconstruct_image_from_ptiles(image_ptiles: Tensor, tile_slen: int, bp: int) -> Tensor:
@@ -294,22 +292,3 @@ def get_galaxy_snr(self, decoder: CenteredGalaxyDecoder, ptile_slen: int, bg: fl
             snr[kk] = gal_snr[kk] * galaxy_bools_ii[kk].cpu()
 
     return rearrange(snr, "(b nth ntw) s 1 -> b nth ntw s 1", b=b, nth=nth, ntw=ntw)
-
-
-def validate_border_padding(tile_slen: int, ptile_slen: int, bp: float = None):
-    # Border Padding
-    # Images are first rendered on *padded* tiles (aka ptiles).
-    # The padded tile consists of the tile and neighboring tiles
-    # The width of the padding is given by ptile_slen.
-    # border_padding is the amount of padding we leave in the final image. Useful for
-    # avoiding sources getting too close to the edges.
-    if bp is None:
-        # default value matches encoder default.
-        bp = (ptile_slen - tile_slen) / 2
-
-    n_tiles_of_padding = (ptile_slen / tile_slen - 1) / 2
-    ptile_padding = n_tiles_of_padding * tile_slen
-    assert float(bp).is_integer(), "amount of border padding must be an integer"
-    assert n_tiles_of_padding.is_integer(), "n_tiles_of_padding must be an integer"
-    assert bp <= ptile_padding, "Too much border, increase ptile_slen"
-    return int(bp)

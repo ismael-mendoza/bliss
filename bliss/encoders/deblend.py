@@ -11,7 +11,7 @@ from torch.optim import Adam
 from bliss.catalog import TileCatalog
 from bliss.datasets.galsim_blends import parse_dataset
 from bliss.encoders.autoencoder import CenteredGalaxyEncoder, OneCenteredGalaxyAE
-from bliss.grid import center_ptiles
+from bliss.grid import shift_sources_in_ptiles
 from bliss.render_tiles import (
     get_images_in_tiles,
     reconstruct_image_from_ptiles,
@@ -124,5 +124,15 @@ class GalaxyEncoder(pl.LightningModule):
         return Adam(self._enc.parameters(), 1e-3)
 
     def _get_centered_padded_tiles(self, image_ptiles: Tensor, tile_locs_flat: Tensor) -> Tensor:
+        """Remove background, center padded tiles at given locations, and crop."""
         img, bg = unpack(image_ptiles, [(1,), (1,)], "b nht nhw * h w")
-        return center_ptiles(img - bg, tile_locs_flat, self.tile_slen, self.bp)
+        shifted_ptiles = shift_sources_in_ptiles(
+            img - bg, tile_locs_flat, self.tile_slen, self.bp, center=True
+        )
+        cropped_ptiles = shifted_ptiles[
+            ...,
+            self.tile_slen : (self.ptile_slen - self.tile_slen),
+            self.tile_slen : (self.ptile_slen - self.tile_slen),
+        ]
+        assert cropped_ptiles.shape[-1] == cropped_ptiles.shape[-2] == self.final_slen
+        return cropped_ptiles

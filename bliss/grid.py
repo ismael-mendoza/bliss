@@ -24,28 +24,30 @@ def swap_locs_columns(locs: Tensor) -> Tensor:
     return pack([y, x], "b *")[0]
 
 
-def center_ptiles(image_ptiles: Tensor, tile_locs_flat: Tensor, tile_slen: int, bp: int) -> Tensor:
-    """Center given padded tiles at locations `tile_locs_flat`."""
+def shift_sources_in_ptiles(
+    image_ptiles: Tensor, tile_locs_flat: Tensor, tile_slen: int, bp: int, center=False
+) -> Tensor:
+    """Shift sources at given padded tiles to given locations.
+
+    The keyword `center` controls whether the sources are already centered at the
+    padded tile and should be shifted by `tile_locs_flat` (center=False),
+    or if the sources are already shifted by that amount and should be 'centered' (center=True).
+    Default is `False`.
+
+    """
     npt, _, _, ptile_slen = image_ptiles.shape
-    n_ptiles_locs, _ = tile_locs_flat.shape
     assert ptile_slen == image_ptiles.shape[-2]
-    assert n_ptiles_locs == npt
     assert bp == (ptile_slen - tile_slen) // 2
+    assert tile_locs_flat.shape[0] == npt
 
     # get new locs to do the shift
     grid = get_mgrid(ptile_slen, image_ptiles.device)
     ptile_locs = (tile_locs_flat * tile_slen + bp) / ptile_slen
-    offsets_hw = torch.tensor(1.0) - 2 * ptile_locs
+    sgn = 1 if center else -1
+    offsets_hw = sgn * (torch.tensor(1.0) - 2 * ptile_locs)
     offsets_xy = swap_locs_columns(offsets_hw)
     grid_inflated = rearrange(grid, "h w xy -> 1 h w xy", xy=2, h=ptile_slen)
     offsets_xy_inflated = rearrange(offsets_xy, "npt xy -> npt 1 1 xy", xy=2)
     grid_loc = grid_inflated - offsets_xy_inflated
 
-    shifted_tiles = grid_sample(image_ptiles, grid_loc, align_corners=True)
-
-    # now that everything is center we can crop easily
-    return shifted_tiles[
-        ...,
-        tile_slen : (ptile_slen - tile_slen),
-        tile_slen : (ptile_slen - tile_slen),
-    ]
+    return grid_sample(image_ptiles, grid_loc, align_corners=True)

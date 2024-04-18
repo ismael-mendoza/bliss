@@ -8,7 +8,7 @@ from torch.optim import Adam
 from bliss.catalog import TileCatalog
 from bliss.datasets.galsim_blends import parse_dataset
 from bliss.encoders.layers import ConcatBackgroundTransform, EncoderCNN, make_enc_final
-from bliss.grid import center_ptiles
+from bliss.grid import shift_sources_in_ptiles
 from bliss.render_tiles import get_images_in_tiles, validate_border_padding
 
 
@@ -124,6 +124,14 @@ class BinaryEncoder(pl.LightningModule):
     def _center_ptiles(self, image_ptiles: Tensor, tile_locs_flat: Tensor) -> Tensor:
         transformed_ptiles = self.input_transform(image_ptiles)
         assert transformed_ptiles.shape[-1] == transformed_ptiles.shape[-2] == self.ptile_slen
-        cropped_ptiles = center_ptiles(transformed_ptiles, tile_locs_flat, self.tile_slen, self.bp)
+        shifted_ptiles = shift_sources_in_ptiles(
+            transformed_ptiles, tile_locs_flat, self.tile_slen, self.bp, center=True
+        )
+        cropped_ptiles = shifted_ptiles[
+            ...,
+            self.tile_slen : (self.ptile_slen - self.tile_slen),
+            self.tile_slen : (self.ptile_slen - self.tile_slen),
+        ]
+
         assert cropped_ptiles.shape[-1] == cropped_ptiles.shape[-2] == self.final_slen
         return cropped_ptiles
