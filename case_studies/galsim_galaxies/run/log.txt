@@ -184,3 +184,4 @@ INFO: Overwriting dataset...
 INFO: Complete galaxy catalog with only i < 27.3 magnitude of length: 666475
 INFO: Removing bright stars with only i < 20 magnitude, final catalog length: 17434
 INFO: Saving model as version 22
+INFO: Saved checkpoint 'run/out/binary/version_3/checkpoints/epoch=2-val_loss=11.227.ckpt' as weights models/binary.pt
