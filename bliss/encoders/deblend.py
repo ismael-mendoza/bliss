@@ -1,5 +1,4 @@
 from copy import deepcopy
-from pathlib import Path
 
 import pytorch_lightning as pl
 import torch
@@ -23,7 +22,7 @@ from bliss.render_tiles import (
 class GalaxyEncoder(pl.LightningModule):
     def __init__(
         self,
-        ae_state_dict: str,
+        ae_state_dict_path: str,
         n_bands: int = 1,
         tile_slen: int = 4,
         ptile_slen: int = 52,
@@ -46,8 +45,8 @@ class GalaxyEncoder(pl.LightningModule):
         self._enc = CenteredGalaxyEncoder(self.final_slen, latent_dim, n_bands, hidden)
 
         # decoder
-        ae = OneCenteredGalaxyAE(decoder_slen, latent_dim, n_bands, hidden)
-        ae.load_state_dict(Path(ae_state_dict))
+        ae = OneCenteredGalaxyAE(decoder_slen, latent_dim, hidden, n_bands)
+        ae.load_state_dict(torch.load(ae_state_dict_path))
         self._dec = deepcopy(ae.dec)
         self._dec.requires_grad_(False)
         self._dec.eval()
