@@ -183,7 +183,7 @@ class DetectionEncoder(pl.LightningModule):
     # pytorch lightning
     def training_step(self, batch, batch_idx):
         """Training step (pytorch lightning)."""
-        images, background, truth_cat = parse_dataset(batch, self.tile_slen)
+        images, background, truth_cat, _ = parse_dataset(batch, self.tile_slen)
         out = self.get_loss(images, background, truth_cat)
 
         # logging

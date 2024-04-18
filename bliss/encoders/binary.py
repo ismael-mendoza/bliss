@@ -104,7 +104,7 @@ class BinaryEncoder(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         """Pytorch lightning method."""
-        images, background, tile_catalog = parse_dataset(batch, tile_slen=self.tile_slen)
+        images, background, tile_catalog, _ = parse_dataset(batch, tile_slen=self.tile_slen)
         loss, acc = self.get_loss(images, background, tile_catalog)
         self.log("train/loss", loss, batch_size=len(images))
         self.log("train/acc", acc, batch_size=len(images))

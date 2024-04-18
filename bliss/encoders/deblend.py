@@ -58,7 +58,9 @@ class GalaxyEncoder(pl.LightningModule):
         centered_ptiles = self._get_centered_padded_tiles(image_ptiles_flat, tile_locs_flat)
         return self._enc(centered_ptiles)
 
-    def get_loss(self, images: Tensor, background: Tensor, tile_catalog: TileCatalog):
+    def get_loss(
+        self, images: Tensor, paddings: Tensor, background: Tensor, tile_catalog: TileCatalog
+    ):
         _, nth, ntw, _ = tile_catalog.locs
 
         images_with_background, _ = pack([images, background], "b * h w")
@@ -88,7 +90,7 @@ class GalaxyEncoder(pl.LightningModule):
         )
         assert recon_ptiles.shape[-1] == recon_ptiles.shape[-2] == self.ptile_slen
         recon_mean = reconstruct_image_from_ptiles(recon_ptiles, self.tile_slen, self.bp)
-        recon_mean += background
+        recon_mean += background + paddings  # target only galaxies within tiles.
         assert recon_mean.ndim == 4 and recon_mean.shape[-1] == images.shape[-1]
         assert not torch.any(torch.logical_or(torch.isnan(recon_mean), torch.isinf(recon_mean)))
 
@@ -99,15 +101,15 @@ class GalaxyEncoder(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         """Pytorch lightning training step."""
-        images, background, tile_catalog = parse_dataset(batch, self.tile_slen)
-        loss = self.get_loss(images, background, tile_catalog)
+        images, background, tile_catalog, paddings = parse_dataset(batch, self.tile_slen)
+        loss = self.get_loss(images, paddings, background, tile_catalog)
         self.log("train/loss", loss, batch_size=len(images))
         return loss
 
     def validation_step(self, batch, batch_idx):
         """Pytorch lightning validation step."""
-        images, background, tile_catalog = parse_dataset(batch, self.tile_slen)
-        loss = self.get_loss(images, background, tile_catalog)
+        images, background, tile_catalog, paddings = parse_dataset(batch, self.tile_slen)
+        loss = self.get_loss(images, paddings, background, tile_catalog)
         self.log("val/loss", loss, batch_size=len(images))
         return loss
 
