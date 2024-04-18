@@ -89,7 +89,7 @@ def test_old_and_new_grid():
 
 
 def test_old_and_new_centering():
-    ptiles = torch.randn((10, 1, 52, 52)) * 10 + 10
+    ptiles = torch.randn((10, 1, 52, 52)) * 10 + 100
     tile_locs = torch.rand((1, 10, 1, 2))
 
     centered_ptiles1 = _old_centering_tiles(ptiles, tile_locs, 52, 4, 24)
