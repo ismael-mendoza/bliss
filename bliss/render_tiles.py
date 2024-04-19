@@ -25,6 +25,7 @@ def render_galaxy_ptiles(
     """Render padded tiles of galaxies from tiled tensors."""
     assert galaxy_bools.le(1).all(), "At most one source can be rendered per tile."
     bp = validate_border_padding(tile_slen, ptile_slen)
+    b, nth, ntw, _ = locs.shape
 
     locs = rearrange(locs, "b nth ntw xy -> (b nth ntw) xy", xy=2)
     galaxy_bools = rearrange(galaxy_bools, "b nth ntw 1 -> (b nth ntw) 1")
@@ -39,7 +40,9 @@ def render_galaxy_ptiles(
         centered_galaxies, locs, tile_slen, bp, center=False
     )
 
-    return rearrange(uncentered_galaxies, "(b nth ntw) c h w -> b nth ntw c h w")
+    return rearrange(
+        uncentered_galaxies, "(b nth ntw) c h w -> b nth ntw c h w", b=b, nth=nth, ntw=ntw
+    )
 
 
 def _render_centered_galaxies_ptiles(
