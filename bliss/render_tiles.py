@@ -140,12 +140,12 @@ def get_n_padded_tiles_hw(
 
 
 def size_galaxy(galaxy: Tensor, ptile_slen: int) -> Tensor:
-    _, _, h, w = galaxy.shape
+    n, c, h, w = galaxy.shape
     assert h == w
     assert (h % 2) == 1, "dimension of galaxy image should be odd"
     galaxy = rearrange(galaxy, "n c h w -> (n c) h w")
     sized_galaxy = fit_source_to_ptile(galaxy, ptile_slen)
-    return rearrange(sized_galaxy, "(n c) h w -> n c h w")
+    return rearrange(sized_galaxy, "(n c) h w -> n c h w", n=n, c=c)
 
 
 def fit_source_to_ptile(source: Tensor, ptile_slen: int) -> Tensor:
