@@ -118,7 +118,7 @@ class GalaxyEncoder(pl.LightningModule):
 
     def _get_centered_padded_tiles(self, image_ptiles: Tensor, tile_locs_flat: Tensor) -> Tensor:
         """Remove background, center padded tiles at given locations, and crop."""
-        img, bg = unpack(image_ptiles, [(1,), (1,)], "b nht nhw * h w")
+        img, bg = unpack(image_ptiles, [(1,), (1,)], "npt * h w")
         shifted_ptiles = shift_sources_in_ptiles(
             img - bg, tile_locs_flat, self.tile_slen, self.bp, center=True
         )
