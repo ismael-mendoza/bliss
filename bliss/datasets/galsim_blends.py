@@ -4,7 +4,7 @@ import galsim
 import numpy as np
 import torch
 from astropy.table import Table
-from einops import pack, rearrange
+from einops import pack, rearrange, reduce
 from torch import Tensor
 from torch.utils.data import Dataset
 from tqdm import tqdm
@@ -134,8 +134,14 @@ def generate_dataset(
         images_list.append(noisy)
         noiseless_images_list.append(noiseless)
         individuals_list.append(individual_noiseless)
-        paddings_list.append(padding_noiseless)
         params_list.append(full_cat.to_tensor_dict())
+
+        # separately keep padding since it's need in the deblender loss function
+        # for that same purpose we also add center stars
+        sbool = rearrange(full_cat["star_bools"], "1 ms 1 -> ms 1 1 1")
+        all_stars = reduce(individual_noiseless * sbool, "ms 1 h w -> 1 h w", "sum")
+        padding_with_stars_noiseless = padding_noiseless + all_stars
+        paddings_list.append(padding_with_stars_noiseless)
 
     images, _ = pack(images_list, "* c h w")
     noiseless_images, _ = pack(noiseless_images_list, "* c h w")
