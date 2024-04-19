@@ -14,7 +14,7 @@ from case_studies.galsim_galaxies.run.training_functions import (
 )
 
 NUM_WORKERS = 0
-AE_STATE_DICT = "../../models/autoencoder.pt"
+AE_STATE_DICT = "../models/autoencoder.pt"
 assert Path(AE_STATE_DICT).exists()
 
 
@@ -65,9 +65,6 @@ def main(
     train_ds_file = f"ds/train_ds_{tag}.pt"
     val_ds_file = f"ds/val_ds_{tag}.pt"
 
-    # setup model to train
-    galaxy_encoder = GalaxyEncoder(AE_STATE_DICT)
-
     if overwrite:
         with open("log.txt", "a") as f:
             # for max_n_sources choice, see:
@@ -105,6 +102,9 @@ def main(
             model_name="deblender",
             log_file=g,
         )
+
+    # setup model to train
+    galaxy_encoder = GalaxyEncoder(AE_STATE_DICT)
 
     trainer.fit(model=galaxy_encoder, train_dataloaders=train_dl, val_dataloaders=val_dl)
 
