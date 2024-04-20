@@ -48,6 +48,6 @@ def shift_sources_in_ptiles(
     offsets_xy = swap_locs_columns(offsets_hw)
     grid_inflated = rearrange(grid, "h w xy -> 1 h w xy", xy=2, h=ptile_slen)
     offsets_xy_inflated = rearrange(offsets_xy, "npt xy -> npt 1 1 xy", xy=2)
-    grid_loc = grid_inflated - offsets_xy_inflated
+    grid_locs = grid_inflated - offsets_xy_inflated
 
-    return grid_sample(image_ptiles_flat, grid_loc, align_corners=True)
+    return grid_sample(image_ptiles_flat, grid_locs, align_corners=True)
