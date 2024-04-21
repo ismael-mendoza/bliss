@@ -10,12 +10,11 @@ from torch.optim import Adam
 from bliss.catalog import TileCatalog
 from bliss.datasets.galsim_blends import parse_dataset
 from bliss.encoders.autoencoder import CenteredGalaxyEncoder, OneCenteredGalaxyAE
-from bliss.grid import shift_sources_in_ptiles
+from bliss.grid import shift_sources_in_ptiles, validate_border_padding
 from bliss.render_tiles import (
     get_images_in_tiles,
     reconstruct_image_from_ptiles,
     render_galaxy_ptiles,
-    validate_border_padding,
 )
 
 
@@ -88,7 +87,7 @@ class GalaxyEncoder(pl.LightningModule):
             self.n_bands,
         )
         assert recon_ptiles.shape[-1] == recon_ptiles.shape[-2] == self.ptile_slen
-        recon_mean = reconstruct_image_from_ptiles(recon_ptiles, self.tile_slen, self.bp)
+        recon_mean = reconstruct_image_from_ptiles(recon_ptiles, self.tile_slen)
         recon_mean += background + paddings  # target only galaxies within tiles.
         assert recon_mean.ndim == 4 and recon_mean.shape[-1] == images.shape[-1]
         assert not torch.any(torch.logical_or(torch.isnan(recon_mean), torch.isinf(recon_mean)))
@@ -120,8 +119,9 @@ class GalaxyEncoder(pl.LightningModule):
         """Remove background, center padded tiles at given locations, and crop."""
         img, bg = unpack(image_ptiles, [(1,), (1,)], "npt * h w")
         shifted_ptiles = shift_sources_in_ptiles(
-            img - bg, tile_locs_flat, self.tile_slen, self.bp, center=True
+            img - bg, tile_locs_flat, self.tile_slen, self.ptile_slen, center=True
         )
+        assert shifted_ptiles.shape[-1] == shifted_ptiles.shape[-2] == self.ptile_slen
         cropped_ptiles = shifted_ptiles[
             ...,
             self.tile_slen : (self.ptile_slen - self.tile_slen),
