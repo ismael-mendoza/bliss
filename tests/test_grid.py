@@ -95,8 +95,8 @@ def test_old_and_new_centering():
     centered_ptiles1 = _old_centering_tiles(ptiles, tile_locs, 52, 4, 24)
     centered_ptiles2 = _shift_sources_in_ptiles(tile_locs[0, :, 0, :], ptiles, 52, 4)
 
-    centered_ptiles3 = shift_sources_in_ptiles(ptiles, tile_locs[0, :, 0, :], 4, 24, center=True)
-    centered_ptiles4 = shift_sources_in_ptiles(ptiles, tile_locs[0, :, 0, :], 4, 24, center=False)
+    centered_ptiles3 = shift_sources_in_ptiles(ptiles, tile_locs[0, :, 0, :], 4, 52, center=True)
+    centered_ptiles4 = shift_sources_in_ptiles(ptiles, tile_locs[0, :, 0, :], 4, 52, center=False)
 
     assert centered_ptiles1.ndim == 5
     assert centered_ptiles2.ndim == centered_ptiles3.ndim == 4
