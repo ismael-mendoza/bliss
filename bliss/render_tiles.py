@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from bliss.datasets.lsst import PIXEL_SCALE
 from bliss.encoders.autoencoder import CenteredGalaxyDecoder
-from bliss.grid import shift_sources_in_ptiles
+from bliss.grid import shift_sources_in_ptiles, validate_border_padding
 from bliss.reporting import get_single_galaxy_ellipticities
 
 
@@ -216,22 +216,3 @@ def get_galaxy_snr(self, decoder: CenteredGalaxyDecoder, ptile_slen: int, bg: fl
             snr[kk] = gal_snr[kk] * galaxy_bools_ii[kk].cpu()
 
     return rearrange(snr, "(b nth ntw) s 1 -> b nth ntw s 1", b=b, nth=nth, ntw=ntw)
-
-
-def validate_border_padding(tile_slen: int, ptile_slen: int, bp: float = None) -> int:
-    # Border Padding
-    # Images are first rendered on *padded* tiles (aka ptiles).
-    # The padded tile consists of the tile and neighboring tiles
-    # The width of the padding is given by ptile_slen.
-    # border_padding is the amount of padding we leave in the final image. Useful for
-    # avoiding sources getting too close to the edges.
-    if bp is None:
-        # default value matches encoder default.
-        bp = (ptile_slen - tile_slen) / 2
-
-    n_tiles_of_padding = (ptile_slen / tile_slen - 1) / 2
-    ptile_padding = n_tiles_of_padding * tile_slen
-    assert float(bp).is_integer(), "amount of border padding must be an integer"
-    assert n_tiles_of_padding.is_integer(), "n_tiles_of_padding must be an integer"
-    assert bp <= ptile_padding, "Too much border, increase ptile_slen"
-    return int(bp)
