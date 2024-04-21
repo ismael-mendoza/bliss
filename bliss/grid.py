@@ -44,7 +44,7 @@ def shift_sources_in_ptiles(
     An explicit demonstration of this function working correctly can be found in the `case_studies`
     notebook: `test-shift-ptiles-fnc.ipynb`.
     """
-    npt, _, _, size = image_ptiles_flat.shape[-1]
+    npt, _, _, size = image_ptiles_flat.shape
     assert tile_locs_flat.shape[0] == npt
     assert size in {ptile_slen, ptile_slen + 1}
     bp = validate_border_padding(tile_slen, ptile_slen)
