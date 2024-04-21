@@ -58,7 +58,9 @@ def shift_sources_in_ptiles(
     offsets_xy_inflated = rearrange(offsets_xy, "npt xy -> npt 1 1 xy", xy=2)
     grid_locs = grid_inflated - offsets_xy_inflated
 
-    return grid_sample(image_ptiles_flat, grid_locs, align_corners=True)
+    sampled_images = grid_sample(image_ptiles_flat, grid_locs, align_corners=True)
+    assert sampled_images.shape[-1] == sampled_images.shape[-2] == ptile_slen
+    return sampled_images
 
 
 def validate_border_padding(tile_slen: int, ptile_slen: int, bp: float = None) -> int:
