@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from bliss.datasets.lsst import PIXEL_SCALE
 from bliss.encoders.autoencoder import CenteredGalaxyDecoder
-from bliss.grid import shift_sources_in_ptiles, validate_border_padding
+from bliss.grid import shift_sources_in_ptiles
 from bliss.reporting import get_single_galaxy_ellipticities
 
 
@@ -23,7 +23,6 @@ def render_galaxy_ptiles(
 ) -> Tensor:
     """Render padded tiles of galaxies from tiled tensors."""
     assert galaxy_bools.le(1).all(), "At most one source can be rendered per tile."
-    bp = validate_border_padding(tile_slen, ptile_slen)
     b, nth, ntw, _ = locs.shape
 
     locs = rearrange(locs, "b nth ntw xy -> (b nth ntw) xy", xy=2)
@@ -35,12 +34,13 @@ def render_galaxy_ptiles(
         galaxy_decoder, galaxy_params, galaxy_bools, n_bands
     )
     assert centered_galaxies.shape[-1] == galaxy_decoder.slen
-    assert centered_galaxies.shape[-1] % 2 == 1
+    assert galaxy_decoder.slen % 2 == 1  # so centered in central pixel
 
-    # render galaxies in correct location within padded tile
+    # render galaxies in correct location within padded tile and trim to be size `ptile_slen`
     uncentered_galaxies = shift_sources_in_ptiles(
-        centered_galaxies, locs, tile_slen, bp, center=False
+        centered_galaxies, locs, tile_slen, ptile_slen, center=False
     )
+    assert uncentered_galaxies.shape[-1] == ptile_slen
 
     return rearrange(
         uncentered_galaxies, "(b nth ntw) c h w -> b nth ntw c h w", b=b, nth=nth, ntw=ntw
@@ -71,7 +71,7 @@ def _render_centered_galaxies_ptiles(
     return gal * rearrange(is_gal, "npt -> npt 1 1 1")
 
 
-def reconstruct_image_from_ptiles(image_ptiles: Tensor, tile_slen: int, bp: int) -> Tensor:
+def reconstruct_image_from_ptiles(image_ptiles: Tensor, tile_slen: int) -> Tensor:
     """Reconstruct an image from padded tiles.
 
     Args:
@@ -82,7 +82,6 @@ def reconstruct_image_from_ptiles(image_ptiles: Tensor, tile_slen: int, bp: int)
         Reconstructed image of size (batch_size x n_bands x height x width)
     """
     _, nth, ntw, _, ptile_slen, _ = image_ptiles.shape  # noqa: WPS236
-    bp = validate_border_padding(tile_slen, ptile_slen, bp=bp)
     image_ptiles_prefold = rearrange(image_ptiles, "b nth ntw c h w -> b (c h w) (nth ntw)")
     kernel_size = (ptile_slen, ptile_slen)
     stride = (tile_slen, tile_slen)
@@ -93,15 +92,10 @@ def reconstruct_image_from_ptiles(image_ptiles: Tensor, tile_slen: int, bp: int)
         output_size_list.append(kernel_size[i] + (nthw[i] - 1) * stride[i])
     output_size = tuple(output_size_list)
 
+    # In default settings, no borders are cropped from output image.
     folded_image = fold(image_ptiles_prefold, output_size, kernel_size, stride=stride)
-
-    # In default settings, no borders are cropped from
-    # output image. However, we may want to crop
-    max_padding = (ptile_slen - tile_slen) / 2
-    assert max_padding.is_integer()
-    max_padding = int(max_padding)
-    crop_idx = max_padding - bp
-    return folded_image[:, :, crop_idx : (-crop_idx or None), crop_idx : (-crop_idx or None)]
+    assert folded_image.shape[-2] == tile_slen * nth + (ptile_slen - tile_slen)
+    return folded_image
 
 
 def get_images_in_tiles(images: Tensor, tile_slen: int, ptile_slen: int) -> Tensor:
