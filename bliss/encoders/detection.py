@@ -9,7 +9,8 @@ from torch.optim import Adam
 from bliss.catalog import TileCatalog
 from bliss.datasets.galsim_blends import parse_dataset
 from bliss.encoders.layers import ConcatBackgroundTransform, EncoderCNN, make_enc_final
-from bliss.render_tiles import get_images_in_tiles, get_n_padded_tiles_hw, validate_border_padding
+from bliss.grid import validate_border_padding
+from bliss.render_tiles import get_images_in_tiles, get_n_padded_tiles_hw
 from bliss.reporting import DetectionMetrics
 
 
