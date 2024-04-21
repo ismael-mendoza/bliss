@@ -105,3 +105,17 @@ def test_old_and_new_centering():
 
     assert torch.all(torch.eq(centered_ptiles1[0], cropped_centered_ptiles3))
     assert torch.all(torch.eq(centered_ptiles2, centered_ptiles4))
+
+
+def test_shifting_and_trimming():
+    """See notebook `test-shift-ptiles-fnc.ipynb` for more extensive visual demonstration."""
+    ptiles = torch.randn((10, 1, 53, 53)) * 10 + 100
+    tile_locs = torch.rand((10, 2))
+
+    # applying it once on centerd sources and shifting them returns new ptiles of size 52 x 52.
+    shifted_ptiles = shift_sources_in_ptiles(ptiles, tile_locs, 4, 52, center=False)
+    assert shifted_ptiles.shape == (10, 1, 52, 52)
+
+    # applying again centers them and keeps the same size.
+    centered_ptiles = shift_sources_in_ptiles(shifted_ptiles, tile_locs, 4, 52, center=True)
+    assert centered_ptiles.shape == (10, 1, 52, 52)
