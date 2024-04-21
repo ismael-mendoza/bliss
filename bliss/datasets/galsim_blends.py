@@ -35,9 +35,10 @@ class SavedGalsimBlends(Dataset):
         ds.pop("individuals")
         ds.pop("noiseless")
 
+        # avoid large memory usage if we don't need padding.
         if not keep_padding:
             ds.pop("paddings")
-            self.paddings = None
+            self.paddings = torch.tensor([0]).float()
         else:
             self.paddings = ds.pop("paddings").float()
         self.keep_padding = keep_padding
@@ -54,7 +55,7 @@ class SavedGalsimBlends(Dataset):
         return {
             "images": self.images[index],
             "background": self.background[index],
-            "paddings": self.paddings[index] if self.keep_padding else None,
+            "paddings": self.paddings[index] if self.keep_padding else self.paddings,
             **tile_params_ii,
         }
 
