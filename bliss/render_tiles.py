@@ -25,20 +25,20 @@ def render_galaxy_ptiles(
     assert galaxy_bools.le(1).all(), "At most one source can be rendered per tile."
     b, nth, ntw, _ = locs.shape
 
-    locs = rearrange(locs, "b nth ntw xy -> (b nth ntw) xy", xy=2)
-    galaxy_bools = rearrange(galaxy_bools, "b nth ntw 1 -> (b nth ntw) 1")
-    galaxy_params = rearrange(galaxy_params, "b nth ntw d -> (b nth ntw) d")
+    locs_flat = rearrange(locs, "b nth ntw xy -> (b nth ntw) xy", xy=2)
+    galaxy_bools_flat = rearrange(galaxy_bools, "b nth ntw 1 -> (b nth ntw) 1")
+    galaxy_params_flat = rearrange(galaxy_params, "b nth ntw d -> (b nth ntw) d")
 
     # NOTE: size of tiles here is galaxy_decoder size, not `ptile_slen`!.
     centered_galaxies = _render_centered_galaxies_ptiles(
-        galaxy_decoder, galaxy_params, galaxy_bools, n_bands
+        galaxy_decoder, galaxy_params_flat, galaxy_bools_flat, n_bands
     )
     assert centered_galaxies.shape[-1] == galaxy_decoder.slen
     assert galaxy_decoder.slen % 2 == 1  # so centered in central pixel
 
     # render galaxies in correct location within padded tile and trim to be size `ptile_slen`
     uncentered_galaxies = shift_sources_in_ptiles(
-        centered_galaxies, locs, tile_slen, ptile_slen, center=False
+        centered_galaxies, locs_flat, tile_slen, ptile_slen, center=False
     )
     assert uncentered_galaxies.shape[-1] == ptile_slen
 
