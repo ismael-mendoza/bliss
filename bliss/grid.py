@@ -31,7 +31,7 @@ def shift_sources_in_ptiles(
 
     The keyword `center` controls whether the sources are already centered at the
     padded tile and should be shifted by `tile_locs_flat` (center=False),
-    or if the sources are already shifted by that amount and should be 'centered' (center=True).
+    or if the sources are already shifted by that amount and should be centered (center=True).
     Default is `False`.
 
     This function can only be used if input image has the same size as padded tiles or is one

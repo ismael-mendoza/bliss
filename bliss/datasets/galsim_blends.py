@@ -137,8 +137,8 @@ def generate_dataset(
         individuals_list.append(individual_noiseless)
         params_list.append(full_cat.to_tensor_dict())
 
-        # separately keep padding since it's need in the deblender loss function
-        # for that same purpose we also add center stars
+        # separately keep padding since it's needed in the deblender loss function
+        # for that same purpose we also add central stars
         sbool = rearrange(full_cat["star_bools"], "1 ms 1 -> ms 1 1 1")
         all_stars = reduce(individual_noiseless * sbool, "ms 1 h w -> 1 h w", "sum")
         padding_with_stars_noiseless = padding_noiseless + all_stars
