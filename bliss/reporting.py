@@ -13,7 +13,7 @@ from torchmetrics import Metric
 from tqdm import tqdm
 
 from bliss.catalog import FullCatalog
-from bliss.datasets.lsst import convert_flux_to_mag
+from bliss.datasets.lsst import PIXEL_SCALE
 
 
 class DetectionMetrics(Metric):
@@ -417,7 +417,7 @@ def compute_bin_metrics(
 
 
 def get_single_galaxy_ellipticities(
-    images: Tensor, psf_image: Tensor, pixel_scale: float = 0.2, no_bar: bool = True
+    images: Tensor, psf_image: Tensor, pixel_scale: float = PIXEL_SCALE, no_bar: bool = True
 ) -> Tensor:
     """Returns ellipticities of (noiseless, single-band) individual galaxy images.
 
@@ -425,7 +425,7 @@ def get_single_galaxy_ellipticities(
         pixel_scale: Conversion from arcseconds to pixel.
         no_bar: Whether to use a progress bar.
         images: Array of shape (n_samples, slen, slen) containing images of
-            single-centered galaxies without noise or background.
+            single isolated galaxies without noise or background.
         psf_image: Array of shape (slen, slen) containing PSF image used for
             convolving the galaxies in `true_images`.
 
@@ -441,22 +441,33 @@ def get_single_galaxy_ellipticities(
     galsim_psf_image = galsim.Image(psf_np, scale=pixel_scale)
 
     # Now we use galsim to measure size and ellipticity
-    for i in tqdm(range(n_samples), desc="Measuring galaxies", disable=no_bar):
-        image = images_np[i]
-        galsim_image = galsim.Image(image, scale=pixel_scale)
-        res_true = galsim.hsm.EstimateShear(
-            galsim_image, galsim_psf_image, shear_est="KSB", strict=False
-        )
-        g1, g2 = float(res_true.corrected_g1), float(res_true.corrected_g2)
-        ellips[i, :] = torch.tensor([g1, g2])
+    for ii in tqdm(range(n_samples), desc="Measuring galaxies", disable=no_bar):
+        image = images_np[ii]
+        if image.sum() > 0:  # skip empty images
+            galsim_image = galsim.Image(image, scale=pixel_scale)
+            res_true = galsim.hsm.EstimateShear(
+                galsim_image, galsim_psf_image, shear_est="KSB", strict=False
+            )
+            g1, g2 = float(res_true.corrected_g1), float(res_true.corrected_g2)
+            ellips[ii, :] = torch.tensor([g1, g2])
 
     return ellips
 
 
+def get_snr(noiseless: Tensor, background: Tensor) -> float:
+    """Compute SNR given noiseless, isolated iamges of galaxies and background."""
+    image_with_background = noiseless + background
+    snr2 = reduce(noiseless**2 / image_with_background, "b c h w -> b", "sum")
+    return torch.sqrt(snr2)
+
+
 def get_single_galaxy_measurements(
-    images: Tensor, psf_image: Tensor, pixel_scale: float = 0.2
+    images: Tensor,
+    background: Tensor,
+    psf_image: Tensor,
+    pixel_scale: float = PIXEL_SCALE,
 ) -> Dict[str, Tensor]:
-    """Compute individual galaxy measurements comparing true images with reconstructed images.
+    """Compute individual galaxy measurements from noiseless isolated images of galaxies.
 
     Args:
         pixel_scale: Conversion from arcseconds to pixel.
@@ -469,14 +480,19 @@ def get_single_galaxy_measurements(
         Dictionary containing fluxes, magnitudes, and ellipticities of `images`.
     """
     _, c, h, w = images.shape
-    assert h == w and c == 1 and psf_image.shape == (c, h, w)
-    assert images.device == psf_image.device == torch.device("cpu")
+    assert h == w and c == 1
+    assert psf_image.shape == (c, h, w)
+    assert images.shape == background.shape
+    assert images.device == background.device == psf_image.device == torch.device("cpu")
 
-    fluxes = reduce(images, "b c h w -> b", "sum")
+    # flux
+    fluxes = reduce(images, "b n c h w -> b n", "sum")
+
+    # snr
+    snrs = get_snr(images, background)
+
+    # ellipticity
+    # correctly handles 0s
     ellips = get_single_galaxy_ellipticities(images[:, 0], psf_image[0], pixel_scale)
 
-    return {
-        "fluxes": fluxes,
-        "mags": convert_flux_to_mag(fluxes),
-        "ellips": ellips,
-    }
+    return fluxes, snrs, ellips
