@@ -164,6 +164,7 @@ class TileCatalog(UserDict):
 
     def _validate(self, x: Tensor):
         assert isinstance(x, Tensor)
+        assert x.ndim == 4
         assert x.shape[:-1] == (self.batch_size, self.nth, self.ntw)
         assert x.device == self.device
 
