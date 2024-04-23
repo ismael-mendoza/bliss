@@ -185,3 +185,51 @@ INFO: Complete galaxy catalog with only i < 27.3 magnitude of length: 666475
 INFO: Removing bright stars with only i < 20 magnitude, final catalog length: 17434
 INFO: Saving model as version 22
 INFO: Saved checkpoint 'run/out/binary/version_3/checkpoints/epoch=2-val_loss=11.227.ckpt' as weights models/binary.pt
+
+./bin/run_deblender_train.py -o -s 42 -t 15_42
+
+Run training deblender script...
+        With tag 15_42 and seed 42 at 2024-04-22 10:48:18.696340
+        Galaxy density 185.0, star_density 10.0, and
+        Only bright 'False', no padding galaxies 'False'.
+        n_samples 20560, split 15420, validate_every_n_epoch 1,
+        val_check_interval 0.2, batch_size 32, n_epochs 25
+
+INFO: Overwriting dataset...
+INFO: Complete galaxy catalog with only i < 27.3 magnitude of length: 666475
+INFO: Removing bright stars with only i < 20 magnitude, final catalog length: 17434
+
+./bin/run_deblender_train.py -o -s 42 -t 15_42
+
+Run training deblender script...
+        With tag 15_42 and seed 42 at 2024-04-22 10:54:28.281268
+        Galaxy density 185.0, star_density 10.0, and
+        Only bright 'False', no padding galaxies 'False'.
+        n_samples 20560, split 15420, validate_every_n_epoch 1,
+        val_check_interval 0.2, batch_size 32, n_epochs 25
+
+INFO: Overwriting dataset...
+INFO: Complete galaxy catalog with only i < 27.3 magnitude of length: 666475
+INFO: Removing bright stars with only i < 20 magnitude, final catalog length: 17434
+INFO: Saving model as version 6
+
+./bin/run_deblender_train.py -s 43 -t 15_42
+
+Run training deblender script...
+        With tag 15_42 and seed 43 at 2024-04-22 13:04:40.003700
+        Galaxy density 185.0, star_density 10.0, and
+        Only bright 'False', no padding galaxies 'False'.
+        n_samples 20560, split 15420, validate_every_n_epoch 1,
+        val_check_interval 'None', batch_size 32, n_epochs 25
+
+
+./bin/run_deblender_train.py -s 43 -t 15_42
+
+Run training deblender script...
+        With tag 15_42 and seed 43 at 2024-04-22 13:05:13.759150
+        Galaxy density 185.0, star_density 10.0, and
+        Only bright 'False', no padding galaxies 'False'.
+        n_samples 20560, split 15420, validate_every_n_epoch 1,
+        val_check_interval 'None', batch_size 32, n_epochs 2001
+
+INFO: Saving model as version 7
