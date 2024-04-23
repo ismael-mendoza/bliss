@@ -101,7 +101,7 @@ class Encoder(nn.Module):
                 out_ptiles = self._encode_ptiles(ptiles)
                 tile_map_list.append(out_ptiles)
 
-        tile_map = collate(tile_map_list)
+        tile_map = _collate(tile_map_list)
 
         n_tiles_h = (image.shape[2] - 2 * self.bp) // self.detection_encoder.tile_slen
         n_tiles_w = (image.shape[3] - 2 * self.bp) // self.detection_encoder.tile_slen
@@ -135,6 +135,7 @@ class Encoder(nn.Module):
         return self._dummy_param.device
 
     def _encode_ptiles(self, flat_image_ptiles: Tensor):
+        assert not self.detection_encoder.training
         tiled_params: dict[str, Tensor] = {}
 
         n_source_probs, locs_mean, locs_sd_raw = self.detection_encoder.encode_tiled(
@@ -156,7 +157,8 @@ class Encoder(nn.Module):
             tiled_params.update({"galaxy_bools": galaxy_bools})
 
             if self.galaxy_encoder is not None:
-                galaxy_params, _ = self.galaxy_encoder.forward(flat_image_ptiles, locs)
+                assert not self.binary_encoder.training
+                galaxy_params = self.galaxy_encoder.forward(flat_image_ptiles, locs)
                 galaxy_params *= tile_is_on * galaxy_bools
                 tiled_params.update({"galaxy_params": galaxy_params})
 
@@ -169,7 +171,7 @@ class Encoder(nn.Module):
         )
 
 
-def collate(tile_map_list: list[dict[str, Tensor]]) -> dict[str, Tensor]:
+def _collate(tile_map_list: list[dict[str, Tensor]]) -> dict[str, Tensor]:
     """Combine multiple Tensors across dictionaries into a single dictionary."""
     assert tile_map_list  # not empty
 
