@@ -1,15 +1,12 @@
 """Functions from producing images from tiled parameters of galaxies or stars."""
 
 import torch
-from einops import rearrange, reduce
+from einops import rearrange
 from torch import Tensor
 from torch.nn.functional import fold, unfold
-from tqdm import tqdm
 
-from bliss.datasets.lsst import PIXEL_SCALE
 from bliss.encoders.autoencoder import CenteredGalaxyDecoder
 from bliss.grid import shift_sources_in_ptiles
-from bliss.reporting import get_single_galaxy_ellipticities
 
 
 def render_galaxy_ptiles(
