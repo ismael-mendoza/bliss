@@ -15,6 +15,7 @@ class TileCatalog(UserDict):
         "galaxy_bools",
         "fluxes",
         "mags",
+        "locs_sd",
         "ellips",
         "snr",
         "blendedness",
@@ -23,6 +24,7 @@ class TileCatalog(UserDict):
         "star_fluxes",
         "star_log_fluxes",
         "star_bools",
+        "n_source_probs",
     }
 
     def __init__(self, tile_slen: int, d: Dict[str, Tensor]):
