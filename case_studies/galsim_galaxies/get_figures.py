@@ -101,8 +101,9 @@ def main(mode: str, overwrite: bool):
 
     if mode == "toy":
         print("INFO: Creating figures for testing BLISS on pair galaxy toy example.")
-        blend_ds = instantiate(cfg.plots.galsim_blends)
-        ToySeparationFigure(overwrite=overwrite, **bfig_kwargs)(encoder, decoder, blend_ds)
+        ToySeparationFigure(overwrite=overwrite, figdir="figures", cachedir="data")(
+            encoder, decoder
+        )
 
 
 if __name__ == "__main__":
