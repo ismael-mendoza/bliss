@@ -1,13 +1,25 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from astropy.table import Table
+from einops import reduce
 from matplotlib.figure import Figure
 
+from bliss.catalog import FullCatalog, TileCatalog
+from bliss.datasets.galsim_blends import render_full_catalog
+from bliss.datasets.lsst import (
+    convert_flux_to_mag,
+    get_default_lsst_background,
+    get_default_lsst_psf,
+)
+from bliss.encoders.autoencoder import CenteredGalaxyDecoder
 from bliss.encoders.encoder import Encoder
-from bliss.plotting import BlissFigure
+from bliss.plotting import BlissFigure, plot_image
+from bliss.render_tiles import reconstruct_image_from_ptiles, render_galaxy_ptiles
 
 
 class ToySeparationFigure(BlissFigure):
+    """Create figures related to assessingn probabilistic performance on toy blend."""
+
     @property
     def all_rcs(self):
         return {
@@ -36,13 +48,14 @@ class ToySeparationFigure(BlissFigure):
     def separations_to_plot(self) -> list[int]:
         return [4, 8, 12]
 
-    def compute_data(self, encoder: Encoder, decoder, galaxy_generator):
+    def compute_data(self, encoder: Encoder, decoder: CenteredGalaxyDecoder):
         # first, decide image size
         slen = 44
         bp = encoder.detection_encoder.bp
         tile_slen = encoder.detection_encoder.tile_slen
         size = 44 + 2 * bp
         tile_slen = encoder.detection_encoder.tile_slen
+        ptile_slen = encoder.detection_encoder.ptile_slen
         assert slen / tile_slen % 2 == 1, "Need odd number of tiles to center galaxy."
 
         # now separations between galaxies to be considered (in pixels)
@@ -50,40 +63,33 @@ class ToySeparationFigure(BlissFigure):
         seps = torch.arange(0, 18, 0.1)
         batch_size = len(seps)
 
-        # Params: total_flux, disk_frac, beta_radians, disk_q, disk_a, bulge_q, bulge_a
         # first centered galaxy, then moving one.
-        # BTK params: ra, dec, fluxnorm_disk, fluxnorm_bulge, fluxnorm_agn, a_d, b_d, a_b, b_b,
-        # pa_bulge, pa_disk, btk_rotation
-        colnames = [
-            "ra",
-            "dec",
-            "fluxnorm_disk",
+        colnames = (
             "fluxnorm_bulge",
+            "fluxnorm_disk",
             "fluxnorm_agn",
-            "a_d",
-            "b_d",
             "a_b",
+            "a_d",
             "b_b",
+            "b_d",
             "pa_bulge",
-            "pa_disk",
-            "btk_rotation",
             "i_ab",
-        ]
+            "flux",
+        )
+        assert len(colnames) == 10
+        n_sources = 2
         flux1, flux2 = 2e5, 1e5
         mag1, mag2 = convert_flux_to_mag(torch.tensor([flux1, flux2]))
         mag1, mag2 = mag1.item(), mag2.item()
-        gal1 = [0, 0, 1.0, 0, 0, 1.5, 0.7, 0, 0, np.pi / 4, np.pi / 4, 0, mag1]
-        gal2 = [0, 0, 1.0, 0, 0, 1.0, 0.7, 0, 0, 3 * np.pi / 4, np.pi / 4, 0, mag2]
-        assert len(gal1) == len(gal2) == len(colnames)
-        base_cat = Table((gal1, gal2), names=colnames)
+        gparam1 = [0, 1.0, 0, 0, 1.5, 0, 0.7, np.pi / 4, mag1, flux1]
+        gparam2 = [0, 1.0, 0, 0, 1.0, 0, 0.7, 3 * np.pi / 4, mag2, flux2]
+        gparams = torch.tensor([gparam1, gparam2])
+        gparams = gparams.reshape(1, 2, 10).expand(batch_size, 2, 10)
 
         # need plocs for later
         x0, y0 = 22, 22  # center plocs
         plocs = torch.tensor([[[x0, y0], [x0, y0 + sep]] for sep in seps]).reshape(batch_size, 2, 2)
 
-        # setup btk configurations
-        survey = btk.survey.get_surveys("LSST")
-        i_band = survey.get_filter("i")
         psf = get_default_lsst_psf()
         bg = get_default_lsst_background()
 
@@ -91,19 +97,41 @@ class ToySeparationFigure(BlissFigure):
         images = torch.zeros(batch_size, 1, size, size)
         background = torch.zeros(batch_size, 1, size, size)
         for ii in range(batch_size):
-            cat = base_cat.copy()
-            ra = seps[ii] * PIXEL_SCALE
-            cat["ra"] = ra
-            image = _render_blend(cat, survey, i_band, psf, size)
+            plocs_ii = plocs[ii].reshape(1, 2, 2)
+            d = {
+                "n_sources": torch.full((1,), n_sources),
+                "plocs": plocs_ii,
+                "galaxy_bools": torch.ones(1, n_sources, 1),
+                "galaxy_params": gparams[ii, None],
+                "star_bools": torch.zeros(1, n_sources, 1),
+                "star_fluxes": torch.zeros(1, n_sources, 1),
+                "star_log_fluxes": torch.zeros(1, n_sources, 1),
+            }
+            full_cat = FullCatalog(slen, slen, d)
+            image, _ = render_full_catalog(full_cat, psf, slen, bp)
             images[ii] = image
             background[ii] = bg
 
         # predictions from encoder
         tile_est = encoder.variational_mode(images, background)
-        recon = decoder.render_images(tile_est)
-        tile_est.set_all_fluxes_and_mags(decoder)
-        tile_est = tile_est.cpu()
+
+        # create reconstruction images and compute galaxy fluxes
+        recon_ptiles = render_galaxy_ptiles(
+            decoder,
+            tile_est.locs,
+            tile_est["galaxy_params"],
+            tile_est["galaxy_bools"],
+            ptile_slen,
+            tile_slen,
+            1,
+        ).cpu()
+        assert recon_ptiles.shape[-1] == recon_ptiles.shape[-2] == ptile_slen
+        recon = reconstruct_image_from_ptiles(recon_ptiles, tile_slen)
         recon = recon.detach().cpu() + background
+        tile_est = tile_est.cpu()
+
+        # finally add flux
+        tile_est["fluxes"] = reduce(recon_ptiles, "b nth ntw c h w -> b nth ntw 1", "sum")
         residuals = (recon - images) / recon.sqrt()
 
         # now we need to obtain flux, pred. ploc, prob. of detection in tile and std. of ploc
@@ -131,11 +159,11 @@ class ToySeparationFigure(BlissFigure):
             d = {k: v[ii, None] for k, v in d.items()}
             tile_est_ii = TileCatalog(tile_slen, d)
 
-            ploc = plocs[ii]
-            params_at_coord = tile_est_ii._get_tile_params_at_coord(ploc)
-            prob_n_source = torch.exp(params_at_coord["n_source_log_probs"])
+            plocs_ii = plocs[ii]
+            params_at_coord = tile_est_ii.get_tile_params_at_coord(plocs_ii)
+            prob_n_source = params_at_coord["n_source_probs"]
             flux = params_at_coord["fluxes"]
-            ploc_sd = params_at_coord["loc_sd"] * tile_slen
+            ploc_sd = params_at_coord["locs_sd"] * tile_slen
             loc = params_at_coord["locs"]
             assert prob_n_source.shape == flux.shape == (2, 1)
             assert ploc_sd.shape == loc.shape == (2, 2)
@@ -361,11 +389,3 @@ class ToySeparationFigure(BlissFigure):
         if fname == "toy_measurements":
             return self._get_measurement_figure(data)
         raise NotImplementedError("Figure {fname} not implemented.")
-
-
-def _render_blend(blend_cat: Table, survey, filt, psf, slen: int):
-    blend_image = torch.zeros((1, slen, slen))
-    for entry in blend_cat:
-        single_image = btk.draw_blends.render_single_catsim_galaxy(entry, filt, survey, psf, slen)
-        blend_image[0] += single_image.array
-    return blend_image
