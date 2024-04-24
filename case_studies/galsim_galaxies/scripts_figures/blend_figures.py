@@ -13,6 +13,7 @@ from bliss.encoders.encoder import Encoder
 from bliss.plotting import BlissFigure, scatter_shade_plot
 from bliss.reporting import (
     compute_bin_metrics,
+    get_blendedness,
     get_boostrap_precision_and_recall,
     get_single_galaxy_measurements,
     match_by_locs,
@@ -44,9 +45,9 @@ class BlendSimulationFigure(BlissFigure):
 
     def compute_data(self, blend_file: str, encoder: Encoder, decoder: CenteredGalaxyDecoder):
         blend_data: dict[str, Tensor] = torch.load(blend_file)
-        images = blend_data.pop("images")
-        background = blend_data.pop("background")
-        individuals = blend_data.pop("individuals")
+        images = blend_data.pop("images").float()
+        background = blend_data.pop("background").float()
+        individuals = blend_data.pop("individuals").float()
         blend_data.pop("noiseless")
         blend_data.pop("paddings")
 
@@ -66,25 +67,29 @@ class BlendSimulationFigure(BlissFigure):
         flat_indiv = rearrange(individuals, "b ms c h w -> (b ms) c h w")
         flat_bg1 = repeat(background, "b c h w -> (b ms) c h w", ms=ms1, h=size, w=size)
         tflux, tsnr, tellip = get_single_galaxy_measurements(
-            flat_indiv, flat_bg1, psf_tensor, PIXEL_SCALE
+            flat_indiv, flat_bg1, psf_tensor, PIXEL_SCALE, no_bar=False
         )
         truth["galaxy_fluxes"] = rearrange(tflux, "(b ms) -> b ms 1", ms=ms1)
         truth["snr"] = rearrange(tsnr, "(b ms) -> b ms 1", ms=ms1)
         truth["ellips"] = rearrange(tellip, "(b ms) g -> b ms g", ms=ms1, g=2)
+        blendedness = get_blendedness(individuals)
+        assert not blendedness.isnan().any()
+        truth["blendedness"] = rearrange(blendedness, "b ms -> b ms 1", b=b, ms=ms1)
 
         # get additional galaxy quantities from predicted information
         print("INFO: BLISS posterior inference on images.")
-        tile_est = encoder.variational_mode(images, background)
+        tile_est = encoder.variational_mode(images, background).to(torch.device("cpu"))
         est = tile_est.to_full_params()  # no need to compute galaxy quantities in tiles anymore!
 
         flat_galaxy_params = rearrange(est["galaxy_params"], "b ms d -> (b ms) d")
-        flat_galaxy_bools = rearrange(est["galaxy_params"], "b ms 1 -> (b ms) 1")
+        flat_galaxy_bools = rearrange(est["galaxy_bools"], "b ms 1 -> (b ms) 1")
 
         # not sure if batches are necessary here
+        psf_tensor2 = get_default_lsst_psf_tensor(decoder.slen)
         b, ms2, _ = est["galaxy_params"].shape
         n_total = b * ms2
         flat_bg2 = repeat(
-            background[0, 0, 0, 0],
+            torch.tensor([background[0, 0, 0, 0].item()]),
             "() -> (b ms) c h w",
             b=b,
             ms=ms2,
@@ -109,21 +114,20 @@ class BlendSimulationFigure(BlissFigure):
             galaxy_bools_ii = flat_galaxy_bools[ii:jj].cpu()
             bg_ii = flat_bg2[ii:jj]
 
-            egals_ii_raw = decoder(galaxy_params_ii).cpu()
+            egals_ii_raw = decoder(galaxy_params_ii.to(encoder.device)).cpu()
             egals_ii = egals_ii_raw * rearrange(galaxy_bools_ii, "npt 1 -> npt 1 1 1")
             eflux_ii, esnr_ii, eellip_ii = get_single_galaxy_measurements(
-                egals_ii, bg_ii, psf_tensor, PIXEL_SCALE
+                egals_ii, bg_ii, psf_tensor2, PIXEL_SCALE
             )
 
-            eflux[ii:jj] = eflux_ii
-            esnr[ii:jj] = esnr_ii
-            eellips[ii:jj] = eellip_ii
+            eflux[ii:jj, 0] = eflux_ii
+            esnr[ii:jj, 0] = esnr_ii
+            eellips[ii:jj, :] = eellip_ii
 
         # finally put into TileCatalog and get FullCatalog
-        est = est.cpu()
-        est["fluxes"] = rearrange(eflux, "n 1 -> b ms 1", b=b, ms=ms2)
-        est["snr"] = rearrange(esnr, "n 1 -> b ms 1", b=b, ms=ms2)
-        est["ellips"] = rearrange(eellips, "n 2 -> b ms 1", b=b, ms=ms2)
+        est["fluxes"] = rearrange(eflux, "(b ms) 1 -> b ms 1", b=b, ms=ms2)
+        est["snr"] = rearrange(esnr, "(b ms) 1 -> b ms 1", b=b, ms=ms2)
+        est["ellips"] = rearrange(eellips, "(b ms) g -> b ms g", b=b, ms=ms2, g=2)
 
         # compute detection metrics (snr)
         snr_bins2 = 10 ** torch.arange(0.2, 3.2, 0.2)
@@ -303,7 +307,7 @@ class BlendSimulationFigure(BlissFigure):
         return tp / p, tp / t
 
     def _get_classification_figure(self, data) -> Figure:
-        snrs, _, tgbools, egbools = data["classification"].values()
+        snrs, tgbools, egbools = data["classification"].values()
         snr_bins = data["detection"]["bins"]
         n_matches = len(snrs)
         n_bins = len(snr_bins)
@@ -432,7 +436,9 @@ def _make_pr_figure(
     )
 
     # (bottom) plot of precision and recall
-    ymin = min(precision.min(), recall.min())
+    mask1 = ~np.isnan(precision)
+    mask2 = ~np.isnan(recall)
+    ymin = min(precision[mask1].min(), recall[mask2].min())
     yticks = np.arange(np.round(ymin, 1), 1.1, 0.1)
     c1 = plt.rcParams["axes.prop_cycle"].by_key()["color"][0]
     precision1 = np.quantile(boot_precision, 0.25, 0)
