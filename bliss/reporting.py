@@ -353,7 +353,6 @@ def scene_metrics(
     tparams = true_params.apply_param_bin(param, p_min, p_max)
     detection_metrics.update(tparams, est_params)
     recall = detection_metrics.compute()["recall"]
-    n_galaxies_detected = detection_metrics.compute()["n_galaxies_detected"]
     detection_metrics.reset()
 
     # f1-score
@@ -362,7 +361,6 @@ def scene_metrics(
         "precision": precision.item(),
         "recall": recall.item(),
         "f1": f1.item(),
-        "n_galaxies_detected": n_galaxies_detected.item(),
     }
 
     # classification
@@ -461,11 +459,27 @@ def get_snr(noiseless: Tensor, background: Tensor) -> float:
     return torch.sqrt(snr2)
 
 
+def get_blendedness(iso_image: Tensor):
+    """Calculate blendedness given isolated images of galaxies in a blend.
+
+    Args:
+        iso_image: Array of shape = (B, N, C, H, W) corresponding to images of the isolated
+            galaxy you are calculating blendedness for.
+    """
+    assert iso_image.ndim == 5
+    num = reduce(iso_image * iso_image, "b n c h w -> b n", "sum")
+    blend = rearrange(reduce(iso_image, "b n c h w -> b c h w", "sum"), "b c h w -> b 1 c h w")
+    denom = reduce(blend * iso_image, "b n c h w -> b n", "sum")
+    blendedness = 1 - num / denom
+    return torch.where(blendedness.isnan(), 0, blendedness)
+
+
 def get_single_galaxy_measurements(
     images: Tensor,
     background: Tensor,
     psf_image: Tensor,
     pixel_scale: float = PIXEL_SCALE,
+    no_bar: bool = True,
 ) -> Dict[str, Tensor]:
     """Compute individual galaxy measurements from noiseless isolated images of galaxies.
 
@@ -486,13 +500,13 @@ def get_single_galaxy_measurements(
     assert images.device == background.device == psf_image.device == torch.device("cpu")
 
     # flux
-    fluxes = reduce(images, "b n c h w -> b n", "sum")
+    fluxes = reduce(images, "b c h w -> b", "sum")
 
     # snr
     snrs = get_snr(images, background)
 
     # ellipticity
     # correctly handles 0s
-    ellips = get_single_galaxy_ellipticities(images[:, 0], psf_image[0], pixel_scale)
+    ellips = get_single_galaxy_ellipticities(images[:, 0], psf_image[0], pixel_scale, no_bar=no_bar)
 
     return fluxes, snrs, ellips
