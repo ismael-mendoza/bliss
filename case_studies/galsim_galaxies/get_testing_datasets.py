@@ -16,7 +16,8 @@ HOME_DIR = Path(__file__).parent.parent.parent
 DATA_DIR = Path(__file__).parent / "data"
 cat = Table.read(HOME_DIR / "data/OneDegSq.fits")
 CATSIM_TABLE = cat[cat["i_ab"] < 27.3]
-STAR_MAGS = column_to_tensor(Table.read(HOME_DIR / "data/stars_med_june2018.fits"), "i_ab")
+star_mags = column_to_tensor(Table.read(HOME_DIR / "data/stars_med_june2018.fits"), "i_ab")
+STAR_MAGS = star_mags[star_mags > 20]
 PSF = get_default_lsst_psf()
 
 
