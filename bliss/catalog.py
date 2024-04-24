@@ -119,13 +119,14 @@ class TileCatalog(UserDict):
         height, width = self.nth * self.tile_slen, self.ntw * self.tile_slen
         return FullCatalog(height, width, params)
 
-    def _get_tile_params_at_coord(self, plocs: torch.Tensor) -> Dict[str, Tensor]:
+    def get_tile_params_at_coord(self, plocs: torch.Tensor) -> Dict[str, Tensor]:
         """Return the parameters contained within the tiles corresponding to locations in plocs."""
         assert len(plocs.shape) == 2 and plocs.shape[1] == 2
         assert plocs.device == self.locs.device
         n_total = len(plocs)
         slen = self.nth * self.tile_slen
         wlen = self.ntw * self.tile_slen
+
         # coordinates on tiles.
         x_coords = torch.arange(0, slen, self.tile_slen, device=self.locs.device).long()
         y_coords = torch.arange(0, wlen, self.tile_slen, device=self.locs.device).long()
@@ -134,10 +135,10 @@ class TileCatalog(UserDict):
         y_indx = torch.searchsorted(y_coords.contiguous(), plocs[:, 1].contiguous()) - 1
 
         # gather in dictionary
-        d = {k: v[:, x_indx, y_indx, :, :].reshape(n_total, -1) for k, v in self.items()}
+        d = {k: v[:, x_indx, y_indx, :].reshape(n_total, -1) for k, v in self.items()}
 
         # also include locs
-        d["locs"] = self.locs[:, x_indx, y_indx, :, :].reshape(n_total, -1)
+        d["locs"] = self.locs[:, x_indx, y_indx, :].reshape(n_total, -1)
 
         return d
 
