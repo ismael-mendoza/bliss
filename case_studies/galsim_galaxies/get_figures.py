@@ -39,7 +39,13 @@ def _load_models(device):
     deblender.load_state_dict(torch.load("models/deblend.pt", map_location=device))
     deblender.requires_grad_(False)
 
-    encoder = Encoder(detection.eval(), binary.eval(), deblender.eval())
+    encoder = Encoder(
+        detection.eval(),
+        binary.eval(),
+        deblender.eval(),
+        n_images_per_batch=20,
+        n_rows_per_batch=30,
+    )
     encoder = encoder.to(device)
 
     # decoder
