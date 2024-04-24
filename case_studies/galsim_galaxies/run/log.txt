@@ -233,3 +233,4 @@ Run training deblender script...
         val_check_interval 'None', batch_size 32, n_epochs 2001
 
 INFO: Saving model as version 7
+INFO: Saved checkpoint 'run/out/deblender/version_7/checkpoints/epoch=1871-val_loss=1882905.750.ckpt' as weights models/deblend.pt
