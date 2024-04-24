@@ -28,11 +28,11 @@ def _load_models(device):
     input_transform = ConcatBackgroundTransform()
 
     detection = DetectionEncoder(input_transform).to(device).eval()
-    detection.load_state_dict(torch.load("models/detection.pt"), map_location=device)
+    detection.load_state_dict(torch.load("models/detection.pt", map_location=device))
     detection.requires_grad_(False)
 
     binary = BinaryEncoder(input_transform).to(device).eval()
-    binary.load_state_dict(torch.load(torch.load("models/binary.pt"), map_location=device))
+    binary.load_state_dict(torch.load("models/binary.pt", map_location=device))
     binary.requires_grad_(False)
 
     deblender = GalaxyEncoder("models/autoencoder.pt")
@@ -44,7 +44,7 @@ def _load_models(device):
 
     # decoder
     ae = OneCenteredGalaxyAE().to(device).eval()
-    ae.load_state_dict(torch.load("models/autoencoder.pt"), map_location=device)
+    ae.load_state_dict(torch.load("models/autoencoder.pt", map_location=device))
     decoder = deepcopy(ae.dec)
     decoder.requires_grad_(False)
     decoder = decoder.eval()
@@ -70,7 +70,7 @@ def _make_autoencoder_figures(device, overwrite: bool):
 
 def _make_blend_figures(encoder, decoder, overwrite: bool):
     print("INFO: Creating figures for metrics on simulated blended galaxies.")
-    blend_file = Path("data/blend_galaxies_test.pt")
+    blend_file = Path("data/blends_test.pt")
     BlendSimulationFigure(overwrite=overwrite, figdir="figures", cachedir="data")(
         blend_file, encoder, decoder
     )
@@ -87,7 +87,7 @@ def main(mode: str, overwrite: bool):
     if mode == "single_gal":
         _make_autoencoder_figures(device, overwrite)
 
-    if mode == "toy" or mode == "blend_gal":
+    if mode in {"toy", "blend_gal"}:
         encoder, decoder = _load_models(device)
 
     if mode == "blend_gal":
