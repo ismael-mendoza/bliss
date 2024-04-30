@@ -164,7 +164,7 @@ class Encoder(nn.Module):
             tiled_params.update({"galaxy_bools": galaxy_bools})
 
             if self.galaxy_encoder is not None:
-                assert not self.binary_encoder.training
+                assert not self.galaxy_encoder.training
                 galaxy_params = self.galaxy_encoder.forward(flat_image_ptiles, locs)
                 galaxy_params *= tile_is_on * galaxy_bools
                 tiled_params.update({"galaxy_params": galaxy_params})
