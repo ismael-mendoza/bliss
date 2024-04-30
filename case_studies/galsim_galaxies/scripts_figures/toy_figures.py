@@ -1,10 +1,12 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-from einops import reduce
+from einops import pack, rearrange, reduce
 from matplotlib.figure import Figure
+from torch import Tensor
 
 from bliss.catalog import FullCatalog, TileCatalog
+from bliss.datasets.background import add_noise_and_background
 from bliss.datasets.galsim_blends import render_full_catalog
 from bliss.datasets.lsst import (
     convert_flux_to_mag,
@@ -12,9 +14,15 @@ from bliss.datasets.lsst import (
     get_default_lsst_psf,
 )
 from bliss.encoders.autoencoder import CenteredGalaxyDecoder
+from bliss.encoders.deblend import GalaxyEncoder
+from bliss.encoders.detection import DetectionEncoder
 from bliss.encoders.encoder import Encoder
 from bliss.plotting import BlissFigure, plot_image
-from bliss.render_tiles import reconstruct_image_from_ptiles, render_galaxy_ptiles
+from bliss.render_tiles import (
+    get_images_in_tiles,
+    reconstruct_image_from_ptiles,
+    render_galaxy_ptiles,
+)
 
 
 class ToySeparationFigure(BlissFigure):
@@ -78,13 +86,14 @@ class ToySeparationFigure(BlissFigure):
         )
         assert len(colnames) == 10
         n_sources = 2
-        flux1, flux2 = 2e5, 1e5
+        flux1, flux2 = 5e6, 2.5e6
         mag1, mag2 = convert_flux_to_mag(torch.tensor([flux1, flux2]))
         mag1, mag2 = mag1.item(), mag2.item()
         gparam1 = [0, 1.0, 0, 0, 1.5, 0, 0.7, np.pi / 4, mag1, flux1]
         gparam2 = [0, 1.0, 0, 0, 1.0, 0, 0.7, 3 * np.pi / 4, mag2, flux2]
         gparams = torch.tensor([gparam1, gparam2])
         gparams = gparams.reshape(1, 2, 10).expand(batch_size, 2, 10)
+        print(f"INFO: Fluxes correspond to magnitudes ({mag1},{mag2})")
 
         # need plocs for later
         x0, y0 = 22, 22  # center plocs
@@ -95,7 +104,7 @@ class ToySeparationFigure(BlissFigure):
 
         # create full catalogs (need separately since `render_blend`` only accepts 1 batch)
         images = torch.zeros(batch_size, 1, size, size)
-        background = torch.zeros(batch_size, 1, size, size)
+        background = torch.full((batch_size, 1, size, size), bg)
         for ii in range(batch_size):
             plocs_ii = plocs[ii].reshape(1, 2, 2)
             d = {
@@ -109,8 +118,7 @@ class ToySeparationFigure(BlissFigure):
             }
             full_cat = FullCatalog(slen, slen, d)
             image, _ = render_full_catalog(full_cat, psf, slen, bp)
-            images[ii] = image
-            background[ii] = bg
+            images[ii] = add_noise_and_background(image, background[ii])
 
         # predictions from encoder
         tile_est = encoder.variational_mode(images, background)
@@ -128,13 +136,12 @@ class ToySeparationFigure(BlissFigure):
         assert recon_ptiles.shape[-1] == recon_ptiles.shape[-2] == ptile_slen
         recon = reconstruct_image_from_ptiles(recon_ptiles, tile_slen)
         recon = recon.detach().cpu() + background
-        tile_est = tile_est.cpu()
 
         # finally add flux
-        tile_est["fluxes"] = reduce(recon_ptiles, "b nth ntw c h w -> b nth ntw 1", "sum")
+        # tile_est["fluxes"] = reduce(recon_ptiles, "b nth ntw c h w -> b nth ntw 1", "sum")
         residuals = (recon - images) / recon.sqrt()
 
-        # now we need to obtain flux, pred. ploc, prob. of detection in tile and std. of ploc
+        # now we need to obtain flux, pred. plocs, prob. of detection in tile and std. of plocs
         # for each source
         params = {
             "images": images,
@@ -143,57 +150,68 @@ class ToySeparationFigure(BlissFigure):
             "seps": seps,
             "truth": {
                 "flux": torch.tensor([flux1, flux2]).reshape(1, 2, 1).expand(batch_size, 2, 1),
-                "ploc": plocs,
+                "plocs": plocs,
             },
             "est": {
                 "prob_n_source": torch.zeros(batch_size, 2, 1),
                 "flux": torch.zeros(batch_size, 2, 1),
-                "ploc": torch.zeros(batch_size, 2, 2),
-                "ploc_sd": torch.zeros(batch_size, 2, 2),
+                "plocs": torch.zeros(batch_size, 2, 2),
+                "plocs_sd": torch.zeros(batch_size, 2, 2),
             },
-            "tile_est": tile_est.to_dict(),
+            "tile_est": tile_est.cpu().to_dict(),
         }
-        for ii, sep in enumerate(seps):
+
+        # NOTE: in this case we don't want to zero out tiles with no source prediction!
+        # manually extract source paramas as `encoder` automatically zeroes out sources
+        tile_est = _get_source_params_not_zeroed(
+            encoder.detection_encoder,
+            encoder.galaxy_encoder,
+            decoder,
+            images.to(encoder.device),
+            background.to(encoder.device),
+        )
+
+        for jj, sep in enumerate(seps):
             # get tile_est for a single batch
             d = tile_est.to_dict()
-            d = {k: v[ii, None] for k, v in d.items()}
+            d = {k: v[jj, None] for k, v in d.items()}
             tile_est_ii = TileCatalog(tile_slen, d)
 
-            plocs_ii = plocs[ii]
+            plocs_ii = plocs[jj]
             params_at_coord = tile_est_ii.get_tile_params_at_coord(plocs_ii)
             prob_n_source = params_at_coord["n_source_probs"]
             flux = params_at_coord["fluxes"]
-            ploc_sd = params_at_coord["locs_sd"] * tile_slen
-            loc = params_at_coord["locs"]
+            plocs_sd = params_at_coord["locs_sd"] * tile_slen
+            locs = params_at_coord["locs"]
             assert prob_n_source.shape == flux.shape == (2, 1)
-            assert ploc_sd.shape == loc.shape == (2, 2)
+            assert plocs_sd.shape == locs.shape == (2, 2)
 
             if sep < 2:
-                params["est"]["prob_n_source"][ii][0] = prob_n_source[0]
-                params["est"]["flux"][ii][0] = flux[0]
-                params["est"]["ploc"][ii][0] = loc[0] * tile_slen + 5 * tile_slen
-                params["est"]["ploc_sd"][ii][0] = ploc_sd[0]
+                params["est"]["prob_n_source"][jj][0] = prob_n_source[0]
+                params["est"]["flux"][jj][0] = flux[0]
+                params["est"]["plocs"][jj][0] = locs[0] * tile_slen + 5 * tile_slen
+                params["est"]["plocs_sd"][jj][0] = plocs_sd[0]
 
-                params["est"]["prob_n_source"][ii][1] = torch.nan
-                params["est"]["flux"][ii][1] = torch.nan
-                params["est"]["ploc"][ii][1] = torch.tensor([torch.nan, torch.nan])
-                params["est"]["ploc_sd"][ii][1] = torch.tensor([torch.nan, torch.nan])
+                params["est"]["prob_n_source"][jj][1] = torch.nan
+                params["est"]["flux"][jj][1] = torch.nan
+                params["est"]["plocs"][jj][1] = torch.tensor([torch.nan, torch.nan])
+                params["est"]["plocs_sd"][jj][1] = torch.tensor([torch.nan, torch.nan])
             else:
                 bias = 5 + np.ceil((sep - 2) / 4)
-                params["est"]["prob_n_source"][ii] = prob_n_source
-                params["est"]["flux"][ii] = flux
-                params["est"]["ploc"][ii][0] = loc[0] * tile_slen + 5 * tile_slen
-                params["est"]["ploc"][ii, 1, 0] = loc[1][0] * tile_slen + 5 * tile_slen
-                params["est"]["ploc"][ii, 1, 1] = loc[1][1] * tile_slen + bias * tile_slen
-                params["est"]["ploc_sd"][ii] = ploc_sd
+                params["est"]["prob_n_source"][jj] = prob_n_source
+                params["est"]["flux"][jj] = flux
+                params["est"]["plocs"][jj][0] = locs[0] * tile_slen + 5 * tile_slen
+                params["est"]["plocs"][jj, 1, 0] = locs[1][0] * tile_slen + 5 * tile_slen
+                params["est"]["plocs"][jj, 1, 1] = locs[1][1] * tile_slen + bias * tile_slen
+                params["est"]["plocs_sd"][jj] = plocs_sd
 
         return params
 
     def _get_three_separations_plot(self, data) -> Figure:
         seps: np.ndarray = data["seps"]
         images: np.ndarray = data["images"]
-        tplocs: np.ndarray = data["truth"]["ploc"]
-        eplocs: np.ndarray = data["est"]["ploc"]
+        tplocs: np.ndarray = data["truth"]["plocs"]
+        eplocs: np.ndarray = data["est"]["plocs"]
 
         # first, create image with 3 example separations (very blended to not blended)
         bp = 24
@@ -212,7 +230,7 @@ class ToySeparationFigure(BlissFigure):
             y1 = tplocs[indx, :, 0] + bp - 0.5 - trim
             x2 = eplocs[indx, :, 1] + bp - 0.5 - trim
             y2 = eplocs[indx, :, 0] + bp - 0.5 - trim
-            axes[ii].imshow(image, cmap="gray")
+            axes[ii].imshow(image)
             axes[ii].scatter(x1, y1, marker="x", color="r", s=30, label=None if ii else "Truth")
             axes[ii].scatter(x2, y2, marker="+", color="b", s=50, label=None if ii else "Predicted")
             axes[ii].set_xticks([0, 10, 20, 30, 40])
@@ -238,7 +256,7 @@ class ToySeparationFigure(BlissFigure):
         bp = 24
         seps_to_plot = [4, 8, 12]
         seps = data["seps"]
-        tplocs: np.ndarray = data["truth"]["ploc"]
+        tplocs: np.ndarray = data["truth"]["plocs"]
         images_all, recon_all, res_all = data["images"], data["recon"], data["resid"]
         trim = 20
         indices = np.array([list(seps).index(psep) for psep in seps_to_plot]).astype(int)
@@ -278,11 +296,12 @@ class ToySeparationFigure(BlissFigure):
             vmax = max(image.max().item(), recon.max().item())
             vmin_res = res.min().item()
             vmax_res = res.max().item()
+            vres = max(abs(vmin_res), abs(vmax_res))
 
             # plot images
             plot_image(fig, ax_true, image, vrange=(vmin, vmax))
             plot_image(fig, ax_recon, recon, vrange=(vmin, vmax))
-            plot_image(fig, ax_res, res, vrange=(vmin_res, vmax_res))
+            plot_image(fig, ax_res, res, vrange=(-vres, vres), cmap="bwr")
 
             ax_true.set_xticks([0, 10, 20, 30])
             ax_true.set_yticks([0, 10, 20, 30])
@@ -324,10 +343,10 @@ class ToySeparationFigure(BlissFigure):
         axs[0].set_ylabel(r"\rm Detection Probability")
 
         # distance residual
-        tploc1 = data["truth"]["ploc"][:, 0]
-        tploc2 = data["truth"]["ploc"][:, 1]
-        eploc1 = data["est"]["ploc"][:, 0]
-        eploc2 = data["est"]["ploc"][:, 1]
+        tploc1 = data["truth"]["plocs"][:, 0]
+        tploc2 = data["truth"]["plocs"][:, 1]
+        eploc1 = data["est"]["plocs"][:, 0]
+        eploc2 = data["est"]["plocs"][:, 1]
         dist1 = ((tploc1 - eploc1) ** 2).sum(1) ** (1 / 2)
         dist2 = ((tploc2 - eploc2) ** 2).sum(1) ** (1 / 2)
 
@@ -344,8 +363,8 @@ class ToySeparationFigure(BlissFigure):
         axs[1].set_ylabel(r"\rm Centroid location residual (pixels)")
 
         # location error (squared sum) estimate
-        eploc_sd1 = (data["est"]["ploc_sd"][:, 0] ** 2).sum(1) ** (1 / 2)
-        eploc_sd2 = (data["est"]["ploc_sd"][:, 1] ** 2).sum(1) ** (1 / 2)
+        eploc_sd1 = (data["est"]["plocs_sd"][:, 0] ** 2).sum(1) ** (1 / 2)
+        eploc_sd2 = (data["est"]["plocs_sd"][:, 1] ** 2).sum(1) ** (1 / 2)
         axs[3].plot(seps, eploc_sd1, "-", color=c1)
         axs[3].plot(seps, eploc_sd2, "-", color=c2)
         axs[3].axhline(0, color="k", ls="-", alpha=1.0)
@@ -389,3 +408,52 @@ class ToySeparationFigure(BlissFigure):
         if fname == "toy_measurements":
             return self._get_measurement_figure(data)
         raise NotImplementedError("Figure {fname} not implemented.")
+
+
+def _get_source_params_not_zeroed(
+    detection_encoder: DetectionEncoder,
+    galaxy_encoder: GalaxyEncoder,
+    decoder: CenteredGalaxyDecoder,
+    images: Tensor,
+    background: Tensor,
+) -> TileCatalog:
+    tiled_params: dict[str, Tensor] = {}
+
+    # should all fit in GPU at once
+    img_bg, _ = pack([images, background], "b * h w")  # by default concatenate channels
+    ptiles = get_images_in_tiles(img_bg, detection_encoder.tile_slen, detection_encoder.ptile_slen)
+    ptiles_flat = rearrange(ptiles, "b nth ntw c h w -> (b nth ntw) c h w")
+
+    n_source_probs, locs_mean, locs_sd_raw = detection_encoder.encode_tiled(ptiles_flat)
+    n_sources = n_source_probs.ge(0.5).long()
+    n_source_probs_inflated = rearrange(n_source_probs, "n -> n 1")  # for `TileCatalog`
+
+    tiled_params.update({"n_sources": n_sources, "n_source_probs": n_source_probs_inflated})
+    tiled_params.update({"locs": locs_mean, "locs_sd": locs_sd_raw})
+
+    galaxy_params = galaxy_encoder.forward(ptiles_flat, locs_mean)
+    tiled_params.update({"galaxy_params": galaxy_params})
+
+    # get tile catalog
+    n_tiles_h = (images.shape[2] - 2 * detection_encoder.bp) // detection_encoder.tile_slen
+    n_tiles_w = (images.shape[3] - 2 * detection_encoder.bp) // detection_encoder.tile_slen
+    tiled_est = TileCatalog.from_flat_dict(
+        detection_encoder.tile_slen,
+        n_tiles_h,
+        n_tiles_w,
+        {k: v.squeeze(0) for k, v in tiled_params.items()},
+    )
+
+    # now get flux
+    recon_ptiles = render_galaxy_ptiles(
+        decoder,
+        tiled_est.locs,
+        tiled_est["galaxy_params"],
+        torch.ones_like(tiled_est["n_source_probs"]),
+        detection_encoder.ptile_slen,
+        detection_encoder.tile_slen,
+        1,
+    )
+    fluxes = reduce(recon_ptiles, "b nth ntw c h w -> b nth ntw 1", "sum")
+    tiled_est["fluxes"] = fluxes
+    return tiled_est.to(torch.device("cpu"))
