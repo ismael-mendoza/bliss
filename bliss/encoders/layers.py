@@ -2,15 +2,6 @@ from torch import Tensor, nn
 from torch.nn.functional import relu
 
 
-class ConcatBackgroundTransform:
-
-    def __call__(self, image_and_background: Tensor) -> Tensor:
-        return image_and_background
-
-    def output_channels(self, input_channels: int) -> int:
-        return 2 * input_channels
-
-
 def make_enc_final(in_size, hidden, out_size, dropout):
     return nn.Sequential(
         nn.Flatten(1),
