@@ -25,13 +25,11 @@ def _load_models(device):
     """Load models required for producing results."""
 
     # encoders
-    input_transform = ConcatBackgroundTransform()
-
-    detection = DetectionEncoder(input_transform).to(device).eval()
+    detection = DetectionEncoder().to(device).eval()
     detection.load_state_dict(torch.load("models/detection.pt", map_location=device))
     detection.requires_grad_(False)
 
-    binary = BinaryEncoder(input_transform).to(device).eval()
+    binary = BinaryEncoder().to(device).eval()
     binary.load_state_dict(torch.load("models/binary.pt", map_location=device))
     binary.requires_grad_(False)
 

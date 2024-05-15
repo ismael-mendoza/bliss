@@ -65,8 +65,7 @@ def main(
     val_ds_file = f"ds/val_ds_{tag}.pt"
 
     # setup model to train
-    input_transform = ConcatBackgroundTransform()
-    detection_encoder = DetectionEncoder(input_transform)
+    detection_encoder = DetectionEncoder()
 
     if overwrite:
         with open("log.txt", "a") as f:

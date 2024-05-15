@@ -59,9 +59,7 @@ val_dl = DataLoader(
 
 
 # now train on the same batch 100 times with some optimizer
-
-input_transform = ConcatBackgroundTransform()
-detection_encoder = DetectionEncoder(input_transform)
+detection_encoder = DetectionEncoder()
 
 # gpu
 detection_encoder.to(gpu)

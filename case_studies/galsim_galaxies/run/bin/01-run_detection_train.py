@@ -32,8 +32,7 @@ L.seed_everything(SEED)
 
 
 # setup model to train
-input_transform = ConcatBackgroundTransform()
-detection_encoder = DetectionEncoder(input_transform)
+detection_encoder = DetectionEncoder()
 
 
 if OVERWRITE:
