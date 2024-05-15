@@ -11,7 +11,6 @@ from bliss.encoders.binary import BinaryEncoder
 from bliss.encoders.deblend import GalaxyEncoder
 from bliss.encoders.detection import DetectionEncoder
 from bliss.encoders.encoder import Encoder
-from bliss.encoders.layers import ConcatBackgroundTransform
 from case_studies.galsim_galaxies.scripts_figures.ae_figures import AutoEncoderFigures
 from case_studies.galsim_galaxies.scripts_figures.blend_figures import BlendSimulationFigure
 from case_studies.galsim_galaxies.scripts_figures.toy_figures import ToySeparationFigure

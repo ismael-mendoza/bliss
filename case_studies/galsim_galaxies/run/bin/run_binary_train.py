@@ -8,7 +8,6 @@ import pytorch_lightning as L
 
 from bliss.datasets.galsim_blends import SavedGalsimBlends
 from bliss.encoders.binary import BinaryEncoder
-from bliss.encoders.layers import ConcatBackgroundTransform
 from case_studies.galsim_galaxies.run.training_functions import (
     create_dataset,
     setup_training_objects,

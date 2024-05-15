@@ -10,7 +10,6 @@ from bliss.datasets.table_utils import column_to_tensor
 from bliss.encoders.binary import BinaryEncoder
 from bliss.encoders.deblend import GalaxyEncoder
 from bliss.encoders.detection import DetectionEncoder
-from bliss.encoders.layers import ConcatBackgroundTransform
 
 
 def test_encoder_forward(home_dir, tmp_path):
