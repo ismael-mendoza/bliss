@@ -315,6 +315,7 @@ class FullCatalog(UserDict):
                 n_sources_in_tile = tile_n_sources[ii, coords[0], coords[1]]
                 assert n_sources_in_tile.ndim == 0
                 assert n_sources_in_tile.le(1) or n_sources_in_tile.ge(0)
+                assert n_sources_in_tile.dtype is torch.int64
                 if n_sources_in_tile > 0:
                     if not ignore_extra_sources:
                         raise ValueError(  # noqa: WPS220
