@@ -330,7 +330,8 @@ class FullCatalog(UserDict):
                     q[ii, coords[0], coords[1], :] = self[p][ii, idx]
                 tile_n_sources[ii, coords[0], coords[1]] = 1
                 if ignore_extra_sources:
-                    tile_fluxes[ii, coords[0], coords[1]] = self["fluxes"][ii, idx]
+                    flux = rearrange(self["fluxes"][ii, idx], "1->")
+                    tile_fluxes[ii, coords[0], coords[1]] = flux
         tile_params.update({"locs": tile_locs, "n_sources": tile_n_sources})
         return TileCatalog(tile_slen, tile_params)
 
