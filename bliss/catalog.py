@@ -6,7 +6,7 @@ from typing import Dict, List, Tuple
 import torch
 from einops import rearrange, reduce, repeat
 from tensordict import TensorDict
-from torch import Tensor
+from torch import Tensor, is_floating_point
 
 
 class TileCatalog(UserDict):
@@ -314,15 +314,14 @@ class FullCatalog(UserDict):
             for idx, coords in enumerate(tile_coords[ii][:n_sources]):
                 n_sources_in_tile = tile_n_sources[ii, coords[0], coords[1]]
                 assert n_sources_in_tile.ndim == 0
-                assert n_sources_in_tile in {0, 1}
+                assert n_sources_in_tile.le(1) or n_sources_in_tile.ge(0)
                 if n_sources_in_tile > 0:
                     if not ignore_extra_sources:
                         raise ValueError(  # noqa: WPS220
                             "# of sources in at least one tile is larger than 1."
                         )
-                    flux1 = tile_fluxes[ii, coords[0], coords[1]]
-                    flux2 = self["fluxes"][ii, idx]
-                    assert flux1.ndim == flux2.ndim == 0
+                    flux1 = rearrange(tile_fluxes[ii, coords[0], coords[1]], "->")
+                    flux2 = rearrange(self["fluxes"][ii, idx], "1 ->")
                     if flux1 > flux2:  # keep current source in tile
                         continue  # noqa: WPS220
                 tile_loc = (self.plocs[ii, idx] - coords * tile_slen) / tile_slen
