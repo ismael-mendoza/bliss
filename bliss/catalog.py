@@ -6,7 +6,7 @@ from typing import Dict, List, Tuple
 import torch
 from einops import rearrange, reduce, repeat
 from tensordict import TensorDict
-from torch import Tensor, is_floating_point
+from torch import Tensor
 
 
 class TileCatalog(UserDict):
