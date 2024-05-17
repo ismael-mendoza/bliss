@@ -117,7 +117,7 @@ class BlendSimulationFigure(BlissFigure):
             egals_ii_raw = decoder(galaxy_params_ii.to(encoder.device)).cpu()
             egals_ii = egals_ii_raw * rearrange(galaxy_bools_ii, "npt 1 -> npt 1 1 1")
             eflux_ii, esnr_ii, eellip_ii = get_single_galaxy_measurements(
-                egals_ii, bg_ii, psf_tensor2, PIXEL_SCALE
+                egals_ii, bg_ii, psf_tensor2
             )
 
             eflux[ii:jj, 0] = eflux_ii
