@@ -77,12 +77,13 @@ def main(n_samples: int, seed: int, mode: str, overwrite: bool):
         if not overwrite and Path(dataset_file).exists():
             raise IOError("File already exists and overwrite flag is 'False'.")
 
+        # https://www.wolframalpha.com/input?i=poisson+distribution+with+mean+3.5
         dataset = generate_dataset(
             n_samples,
             CATSIM_TABLE,
             STAR_MAGS,
             psf=PSF,
-            max_n_sources=15,
+            max_n_sources=10,
         )
 
         torch.save(dataset, dataset_file)
