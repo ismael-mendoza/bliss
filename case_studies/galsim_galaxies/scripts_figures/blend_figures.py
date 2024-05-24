@@ -47,7 +47,8 @@ class BlendSimulationFigure(BlissFigure):
         blend_data: dict[str, Tensor] = torch.load(blend_file)
         images = blend_data.pop("images").float()
         background = blend_data.pop("background").float()
-        individuals = blend_data.pop("individuals").float()
+        uncentered_sources = blend_data.pop("uncentered_sources").float()
+        centered_sources = blend_data.pop("centered_sources").float()
         blend_data.pop("noiseless")
         blend_data.pop("paddings")
 
@@ -63,8 +64,9 @@ class BlendSimulationFigure(BlissFigure):
 
         # get additional truth information needed
         b, ms1, _ = truth.plocs.shape
-        assert individuals.shape == (b, ms1, 1, size, size)
-        flat_indiv = rearrange(individuals, "b ms c h w -> (b ms) c h w")
+        assert uncentered_sources.shape == (b, ms1, 1, size, size)
+        assert centered_sources.shape == (b, ms1, 1, size, size)
+        flat_indiv = rearrange(centered_sources, "b ms c h w -> (b ms) c h w")
         flat_bg1 = repeat(background, "b c h w -> (b ms) c h w", ms=ms1, h=size, w=size)
         tflux, tsnr, tellip = get_single_galaxy_measurements(
             flat_indiv, flat_bg1, psf_tensor, PIXEL_SCALE, no_bar=False
@@ -72,7 +74,7 @@ class BlendSimulationFigure(BlissFigure):
         truth["galaxy_fluxes"] = rearrange(tflux, "(b ms) -> b ms 1", ms=ms1)
         truth["snr"] = rearrange(tsnr, "(b ms) -> b ms 1", ms=ms1)
         truth["ellips"] = rearrange(tellip, "(b ms) g -> b ms g", ms=ms1, g=2)
-        blendedness = get_blendedness(individuals)
+        blendedness = get_blendedness(uncentered_sources)
         assert not blendedness.isnan().any()
         truth["blendedness"] = rearrange(blendedness, "b ms -> b ms 1", b=b, ms=ms1)
 
