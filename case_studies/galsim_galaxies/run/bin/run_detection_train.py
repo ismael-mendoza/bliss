@@ -69,7 +69,7 @@ def main(
     if overwrite:
         with open("log.txt", "a") as f:
             # for max_n_sources choice, see:
-            # https://www.wolframalpha.com/input?i=Poisson+distribution+with+mean+4
+            # https://www.wolframalpha.com/input?i=Poisson+distribution+with+mean+3.5
             create_dataset(
                 catsim_file="../../../data/OneDegSq.fits",
                 stars_mag_file="../../../data/stars_med_june2018.fits",
@@ -77,7 +77,7 @@ def main(
                 train_val_split=split,
                 train_ds_file=train_ds_file,
                 val_ds_file=val_ds_file,
-                max_n_sources=15,
+                max_n_sources=10,
                 max_shift=0.5,  # uniformly random within central slen square.
                 only_bright=only_bright,
                 add_galaxies_in_padding=not no_padding_galaxies,
