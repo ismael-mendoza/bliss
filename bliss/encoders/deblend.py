@@ -128,7 +128,7 @@ class GalaxyEncoder(pl.LightningModule):
 
     def configure_optimizers(self):
         """Set up optimizers."""
-        return Adam(self._enc.parameters(), 1e-2)
+        return Adam(self._enc.parameters(), 1e-3)
 
     def _get_centered_padded_tiles(self, image_ptiles: Tensor, tile_locs_flat: Tensor) -> Tensor:
         """Remove background, center padded tiles at given locations, and crop."""
