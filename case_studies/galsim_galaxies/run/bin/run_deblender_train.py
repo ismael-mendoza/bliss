@@ -24,7 +24,7 @@ assert Path(AE_STATE_DICT).exists()
 @click.option("--split", default=1028 * 15, type=int)
 @click.option("-b", "--batch-size", default=256)
 @click.option("-e", "--n-epochs", default=10001)
-@click.option("--validate-every-n-epoch", default=10, type=int)
+@click.option("--validate-every-n-epoch", default=20, type=int)
 @click.option("-o", "--overwrite", is_flag=True, default=False)
 @click.option("-t", "--tag", required=True, type=str, help="Dataset tag")
 @click.option("--only-bright", is_flag=True, default=False)
@@ -98,7 +98,7 @@ def main(
             validate_every_n_epoch=validate_every_n_epoch,
             val_check_interval=None,
             model_name="deblender",
-            log_every_n_steps=50,
+            log_every_n_steps=100,
             log_file=g,
         )
 
