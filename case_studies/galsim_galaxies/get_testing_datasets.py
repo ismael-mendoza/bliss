@@ -22,8 +22,8 @@ PSF = get_default_lsst_psf()
 
 
 @click.command()
-@click.option("--n-samples", default=10000, type=int)
-@click.option("-s", "--seed", default=1, type=int)
+@click.option("--n-samples", default=100000, type=int)
+@click.option("-s", "--seed", default=42, type=int)
 @click.option("--mode", type=str, required=True)
 @click.option("-o", "--overwrite", is_flag=True, default=False)
 def main(n_samples: int, seed: int, mode: str, overwrite: bool):
