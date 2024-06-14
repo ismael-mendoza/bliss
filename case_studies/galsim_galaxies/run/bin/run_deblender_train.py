@@ -20,9 +20,9 @@ assert Path(AE_STATE_DICT).exists()
 
 @click.command()
 @click.option("-s", "--seed", default=42, type=int)
-@click.option("-n", "--n-samples", default=1028 * 20, type=int)
-@click.option("--split", default=1028 * 15, type=int)
-@click.option("-b", "--batch-size", default=256)
+@click.option("-n", "--n-samples", default=1280 * 20, type=int)
+@click.option("--split", default=1280 * 15, type=int)
+@click.option("-b", "--batch-size", default=64)
 @click.option("-e", "--n-epochs", default=10001)
 @click.option("--validate-every-n-epoch", default=20, type=int)
 @click.option("-o", "--overwrite", is_flag=True, default=False)
@@ -60,8 +60,8 @@ def main(
 
     L.seed_everything(seed)
 
-    train_ds_file = f"/nfs/turbo/lsa-regier/data_nfs/ismael/datasets/train_ds_{tag}.pt"
-    val_ds_file = f"/nfs/turbo/lsa-regier/data_nfs/ismael/datasets/val_ds_{tag}.pt"
+    train_ds_file = f"/nfs/turbo/lsa-regier/scratch/ismael/datasets/train_ds_{tag}.pt"
+    val_ds_file = f"/nfs/turbo/lsa-regier/scratch/ismael/datasets/val_ds_{tag}.pt"
 
     if overwrite:
         with open("log.txt", "a") as f:
@@ -98,7 +98,7 @@ def main(
             validate_every_n_epoch=validate_every_n_epoch,
             val_check_interval=None,
             model_name="deblender",
-            log_every_n_steps=100,
+            log_every_n_steps=128,
             log_file=g,
         )
 
