@@ -30,3 +30,4 @@ venv
 **/run/*.pt
 **/run/ds
 case_studies/galsim_galaxies/data/*.pt
+**/out
