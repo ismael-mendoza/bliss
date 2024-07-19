@@ -105,16 +105,16 @@ class BlendSimulationFigure(BlissFigure):
         eellips = torch.zeros((n_total, 2))
         n_parts = 1000  # so it all fits in GPU
 
-        for ii in tqdm(
+        for n1 in tqdm(
             range(0, n_total, n_parts),
             desc="Computing galaxy properties of predicted, reconstructed galaxies",
             total=n_total // n_parts,
         ):
 
-            jj = ii + n_parts
-            galaxy_params_ii = flat_galaxy_params[ii:jj]
-            galaxy_bools_ii = flat_galaxy_bools[ii:jj].cpu()
-            bg_ii = flat_bg2[ii:jj]
+            n2 = n1 + n_parts
+            galaxy_params_ii = flat_galaxy_params[n1:n2]
+            galaxy_bools_ii = flat_galaxy_bools[n1:n2].cpu()
+            bg_ii = flat_bg2[n1:n2]
 
             egals_ii_raw = decoder(galaxy_params_ii.to(encoder.device)).cpu()
             egals_ii = egals_ii_raw * rearrange(galaxy_bools_ii, "npt 1 -> npt 1 1 1")
@@ -122,9 +122,9 @@ class BlendSimulationFigure(BlissFigure):
                 egals_ii, bg_ii, psf_tensor2
             )
 
-            eflux[ii:jj, 0] = eflux_ii
-            esnr[ii:jj, 0] = esnr_ii
-            eellips[ii:jj, :] = eellip_ii
+            eflux[n1:n2, 0] = eflux_ii
+            esnr[n1:n2, 0] = esnr_ii
+            eellips[n1:n2, :] = eellip_ii
 
         # finally put into TileCatalog and get FullCatalog
         est["fluxes"] = rearrange(eflux, "(b ms) 1 -> b ms 1", b=b, ms=ms2)
@@ -181,15 +181,15 @@ class BlendSimulationFigure(BlissFigure):
 
                 n_matched_gals = len(snr_ii)
 
-                for jj in range(n_matched_gals):
-                    snr.append(snr_ii[jj].item())
-                    blendedness.append(blendedness_ii[jj].item())
-                    true_ellips1.append(true_ellips_ii[jj][0].item())
-                    true_ellips2.append(true_ellips_ii[jj][1].item())
-                    est_ellips1.append(est_ellips_ii[jj][0].item())
-                    est_ellips2.append(est_ellips_ii[jj][1].item())
-                    true_fluxes.append(true_flux_ii[jj].item())
-                    est_fluxes.append(est_flux_ii[jj].item())
+                for kk in range(n_matched_gals):
+                    snr.append(snr_ii[kk].item())
+                    blendedness.append(blendedness_ii[kk].item())
+                    true_ellips1.append(true_ellips_ii[kk][0].item())
+                    true_ellips2.append(true_ellips_ii[kk][1].item())
+                    est_ellips1.append(est_ellips_ii[kk][0].item())
+                    est_ellips2.append(est_ellips_ii[kk][1].item())
+                    true_fluxes.append(true_flux_ii[kk].item())
+                    est_fluxes.append(est_flux_ii[kk].item())
 
         true_ellips = torch.vstack([torch.tensor(true_ellips1), torch.tensor(true_ellips2)])
         true_ellips = true_ellips.T.reshape(-1, 2)
