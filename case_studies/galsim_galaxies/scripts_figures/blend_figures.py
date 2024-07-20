@@ -69,7 +69,7 @@ class BlendSimulationFigure(BlissFigure):
         flat_indiv = rearrange(centered_sources, "b ms c h w -> (b ms) c h w")
         flat_bg1 = repeat(background, "b c h w -> (b ms) c h w", ms=ms1, h=size, w=size)
         tflux, tsnr, tellip = get_single_galaxy_measurements(
-            flat_indiv, flat_bg1, psf_tensor, PIXEL_SCALE, no_bar=False
+            flat_indiv, flat_bg1, PIXEL_SCALE, no_bar=False
         )
         truth["galaxy_fluxes"] = rearrange(tflux, "(b ms) -> b ms 1", ms=ms1)
         truth["snr"] = rearrange(tsnr, "(b ms) -> b ms 1", ms=ms1)
@@ -115,9 +115,7 @@ class BlendSimulationFigure(BlissFigure):
 
             egals_ii_raw = decoder(galaxy_params_ii.to(encoder.device)).cpu()
             egals_ii = egals_ii_raw * rearrange(galaxy_bools_ii, "npt 1 -> npt 1 1 1")
-            eflux_ii, esnr_ii, eellip_ii = get_single_galaxy_measurements(
-                egals_ii, bg_ii, psf_tensor2
-            )
+            eflux_ii, esnr_ii, eellip_ii = get_single_galaxy_measurements(egals_ii, bg_ii)
 
             eflux[n1:n2, 0] = eflux_ii
             esnr[n1:n2, 0] = esnr_ii
