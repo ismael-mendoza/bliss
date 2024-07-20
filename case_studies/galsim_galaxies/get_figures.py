@@ -62,7 +62,7 @@ def _make_autoencoder_figures(device, overwrite: bool):
     autoencoder.load_state_dict(torch.load("models/autoencoder.pt"))
     autoencoder = autoencoder.to(device).eval()
     autoencoder.requires_grad_(False)
-    galaxies_file = "data/single_galaxies_test.pt"
+    galaxies_file = "/nfs/turbo/lsa-regier/scratch/ismael/data/single_galaxies_test.pt"
 
     # arguments for figures
     args = (autoencoder, galaxies_file)
@@ -73,7 +73,7 @@ def _make_autoencoder_figures(device, overwrite: bool):
 
 def _make_blend_figures(encoder, decoder, overwrite: bool):
     print("INFO: Creating figures for metrics on simulated blended galaxies.")
-    blend_file = Path("data/blends_test.pt")
+    blend_file = Path("/nfs/turbo/lsa-regier/scratch/ismael/data/blends_test.pt")
     BlendSimulationFigure(overwrite=overwrite, figdir="figures", cachedir="data")(
         blend_file, encoder, decoder
     )
