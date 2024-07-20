@@ -105,11 +105,8 @@ class BlendSimulationFigure(BlissFigure):
         eellips = torch.zeros((n_total, 2))
         n_parts = 1000  # so it all fits in GPU
 
-        for n1 in tqdm(
-            range(0, n_total, n_parts),
-            desc="Computing galaxy properties of predicted, reconstructed galaxies",
-            total=n_total // n_parts,
-        ):
+        desc = "Computing galaxy properties of predicted, reconstructed galaxies"
+        for n1 in tqdm(range(0, n_total, n_parts), desc=desc, total=n_total // n_parts):
 
             n2 = n1 + n_parts
             galaxy_params_ii = flat_galaxy_params[n1:n2]
@@ -160,7 +157,7 @@ class BlendSimulationFigure(BlissFigure):
                 # only evaluate flux/ellipticity residuals on galaxies labelled as galaxies.
                 tgbool_ii = truth["galaxy_bools"][ii][tindx][dkeep]
                 egbool_ii = est["galaxy_bools"][ii][eindx][dkeep]
-                gbool_ii = torch.eq(tgbool_ii, egbool_ii).eq(torch.ones_like(tgbool_ii))
+                gbool_ii = torch.logical_and(torch.eq(tgbool_ii, egbool_ii), tgbool_ii)
                 gbool_ii = gbool_ii.flatten()
                 snr_ii_class = truth["snr"][ii][tindx][dkeep]
 
