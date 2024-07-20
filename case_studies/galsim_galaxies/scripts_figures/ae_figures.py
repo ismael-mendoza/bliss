@@ -7,6 +7,7 @@ from torch import Tensor
 from bliss.datasets.lsst import PIXEL_SCALE
 from bliss.encoders.autoencoder import OneCenteredGalaxyAE
 from bliss.plotting import BlissFigure, plot_image, scatter_shade_plot
+from bliss.reporting import get_single_galaxy_measurements
 
 
 class AutoEncoderFigures(BlissFigure):
@@ -67,18 +68,11 @@ class AutoEncoderFigures(BlissFigure):
         absolute_residual = residuals.abs().sum(axis=(1, 2, 3))
         worst_indices = absolute_residual.argsort()[-self.n_examples - q : -q]
 
-        # measurements
-        psf_image = get_default_lsst_psf_tensor(53)
-
         recon_no_background = recon_means - background.cpu()
         assert torch.all(recon_no_background.sum(axis=(1, 2, 3)) > 0)
-        true_meas = reporting.get_single_galaxy_measurements(
-            noiseless_images, psf_image, PIXEL_SCALE
-        )
+        true_meas = get_single_galaxy_measurements(noiseless_images, PIXEL_SCALE)
         true_meas = {f"true_{k}": v for k, v in true_meas.items()}
-        recon_meas = reporting.get_single_galaxy_measurements(
-            recon_no_background, psf_image, PIXEL_SCALE
-        )
+        recon_meas = gett_single_galaxy_measurements(recon_no_background, PIXEL_SCALE)
         recon_meas = {f"recon_{k}": v for k, v in recon_meas.items()}
         measurements = {**true_meas, **recon_meas, "snr": snr}
 
