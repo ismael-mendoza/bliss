@@ -485,7 +485,6 @@ def get_single_galaxy_measurements(
         images: Array of shape (n_samples, n_bands, slen, slen) containing images of
             single-centered galaxies without noise or background.
 
-
     Returns:
         Dictionary containing fluxes, magnitudes, and ellipticities of `images`.
     """
