@@ -68,13 +68,17 @@ def _make_autoencoder_figures(device, overwrite: bool):
     args = (autoencoder, galaxies_file)
 
     # create figure classes and plot.
-    AutoEncoderFigures(n_examples=5, overwrite=overwrite, figdir="figures", cachedir="data")(*args)
+    cachedir = "/nfs/turbo/lsa-regier/scratch/ismael/data/"
+    AutoEncoderFigures(n_examples=5, overwrite=overwrite, figdir="figures", cachedir=cachedir)(
+        *args
+    )
 
 
 def _make_blend_figures(encoder, decoder, overwrite: bool):
     print("INFO: Creating figures for metrics on simulated blended galaxies.")
     blend_file = Path("/nfs/turbo/lsa-regier/scratch/ismael/data/blends_test.pt")
-    BlendSimulationFigure(overwrite=overwrite, figdir="figures", cachedir="data")(
+    cachedir = "/nfs/turbo/lsa-regier/scratch/ismael/data/"
+    BlendSimulationFigure(overwrite=overwrite, figdir="figures", cachedir=cachedir)(
         blend_file, encoder, decoder
     )
 
@@ -98,7 +102,8 @@ def main(mode: str, overwrite: bool):
 
     if mode == "toy":
         print("INFO: Creating figures for testing BLISS on pair galaxy toy example.")
-        ToySeparationFigure(overwrite=overwrite, figdir="figures", cachedir="data")(
+        cachedir = "/nfs/turbo/lsa-regier/scratch/ismael/data/"
+        ToySeparationFigure(overwrite=overwrite, figdir="figures", cachedir=cachedir)(
             encoder, decoder
         )
 
