@@ -420,8 +420,7 @@ def get_single_galaxy_ellipticities(
     """Returns ellipticities of (noiseless, single-band) individual galaxy images.
 
     Args:
-        images: Array of shape (n_samples, slen, slen) containing images of
-            single isolated galaxies without noise or background.
+        images: Array of shape (n, slen, slen) containing single galaxies with no noise/background.
         pixel_scale: Conversion from arcseconds to pixel.
         no_bar: Whether to use a progress bar.
 
@@ -445,7 +444,7 @@ def get_single_galaxy_ellipticities(
                 e1 = float(out.observed_e1)
                 e2 = float(out.observed_e2)
             else:
-                e1, e2 = float("nan"), float("nan")
+                e1, e2 = float("nan"), float("nan")  # noqa: WPS456
             ellips[ii, :] = torch.tensor([e1, e2])
     return ellips
 
