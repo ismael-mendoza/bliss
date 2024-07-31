@@ -7,7 +7,7 @@ from torch import Tensor
 from tqdm import tqdm
 
 from bliss.catalog import FullCatalog
-from bliss.datasets.lsst import PIXEL_SCALE, get_default_lsst_psf_tensor
+from bliss.datasets.lsst import PIXEL_SCALE
 from bliss.encoders.autoencoder import CenteredGalaxyDecoder
 from bliss.encoders.encoder import Encoder
 from bliss.plotting import BlissFigure, scatter_shade_plot
@@ -55,9 +55,6 @@ class BlendSimulationFigure(BlissFigure):
         n_batches, _, size, _ = images.shape
         assert background.shape == images.shape
 
-        # get psf
-        psf_tensor = get_default_lsst_psf_tensor(size)
-
         # obtain `FullCatalog` from saved data
         slen = size - 2 * (encoder.detection_encoder.bp)
         truth = FullCatalog(slen, slen, blend_data)
@@ -87,7 +84,6 @@ class BlendSimulationFigure(BlissFigure):
         flat_galaxy_bools = rearrange(est["galaxy_bools"], "b ms 1 -> (b ms) 1")
 
         # not sure if batches are necessary here
-        psf_tensor2 = get_default_lsst_psf_tensor(decoder.slen)
         b, ms2, _ = est["galaxy_params"].shape
         n_total = b * ms2
         flat_bg2 = repeat(
