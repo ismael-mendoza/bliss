@@ -226,14 +226,14 @@ class BlendSimulationFigure(BlissFigure):
         xlabel = r"$\log_{10} \rm SNR$"
         ylabel = r"\rm $(f^{\rm recon} - f^{\rm true}) / f^{\rm true}$"
         x, y = np.log10(snr), (efluxes - tfluxes) / tfluxes
-        scatter_shade_plot(ax1, x, y, xlims, delta=0.2)
+        scatter_shade_plot(ax1, x, y, xlims, delta=0.2, use_boot=True)
         ax1.set_ylabel(ylabel)
         ax1.axhline(0, ls="--", color="k")
         ax1.set_ylim(-0.5, 0.5)
 
         xlims = (0, 0.5)
         x, y = blendedness, (efluxes - tfluxes) / tfluxes
-        scatter_shade_plot(ax2, x, y, xlims, delta=0.05)
+        scatter_shade_plot(ax2, x, y, xlims, delta=0.05, use_boot=True)
         ax2.axhline(0, ls="--", color="k")
         ax2.set_ylim(-0.5, 0.5)
 
@@ -244,14 +244,14 @@ class BlendSimulationFigure(BlissFigure):
         xlims = (0.5, 3)
         ylabel = r"$g_{1}^{\rm recon} - g_{1}^{\rm true}$"
         x, y = np.log10(snr)[mask], (pe1 - te1)[mask]
-        scatter_shade_plot(ax3, x, y, xlims, delta=0.2)
+        scatter_shade_plot(ax3, x, y, xlims, delta=0.2, use_boot=True)
         ax3.set_ylabel(ylabel)
         ax3.axhline(0, ls="--", color="k")
         ax3.set_ylim(-0.2, 0.2)
 
         xlims = (0, 0.5)
         x, y = blendedness[mask], (pe1 - te1)[mask]
-        scatter_shade_plot(ax4, x, y, xlims, delta=0.05)
+        scatter_shade_plot(ax4, x, y, xlims, delta=0.05, use_boot=True)
         ax4.axhline(0, ls="--", color="k")
         ax4.set_ylim(-0.2, 0.2)
 
@@ -260,7 +260,7 @@ class BlendSimulationFigure(BlissFigure):
         xlabel = r"$\log_{10} \rm SNR$"
         ylabel = r"$g_{2}^{\rm recon} - g_{2}^{\rm true}$"
         x, y = np.log10(snr)[mask], (pe2 - te2)[mask]
-        scatter_shade_plot(ax5, x, y, xlims, delta=0.2)
+        scatter_shade_plot(ax5, x, y, xlims, delta=0.2, use_boot=True)
         ax5.set_xlabel(xlabel)
         ax5.set_ylabel(ylabel)
         ax5.set_xticks(xticks)
@@ -271,7 +271,7 @@ class BlendSimulationFigure(BlissFigure):
         xlims = (0, 0.5)
         xlabel = "$B$"
         x, y = blendedness[mask], (pe2 - te2)[mask]
-        scatter_shade_plot(ax6, x, y, xlims=xlims, delta=0.05)
+        scatter_shade_plot(ax6, x, y, xlims=xlims, delta=0.05, use_boot=True)
         ax6.set_xlabel(xlabel)
         ax6.set_xticks(xticks)
         ax6.axhline(0, ls="--", color="k")
