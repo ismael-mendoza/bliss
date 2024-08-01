@@ -262,11 +262,11 @@ def scatter_shade_plot(
             yqs[i] = (np.nan, np.nan)
             continue
 
-        _fnc = np.mean if use_mean else np.median
+        fnc = np.mean if use_mean else np.median
 
-        ys[i] = _fnc(y_bin)
+        ys[i] = fnc(y_bin)
         if use_boot:
-            yqs[i, :] = _bootstrap_quantiles(y_bin, _fnc, qs)
+            yqs[i, :] = _bootstrap_quantiles(y_bin, fnc, qs)
         else:
             yqs[i, :] = np.quantile(y_bin, qs[0]), np.quantile(y_bin, qs[1])
 
