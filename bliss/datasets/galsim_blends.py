@@ -195,7 +195,7 @@ def _render_padded_image(
         is_galaxy = _bernoulli(galaxy_prob, 1).bool().item()
         if is_galaxy:
             params = _sample_galaxy_params(catsim_table, 1, 1)
-            assert params.shape == (1, 10)
+            assert params.shape == (1, 11)
             one_galaxy_params = params[0]
             galaxy = _render_one_galaxy(one_galaxy_params, psf, size, offset)
             image += galaxy
@@ -228,7 +228,7 @@ def sample_source_params(
     """Returns source parameters corresponding to a single blend."""
     n_sources = _sample_poisson_n_sources(mean_sources, max_n_sources)
     params = _sample_galaxy_params(catsim_table, n_sources, max_n_sources)
-    assert params.shape == (max_n_sources, 10)
+    assert params.shape == (max_n_sources, 11)
 
     star_fluxes = _sample_star_fluxes(all_star_mags, n_sources, max_n_sources)
 
@@ -340,27 +340,29 @@ def _render_one_galaxy(
     galaxy_params: Tensor, psf: galsim.GSObject, size: int, offset: Optional[Tensor] = None
 ) -> Tensor:
     assert offset is None or offset.shape == (2,)
-    assert galaxy_params.device == torch.device("cpu") and galaxy_params.shape == (10,)
-    fnb, fnd, fnagn, ab, ad, bb, bd, pa, _, total_flux = galaxy_params.numpy()  # noqa:WPS236
+    assert galaxy_params.device == torch.device("cpu") and galaxy_params.shape == (11,)
+    fnb, fnd, fnagn, ab, ad, bb, bd, pab, pad, _, total_flux = galaxy_params.numpy()  # noqa:WPS236
 
     disk_flux = total_flux * fnd / (fnd + fnb + fnagn)
     bulge_flux = total_flux * fnb / (fnd + fnb + fnagn)
 
     components = []
     if disk_flux > 0:
+        assert bd > 0 and ad > 0 and pad > 0
         disk_q = bd / ad
         disk_hlr_arcsecs = np.sqrt(ad * bd)
         disk = galsim.Exponential(flux=disk_flux, half_light_radius=disk_hlr_arcsecs).shear(
             q=disk_q,
-            beta=pa * galsim.radians,
+            beta=pad * galsim.degrees,
         )
         components.append(disk)
     if bulge_flux > 0:
+        assert bb > 0 and ab > 0 and pab > 0
         bulge_q = bb / ab
         bulge_hlr_arcsecs = np.sqrt(ab * bb)
         bulge = galsim.DeVaucouleurs(flux=bulge_flux, half_light_radius=bulge_hlr_arcsecs).shear(
             q=bulge_q,
-            beta=pa * galsim.radians,
+            beta=pab * galsim.degrees,
         )
         components.append(bulge)
     galaxy = galsim.Add(components)

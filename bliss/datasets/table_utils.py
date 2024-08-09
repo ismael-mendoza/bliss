@@ -39,6 +39,7 @@ def catsim_row_to_galaxy_params(table: Table, max_n_sources: int):
         "b_b",
         "b_d",
         "pa_bulge",
+        "pa_disk",
         "i_ab",
         "flux",
     )
