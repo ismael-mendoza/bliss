@@ -225,7 +225,7 @@ def sample_source_params(
     max_shift: float = 0.5,
     galaxy_prob: float = 0.9,
 ) -> dict[str, Tensor]:
-    """Returns a single batch of source parameters."""
+    """Returns source parameters corresponding to a single blend."""
     n_sources = _sample_poisson_n_sources(mean_sources, max_n_sources)
     params = _sample_galaxy_params(catsim_table, n_sources, max_n_sources)
     assert params.shape == (max_n_sources, 10)

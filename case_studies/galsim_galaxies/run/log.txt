@@ -363,3 +363,36 @@ Run training deblender script...
         val_check_interval 'None', batch_size 256, n_epochs 10001
 
 INFO: Saving model as version 15
+
+./bin/run_autoencoder_train.py -o -s 42 -t 3
+
+Run training autoencoder script...
+        With tag 3 and seed 42 at 2024-08-01 16:05:51.986546
+        Only bright 'False',
+        n_samples 12800, split 9600, validate_every_n_epoch 1,
+        batch_size 256, n_epochs 3001
+
+INFO: Overwriting dataset...
+INFO: Complete galaxy catalog with only i < 27.3 magnitude of length: 666475
+INFO: Removing bright stars with only i < 20 magnitude, final catalog length: 17434
+
+./bin/run_autoencoder_train.py -o -s 42 -t 3
+
+Run training autoencoder script...
+        With tag 3 and seed 42 at 2024-08-01 16:09:46.787120
+        Only bright 'False',
+        n_samples 12800, split 9600, validate_every_n_epoch 1,
+        batch_size 256, n_epochs 3001
+
+INFO: Overwriting dataset...
+INFO: Complete galaxy catalog with only i < 27.3 magnitude of length: 666475
+INFO: Removing bright stars with only i < 20 magnitude, final catalog length: 17434
+INFO: Saving model as version 4
+
+./bin/run_autoencoder_train.py -o -s 43 -t 1_43
+
+Run training autoencoder script...
+        With tag 1_43 and seed 43 at 2024-08-09 10:25:54.491050
+        Only bright 'False',
+        n_samples 512000, split 384000, validate_every_n_epoch 1,
+        batch_size 256, n_epochs 10001

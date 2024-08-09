@@ -40,13 +40,13 @@ class OneCenteredGalaxyAE(pl.LightningModule):
 
     def get_loss(self, images: Tensor, background: Tensor) -> Tuple[Tensor, Tensor]:
         recon_mean: Tensor = self(images, background)
-        return -Normal(recon_mean, recon_mean.sqrt()).log_prob(images).sum(), recon_mean
+        return -Normal(recon_mean, recon_mean.sqrt()).log_prob(images).mean(), recon_mean
 
     def training_step(self, batch: dict[str, Tensor], batch_idx: int):
         """Training step (pytorch lightning)."""
         images, background = batch["images"], batch["background"]
         loss, _ = self.get_loss(images, background)
-        self.log("train/loss", loss)
+        self.log("train/loss", loss, on_step=False, on_epoch=True)
         return loss
 
     def validation_step(self, batch: dict[str, Tensor], batch_idx: int):
