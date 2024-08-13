@@ -1,4 +1,6 @@
+import datetime
 import sys
+from pathlib import Path
 from typing import TextIO
 
 import pytorch_lightning as L
@@ -8,9 +10,12 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader, Dataset
 
-from bliss.datasets.galsim_blends import generate_dataset
+from bliss.datasets.galsim_blends import SavedGalsimBlends, generate_dataset
 from bliss.datasets.lsst import get_default_lsst_psf
 from bliss.datasets.table_utils import column_to_tensor
+from case_studies.galsim_galaxies.run.training_functions import setup_training_objects
+
+NUM_WORKERS = 0
 
 
 def create_dataset(
@@ -128,3 +133,43 @@ def setup_training_objects(
     )
 
     return train_dl, val_dl, trainer
+
+
+def run_encoder_training(
+    seed, tag, batch_size, n_epochs, model, model_name, validate_every_n_epoch, val_check_interval
+):
+    assert model_name in {"detection", "binary", "deblender"}
+
+    with open("log.txt", "a") as f:
+        now = datetime.datetime.now()
+        print("", file=f)
+        log_msg = f"""Run training detection encoder script...
+        With tag {tag} and seed {seed} at {now} validate_every_n_epoch {validate_every_n_epoch},
+        val_check_interval {val_check_interval}, batch_size {batch_size}, n_epochs {n_epochs}
+        """
+        print(log_msg, file=f)
+
+    L.seed_everything(seed)
+
+    train_ds_file = f"/nfs/turbo/lsa-regier/data_nfs/ismael/datasets/train_ds_{tag}.pt"
+    val_ds_file = f"/nfs/turbo/lsa-regier/data_nfs/ismael/datasets/val_ds_{tag}.pt"
+
+    if not Path(train_ds_file).exists() and Path(val_ds_file).exists():
+        raise IOError("Training datasets do not exists")
+
+    with open("log.txt", "a") as g:
+        train_ds = SavedGalsimBlends(train_ds_file)
+        val_ds = SavedGalsimBlends(val_ds_file)
+        train_dl, val_dl, trainer = setup_training_objects(
+            train_ds,
+            val_ds,
+            batch_size,
+            NUM_WORKERS,
+            n_epochs,
+            validate_every_n_epoch,
+            val_check_interval,
+            model_name=model_name,
+            log_file=g,
+        )
+
+    trainer.fit(model=model, train_dataloaders=train_dl, val_dataloaders=val_dl)
