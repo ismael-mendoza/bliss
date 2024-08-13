@@ -19,17 +19,16 @@ class SavedGalsimBlends(Dataset):
     def __init__(
         self,
         dataset_file: str,
-        epoch_size: int,
         slen: int = 40,
         tile_slen: int = 4,
         keep_padding: bool = False,
     ) -> None:
         super().__init__()
         ds: dict[str, Tensor] = torch.load(dataset_file)
-        self.epoch_size = epoch_size
 
         self.images = ds.pop("images").float()  # needs to be a float for NN
         self.background = ds.pop("background").float()
+        self.epoch_size = len(self.images)
 
         # don't need for training
         ds.pop("centered_sources")
