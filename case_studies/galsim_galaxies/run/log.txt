@@ -389,10 +389,61 @@ INFO: Complete galaxy catalog with only i < 27.3 magnitude of length: 666475
 INFO: Removing bright stars with only i < 20 magnitude, final catalog length: 17434
 INFO: Saving model as version 4
 
-./bin/run_autoencoder_train.py -o -s 43 -t 1_43
+./bin/run_autoencoder_train.py -o -s 43 -t 1_43_test -n 1280
 
 Run training autoencoder script...
-        With tag 1_43 and seed 43 at 2024-08-09 10:25:54.491050
+        With tag 1_43_test and seed 43 at 2024-08-12 20:04:59.280518
         Only bright 'False',
-        n_samples 512000, split 384000, validate_every_n_epoch 1,
+        n_samples 1280, split 192000, validate_every_n_epoch 1,
         batch_size 256, n_epochs 10001
+
+INFO: Overwriting dataset...
+INFO: Complete galaxy catalog with only i < 27.3 magnitude of length: 666475
+INFO: Removing bright stars with only i < 20 magnitude, final catalog length: 17434
+INFO: Saving model as version 5
+
+Run training autoencoder data generation script...
+        With tag 42_1 and seed 42 at 2024-08-12 20:40:50.233566
+        Only bright 'False', n_samples 128000, split 96000
+
+INFO: Overwriting dataset...
+INFO: Complete galaxy catalog with only i < 27.3 magnitude of length: 666475
+INFO: Removing bright stars with only i < 20 magnitude, final catalog length: 17434
+
+Run training autoencoder data generation script...
+        With tag 1_42_test and seed 42 at 2024-08-13 14:54:06.399115, n_samples 12800, split 96000
+
+
+Run training autoencoder data generation script...
+        With tag 2_42_test and seed 42 at 2024-08-13 14:55:12.681025, n_samples 128000, split 96000
+
+
+Run training autoencoder data generation script...
+        With tag 3_42_test and seed 42 at 2024-08-13 15:05:05.211638, n_samples 25600, split 25600
+
+
+Run training autoencoder data generation script...
+        With tag 4_42_test and seed 42 at 2024-08-13 15:07:21.644899, n_samples 64000, split 32000
+
+
+Run training autoencoder data generation script...
+        With tag 42_1 and seed 42 at 2024-08-13 15:17:34.877424, n_samples 64000, split 32000
+
+
+./bin/run_autoencoder_train.py -s 42 -t 42_1
+
+Run training autoencoder script...
+        With tag 42_1 and seed 42 at 2024-08-13 15:27:33.433818
+        validate_every_n_epoch 1,
+        batch_size 256, n_epochs 10001
+
+INFO: Saving model as version 5
+
+./bin/run_autoencoder_train.py -s 42 -t 42_1
+
+Run training autoencoder script...
+        With tag 42_1 and seed 42 at 2024-08-13 15:30:48.433252
+        validate_every_n_epoch 1,
+        batch_size 256, n_epochs 10001
+
+INFO: Saving model as version 6
