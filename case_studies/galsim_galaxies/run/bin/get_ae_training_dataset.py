@@ -16,7 +16,7 @@ NUM_WORKERS = 0
 
 @click.command()
 @click.option("-s", "--seed", default=42, type=int)
-@click.option("-n", "--n-samples", default=1280 * 50, type=int)  # 75% of total catalog
+@click.option("-n", "--n-samples", default=1280 * 100, type=int)  # 75% of total catalog
 @click.option("-t", "--tag", required=True, type=str, help="Dataset tag")
 def main(
     seed: int,
