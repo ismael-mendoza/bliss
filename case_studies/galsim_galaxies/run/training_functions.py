@@ -150,7 +150,7 @@ def run_encoder_training(
     with open("log.txt", "a") as f:
         now = datetime.datetime.now()
         print("", file=f)
-        log_msg = f"""Run training detection encoder script...
+        log_msg = f"""Run training {model_name} encoder script...
         With tag {tag} and seed {seed} at {now} validate_every_n_epoch {validate_every_n_epoch},
         val_check_interval {val_check_interval}, batch_size {batch_size}, n_epochs {n_epochs}
         """
