@@ -62,13 +62,14 @@ class SavedGalsimBlends(Dataset):
 
 
 class SavedIndividualGalaxies(Dataset):
-    def __init__(self, dataset_file: str, epoch_size: int) -> None:
+    def __init__(self, dataset_file: str) -> None:
         super().__init__()
         ds: dict[str, Tensor] = torch.load(dataset_file)
-        self.epoch_size = epoch_size
 
         self.images = ds.pop("images").float()  # needs to be a float for NN
         self.background = ds.pop("background").float()
+
+        self.epoch_size = len(self.images)
 
     def __len__(self) -> int:
         return self.epoch_size
