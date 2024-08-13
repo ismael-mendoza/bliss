@@ -81,6 +81,25 @@ class SavedIndividualGalaxies(Dataset):
         }
 
 
+def generate_individual_dataset(
+    n_samples: int, catsim_table: Table, psf: galsim.GSObject, slen: int = 53
+):
+    """Like the function bleow but it only generates individual galaxies, so much faster to run."""
+
+    background = get_constant_background(get_default_lsst_background(), (n_samples, 1, slen, slen))
+    params = _sample_galaxy_params(catsim_table, n_samples, n_samples)
+    assert params.shape == (n_samples, 11)
+    gals = torch.zeros((n_samples, 1, slen, slen))
+    for ii in tqdm(range(n_samples)):
+        gal = _render_one_galaxy(params[ii], psf, slen, offset=None)
+        gals[ii] = gal
+
+    # add noise
+    noisy = add_noise_and_background(gals, background)
+
+    return {"images": noisy, "background": background, "noiseless": gals, "galaxy_params": params}
+
+
 def generate_dataset(
     n_samples: int,
     catsim_table: Table,
