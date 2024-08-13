@@ -59,7 +59,7 @@ def main(
             validate_every_n_epoch=validate_every_n_epoch,
             val_check_interval=None,
             model_name="autoencoder",
-            log_every_n_steps=256,
+            log_every_n_steps=train_ds.epoch_size // batch_size,  # = number of batches in 1 epoch
             log_file=g,
         )
 
