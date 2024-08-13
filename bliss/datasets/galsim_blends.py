@@ -83,7 +83,7 @@ class SavedIndividualGalaxies(Dataset):
 def generate_individual_dataset(
     n_samples: int, catsim_table: Table, psf: galsim.GSObject, slen: int = 53
 ):
-    """Like the function bleow but it only generates individual galaxies, so much faster to run."""
+    """Like the function below but it only generates individual galaxies, so much faster to run."""
 
     background = get_constant_background(get_default_lsst_background(), (n_samples, 1, slen, slen))
     params = _sample_galaxy_params(catsim_table, n_samples, n_samples)
