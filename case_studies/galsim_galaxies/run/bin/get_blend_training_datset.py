@@ -33,8 +33,8 @@ def main(
 
     L.seed_everything(seed)
 
-    train_ds_file = f"/nfs/turbo/lsa-regier/data_nfs/ismael/datasets/train_ds_{tag}.pt"
-    val_ds_file = f"/nfs/turbo/lsa-regier/data_nfs/ismael/datasets/val_ds_{tag}.pt"
+    train_ds_file = f"/nfs/turbo/lsa-regier/scratch/ismael/datasets/train_ds_{tag}.pt"
+    val_ds_file = f"/nfs/turbo/lsa-regier/scratch/ismael/datasets/val_ds_{tag}.pt"
 
     if Path(train_ds_file).exists():
         raise IOError("Training file already exists")
