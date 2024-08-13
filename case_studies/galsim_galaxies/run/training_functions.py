@@ -13,7 +13,6 @@ from torch.utils.data import DataLoader, Dataset
 from bliss.datasets.galsim_blends import SavedGalsimBlends, generate_dataset
 from bliss.datasets.lsst import get_default_lsst_psf
 from bliss.datasets.table_utils import column_to_tensor
-from case_studies.galsim_galaxies.run.training_functions import setup_training_objects
 
 NUM_WORKERS = 0
 
@@ -136,7 +135,15 @@ def setup_training_objects(
 
 
 def run_encoder_training(
-    seed, tag, batch_size, n_epochs, model, model_name, validate_every_n_epoch, val_check_interval
+    seed: int,
+    tag: str,
+    batch_size: int,
+    n_epochs: int,
+    model,
+    model_name: str,
+    validate_every_n_epoch: int,
+    val_check_interval: float,
+    log_every_n_steps: int,
 ):
     assert model_name in {"detection", "binary", "deblender"}
 
@@ -161,14 +168,15 @@ def run_encoder_training(
         train_ds = SavedGalsimBlends(train_ds_file)
         val_ds = SavedGalsimBlends(val_ds_file)
         train_dl, val_dl, trainer = setup_training_objects(
-            train_ds,
-            val_ds,
-            batch_size,
-            NUM_WORKERS,
-            n_epochs,
-            validate_every_n_epoch,
-            val_check_interval,
+            train_ds=train_ds,
+            val_ds=val_ds,
+            batch_size=batch_size,
+            num_workers=NUM_WORKERS,
+            n_epochs=n_epochs,
+            validate_every_n_epoch=validate_every_n_epoch,
+            val_check_interval=val_check_interval,
             model_name=model_name,
+            log_every_n_steps=log_every_n_steps,
             log_file=g,
         )
 
