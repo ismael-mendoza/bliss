@@ -5,24 +5,23 @@ from pathlib import Path
 
 import click
 import pytorch_lightning as L
+import torch
+from astropy.table import Table
 
-from case_studies.galsim_galaxies.run.training_functions import create_dataset
+from bliss.datasets.galsim_blends import generate_individual_dataset
+from bliss.datasets.lsst import get_default_lsst_psf
 
 NUM_WORKERS = 0
 
 
 @click.command()
 @click.option("-s", "--seed", default=42, type=int)
-@click.option("-n", "--n-samples", default=1280 * 100, type=int)  # 75% of total catalog
-@click.option("--split", default=1280 * 75, type=int)
+@click.option("-n", "--n-samples", default=1280 * 50, type=int)  # 75% of total catalog
 @click.option("-t", "--tag", required=True, type=str, help="Dataset tag")
-@click.option("--only-bright", is_flag=True, default=False)
 def main(
     seed: int,
     n_samples: int,
-    split: int,
     tag: str,
-    only_bright: bool,
 ):
 
     L.seed_everything(seed)
@@ -37,29 +36,25 @@ def main(
         now = datetime.datetime.now()
         print("", file=f)
         log_msg = f"""Run training autoencoder data generation script...
-        With tag {tag} and seed {seed} at {now}
-        Only bright '{only_bright}', n_samples {n_samples}, split {split}
+        With tag {tag} and seed {seed} at {now}, n_samples {n_samples}, split {n_samples//2}
         """
         print(log_msg, file=f)
 
     with open("log.txt", "a") as g:
-        create_dataset(
-            catsim_file="../../../data/OneDegSq.fits",
-            stars_mag_file="../../../data/stars_med_june2018.fits",  # UNUSED
-            n_samples=n_samples,
-            train_val_split=split,
-            train_ds_file=train_ds_file,
-            val_ds_file=val_ds_file,
-            only_bright=only_bright,
-            add_galaxies_in_padding=False,
-            galaxy_density=1000,  # hack to always have at least 1 galaxy
-            star_density=0,
-            max_n_sources=1,
-            slen=53,
-            bp=0,
-            max_shift=0,  # centered
-            log_file=g,
-        )
+        catsim_table = Table.read("../../../data/OneDegSq.fits")
+        psf = get_default_lsst_psf()
+        mask = catsim_table["i_ab"] < 27.3
+        new_table = catsim_table[mask]
+
+        dataset = generate_individual_dataset(n_samples, new_table, psf, slen=53)
+
+        # train, val split
+        train_ds = {p: q[: n_samples // 2] for p, q in dataset.items()}
+        val_ds = {p: q[n_samples // 2 :] for p, q in dataset.items()}
+
+        # now save  data
+        torch.save(train_ds, train_ds_file)
+        torch.save(val_ds, val_ds_file)
 
 
 if __name__ == "__main__":
