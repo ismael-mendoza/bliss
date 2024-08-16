@@ -15,12 +15,14 @@ class OneCenteredGalaxyAE(pl.LightningModule):
         latent_dim: int = 8,
         hidden: int = 256,
         n_bands: int = 1,
+        lr=1e-3,
     ):
         super().__init__()
 
         self.enc = self.make_encoder(slen, latent_dim, n_bands, hidden)
         self.dec = self.make_decoder(slen, latent_dim, n_bands, hidden)
         self.latent_dim = latent_dim
+        self.lr = lr
 
     def make_encoder(
         self, slen: int, latent_dim: int, n_bands: int, hidden: int
@@ -69,7 +71,7 @@ class OneCenteredGalaxyAE(pl.LightningModule):
         return loss
 
     def configure_optimizers(self):
-        return Adam(self.parameters(), lr=1e-3)
+        return Adam(self.parameters(), lr=self.lr)
 
 
 class CenteredGalaxyEncoder(nn.Module):
