@@ -19,12 +19,14 @@ NUM_WORKERS = 0
 @click.option("-e", "--n-epochs", default=10001)
 @click.option("--validate-every-n-epoch", default=1, type=int)
 @click.option("-t", "--tag", required=True, type=str, help="Dataset tag")
+@click.option("--lr", default=1e-3, type=float)
 def main(
     seed: int,
     batch_size: int,
     n_epochs: int,
     validate_every_n_epoch: int,
     tag: str,
+    lr: float,
 ):
 
     with open("log.txt", "a") as f:
@@ -34,6 +36,7 @@ def main(
         With tag {tag} and seed {seed} at {now}
         validate_every_n_epoch {validate_every_n_epoch},
         batch_size {batch_size}, n_epochs {n_epochs}
+        learning rate {lr}
         """
         print(log_msg, file=f)
 
@@ -45,7 +48,7 @@ def main(
     assert Path(train_ds_file).exists(), f"Training dataset with tag {tag} is not available"
 
     # setup model to train
-    autoencoder = OneCenteredGalaxyAE()
+    autoencoder = OneCenteredGalaxyAE(lr=lr)
 
     with open("log.txt", "a") as g:
         train_ds = SavedIndividualGalaxies(train_ds_file)
