@@ -15,7 +15,7 @@ NUM_WORKERS = 0
 
 @click.command()
 @click.option("-s", "--seed", default=42, type=int)
-@click.option("-b", "--batch-size", default=256)
+@click.option("-b", "--batch-size", default=128)
 @click.option("-e", "--n-epochs", default=10001)
 @click.option("--validate-every-n-epoch", default=1, type=int)
 @click.option("-t", "--tag", required=True, type=str, help="Dataset tag")
