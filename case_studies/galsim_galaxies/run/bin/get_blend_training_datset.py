@@ -13,8 +13,8 @@ NUM_WORKERS = 0
 
 @click.command()
 @click.option("-s", "--seed", default=42, type=int)
-@click.option("-n", "--n-samples", default=1028 * 30, type=int)
-@click.option("--split", default=1028 * 20, type=int)
+@click.option("-n", "--n-samples", default=1280 * 30, type=int)
+@click.option("--split", default=1280 * 20, type=int)
 @click.option("-t", "--tag", required=True, type=str, help="Dataset tag")
 @click.option("--only-bright", is_flag=True, default=False)
 @click.option("--no-padding-galaxies", is_flag=True, default=False)
