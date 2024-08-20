@@ -15,10 +15,10 @@ assert Path(AE_STATE_DICT).exists()
 
 @click.command()
 @click.option("-s", "--seed", default=42, type=int)
-@click.option("-b", "--batch-size", default=64)
+@click.option("-b", "--batch-size", default=128)
 @click.option("-e", "--n-epochs", default=10001)
 @click.option("--validate-every-n-epoch", default=20, type=int)
-@click.option("--log-every-n-steps", default=128, type=float, help="Fraction of training epoch")
+@click.option("--log-every-n-steps", default=10, type=float, help="Fraction of training epoch")
 @click.option("-t", "--tag", required=True, type=str, help="Dataset tag")
 def main(
     seed: int,
