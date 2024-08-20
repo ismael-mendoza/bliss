@@ -15,7 +15,7 @@ class OneCenteredGalaxyAE(pl.LightningModule):
         latent_dim: int = 8,
         hidden: int = 256,
         n_bands: int = 1,
-        lr=1e-3,
+        lr=1e-4,
     ):
         super().__init__()
 
