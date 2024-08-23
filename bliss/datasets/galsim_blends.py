@@ -86,7 +86,7 @@ def generate_individual_dataset(
     """Like the function below but it only generates individual galaxies, so much faster to run."""
 
     background = get_constant_background(get_default_lsst_background(), (n_samples, 1, slen, slen))
-    params = _sample_galaxy_params(catsim_table, n_samples, n_samples, replace=replace)
+    params, indices = _sample_galaxy_params(catsim_table, n_samples, n_samples, replace=replace)
     assert params.shape == (n_samples, 11)
     gals = torch.zeros((n_samples, 1, slen, slen))
     for ii in tqdm(range(n_samples)):
@@ -96,7 +96,13 @@ def generate_individual_dataset(
     # add noise
     noisy = add_noise_and_background(gals, background)
 
-    return {"images": noisy, "background": background, "noiseless": gals, "galaxy_params": params}
+    return {
+        "images": noisy,
+        "background": background,
+        "noiseless": gals,
+        "galaxy_params": params,
+        "indices": indices,
+    }
 
 
 def generate_dataset(
@@ -213,7 +219,7 @@ def _render_padded_image(
 
         is_galaxy = _bernoulli(galaxy_prob, 1).bool().item()
         if is_galaxy:
-            params = _sample_galaxy_params(catsim_table, 1, 1)
+            params, _ = _sample_galaxy_params(catsim_table, 1, 1)
             assert params.shape == (1, 11)
             one_galaxy_params = params[0]
             galaxy = _render_one_galaxy(one_galaxy_params, psf, size, offset)
@@ -246,7 +252,7 @@ def sample_source_params(
 ) -> dict[str, Tensor]:
     """Returns source parameters corresponding to a single blend."""
     n_sources = _sample_poisson_n_sources(mean_sources, max_n_sources)
-    params = _sample_galaxy_params(catsim_table, n_sources, max_n_sources)
+    params, _ = _sample_galaxy_params(catsim_table, n_sources, max_n_sources)
     assert params.shape == (max_n_sources, 11)
 
     star_fluxes = _sample_star_fluxes(all_star_mags, n_sources, max_n_sources)
@@ -336,15 +342,16 @@ def render_full_catalog(full_cat: FullCatalog, psf: galsim.GSObject, slen: int, 
 
 def _sample_galaxy_params(
     catsim_table: Table, n_galaxies: int, max_n_sources: int, replace: bool = True
-) -> Tensor:
+) -> tuple[Tensor, Tensor]:
     indices = np.random.choice(np.arange(len(catsim_table)), size=(n_galaxies,), replace=replace)
 
     rows = catsim_table[indices]
     mags = torch.from_numpy(rows["i_ab"].value.astype(float))  # byte order
     gal_flux = convert_mag_to_flux(mags)
-    rows["flux"] = gal_flux.numpy().astype(float)
+    rows["flux"] = gal_flux.numpy().astype(np.float32)
 
-    return catsim_row_to_galaxy_params(rows, max_n_sources)
+    ids = torch.from_numpy(rows["galtileid"].value.astype(int))
+    return catsim_row_to_galaxy_params(rows, max_n_sources), ids
 
 
 def _render_one_star(
