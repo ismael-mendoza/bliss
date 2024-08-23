@@ -12,7 +12,7 @@ def column_to_tensor(table: Table, colname: str):
         np.dtype(">i8"): int,
         np.dtype("bool"): bool,
         np.dtype(">f4"): np.float32,
-        np.dtype(">f8"): np.float32,
+        np.dtype(">f8"): np.float32,  # convert 64-bit precision float to 32-bit precision
         np.dtype("float32"): np.float32,
         np.dtype("float64"): np.dtype("float64"),
     }
@@ -47,8 +47,12 @@ def catsim_row_to_galaxy_params(table: Table, max_n_sources: int):
         "flux",
     )
 
-    params = torch.zeros((max_n_sources, len(names)))
+    params = torch.zeros((max_n_sources, len(names)), dtype=torch.float32)
+
     for jj, n in enumerate(names):
+        dtype = table[n].dtype
+        # everything should be a float32 or float64
+        assert dtype == np.dtype(">f8") or dtype == np.float32
         params[:n_rows, jj] = column_to_tensor(table, n)
 
     return params
