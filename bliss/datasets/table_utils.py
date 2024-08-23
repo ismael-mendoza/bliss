@@ -30,6 +30,9 @@ def table_to_dict(table: Table):
 
 
 def catsim_row_to_galaxy_params(table: Table, max_n_sources: int):
+    n_rows = len(table)
+    assert n_rows <= max_n_sources
+
     names = (
         "fluxnorm_bulge",
         "fluxnorm_disk",
@@ -45,9 +48,7 @@ def catsim_row_to_galaxy_params(table: Table, max_n_sources: int):
     )
 
     params = torch.zeros((max_n_sources, len(names)))
-
-    for ii, col in enumerate(table):
-        for jj, n in enumerate(names):
-            params[ii, jj] = column_to_tensor(col, n)
+    for jj, n in enumerate(names):
+        params[:n_rows, jj] = column_to_tensor(table, n)
 
     return params
