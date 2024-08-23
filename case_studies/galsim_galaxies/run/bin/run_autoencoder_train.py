@@ -19,7 +19,7 @@ NUM_WORKERS = 0
 @click.option("-e", "--n-epochs", default=10001)
 @click.option("--validate-every-n-epoch", default=1, type=int)
 @click.option("-t", "--tag", required=True, type=str, help="Dataset tag")
-@click.option("--lr", default=1e-3, type=float)
+@click.option("--lr", default=1e-4, type=float)
 def main(
     seed: int,
     batch_size: int,
