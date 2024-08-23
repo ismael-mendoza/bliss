@@ -447,3 +447,91 @@ Run training autoencoder script...
         batch_size 256, n_epochs 10001
 
 INFO: Saving model as version 6
+
+Run training autoencoder data generation script...
+        With tag 43_1 and seed 43 at 2024-08-13 16:26:56.769339, n_samples 128000, split 64000
+
+
+./bin/run_autoencoder_train.py -s 43 -b 1024 -t 43_1
+
+Run training autoencoder script...
+        With tag 43_1 and seed 43 at 2024-08-13 16:37:04.408399
+        validate_every_n_epoch 1,
+        batch_size 1024, n_epochs 10001
+
+INFO: Saving model as version 7
+
+./bin/run_autoencoder_train.py -s 44 -b 512 -t 43_1
+
+Run training autoencoder script...
+        With tag 43_1 and seed 44 at 2024-08-13 16:41:59.737275
+        validate_every_n_epoch 1,
+        batch_size 512, n_epochs 10001
+
+INFO: Saving model as version 8
+
+Run training blend data generation script...
+        With tag 42_1 and seed 42 at 2024-08-13 17:55:58.708304
+        Galaxy density 185.0, star_density 10.0, and
+        Only bright 'False', no padding galaxies 'False'.
+        n_samples 30840, split 20560
+
+
+./bin/run_autoencoder_train.py -s 45 -b 2048 -t 45_1
+
+Run training autoencoder script...
+        With tag 45_1 and seed 45 at 2024-08-14 11:18:24.442928
+        validate_every_n_epoch 1,
+        batch_size 2048, n_epochs 10001
+
+
+./bin/run_autoencoder_train.py -s 45 -b 2048 -t 43_1
+
+Run training autoencoder script...
+        With tag 43_1 and seed 45 at 2024-08-14 11:18:53.550500
+        validate_every_n_epoch 1,
+        batch_size 2048, n_epochs 10001
+
+INFO: Saving model as version 9
+
+./bin/run_autoencoder_train.py -s 45 -b 512 -t 43_1
+
+Run training autoencoder script...
+        With tag 43_1 and seed 45 at 2024-08-14 11:21:24.390594
+        validate_every_n_epoch 1,
+        batch_size 512, n_epochs 10001
+
+INFO: Saving model as version 10
+INFO: Saved checkpoint 'data/out/autoencoder/version_9/checkpoints/epoch=8492-val_loss=7.491.ckpt' as weights models/autoencoder.pt
+INFO: Saved checkpoint 'data/out/autoencoder/version_10/checkpoints/epoch=7294-val_loss=7.502.ckpt' as weights models/autoencoder.pt
+
+./bin/run_autoencoder_train.py -s 42 -t 43_1
+
+Run training autoencoder script...
+        With tag 43_1 and seed 42 at 2024-08-16 16:12:43.728228
+        validate_every_n_epoch 1,
+        batch_size 128, n_epochs 10001
+
+INFO: Saving model as version 11
+
+./bin/run_autoencoder_train.py -s 43 -t 43_1
+
+Run training autoencoder script...
+        With tag 43_1 and seed 43 at 2024-08-16 16:35:10.140659
+        validate_every_n_epoch 1,
+        batch_size 128, n_epochs 10001
+
+INFO: Saving model as version 12
+
+./bin/run_autoencoder_train.py -s 44 -lr 1e-4 -t 43_1
+
+./bin/run_autoencoder_train.py -s 44 --lr 1e-4 -t 43_1
+
+Run training autoencoder script...
+        With tag 43_1 and seed 44 at 2024-08-16 17:19:11.329207
+        validate_every_n_epoch 1,
+        batch_size 128, n_epochs 10001
+        learning rate 0.0001
+
+INFO: Saving model as version 13
+INFO: Saved checkpoint 'data/out/autoencoder/version_13/checkpoints/epoch=9281-val_loss=2691874.000.ckpt' as weights models/autoencoder.pt
