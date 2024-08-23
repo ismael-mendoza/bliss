@@ -24,46 +24,25 @@ PSF = get_default_lsst_psf()
 @click.command()
 @click.option("--n-samples", default=20000, type=int)
 @click.option("-s", "--seed", default=42, type=int)
-@click.option("--mode", type=str, required=True)
 @click.option("-o", "--overwrite", is_flag=True, default=False)
-def main(n_samples: int, seed: int, mode: str, overwrite: bool):
-    assert mode in {"single", "blend"}
+def main(n_samples: int, seed: int, overwrite: bool):
 
     pl.seed_everything(seed)
 
-    if mode == "single":
-        dataset_file = DATA_DIR / "single_galaxies_test.pt"
-        if not overwrite and Path(dataset_file).exists():
-            raise IOError("File already exists and overwrite flag is 'False'.")
+    dataset_file = DATA_DIR / "blends_test.pt"
+    if not overwrite and Path(dataset_file).exists():
+        raise IOError("File already exists and overwrite flag is 'False'.")
 
-        dataset = generate_individual_dataset(n_samples, CATSIM_TABLE, PSF, slen=53)
+    # https://www.wolframalpha.com/input?i=poisson+distribution+with+mean+3.5
+    dataset = generate_dataset(
+        n_samples,
+        CATSIM_TABLE,
+        STAR_MAGS,
+        psf=PSF,
+        max_n_sources=10,
+    )
 
-        # compute SNR
-        dataset["snr"] = get_snr(dataset["noiseless"], dataset["background"])
-
-        # convert everything to float and remove useless params
-        dataset.pop("galaxy_params")
-
-        for p1, q in dataset.items():
-            dataset[p1] = q.float()
-
-        torch.save(dataset, dataset_file)
-
-    else:
-        dataset_file = DATA_DIR / "blends_test.pt"
-        if not overwrite and Path(dataset_file).exists():
-            raise IOError("File already exists and overwrite flag is 'False'.")
-
-        # https://www.wolframalpha.com/input?i=poisson+distribution+with+mean+3.5
-        dataset = generate_dataset(
-            n_samples,
-            CATSIM_TABLE,
-            STAR_MAGS,
-            psf=PSF,
-            max_n_sources=10,
-        )
-
-        torch.save(dataset, dataset_file)
+    torch.save(dataset, dataset_file)
 
 
 if __name__ == "__main__":
