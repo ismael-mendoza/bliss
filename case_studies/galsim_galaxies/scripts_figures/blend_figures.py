@@ -240,7 +240,11 @@ class BlendSimulationFigure(BlissFigure):
         # need to mask the (very few) ellipticities that are NaNs from adaptive moments
         te1, te2 = true_ellips[:, 0], true_ellips[:, 1]
         pe1, pe2 = est_ellips[:, 0], est_ellips[:, 1]
-        mask = ~np.isnan(te1) & ~np.isnan(pe1)  # only need one component bc who func is written
+        mask1 = np.isnan(te1)
+        mask2 = np.isnan(pe1)
+        mask = ~mask1 & ~mask2  # only need one component bc how func is written
+        print(f"INFO: Total number of true ellipticity NaNs is: {sum(mask1)}")
+        print(f"INFO: Total number of reconstructed ellipticity NaNs is: {sum(mask2)}")
         xlims = (0.5, 3)
         ylabel = r"$g_{1}^{\rm recon} - g_{1}^{\rm true}$"
         x, y = np.log10(snr)[mask], (pe1 - te1)[mask]

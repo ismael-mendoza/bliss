@@ -96,8 +96,8 @@ class AutoEncoderFigures(BlissFigure):
         fig, axes = plt.subplots(1, 3, figsize=(18, 7))
         ax1, ax2, ax3 = axes.flatten()
         snr = meas["snr"]
-        xticks = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
-        xlims = (0.5, 3)
+        xticks = [1.0, 1.5, 2.0, 2.5, 3.0]
+        xlims = (1.0, 3)
         xlabel = r"$\log_{10} \rm SNR$"
 
         # fluxes
@@ -112,7 +112,12 @@ class AutoEncoderFigures(BlissFigure):
 
         # ellipticities
         true_ellip1, recon_ellip1 = meas["true_ellips"][:, 0], meas["recon_ellips"][:, 0]
-        x, y = np.log10(snr), recon_ellip1 - true_ellip1
+        mask1 = np.isnan(true_ellip1)
+        mask2 = np.isnan(recon_ellip1)
+        mask = ~mask1 & ~mask2
+        print(f"INFO: Total number of true ellipticity NaNs is: {sum(mask1)}")
+        print(f"INFO: Total number of reconstructed ellipticity NaNs is: {sum(mask2)}")
+        x, y = np.log10(snr[mask]), recon_ellip1[mask] - true_ellip1[mask]
         scatter_shade_plot(ax2, x, y, xlims, delta=0.2, use_boot=True)
         ax2.set_xlim(xlims)
         ax2.set_xlabel(xlabel)
