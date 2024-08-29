@@ -535,3 +535,49 @@ Run training autoencoder script...
 
 INFO: Saving model as version 13
 INFO: Saved checkpoint 'data/out/autoencoder/version_13/checkpoints/epoch=9281-val_loss=2691874.000.ckpt' as weights models/autoencoder.pt
+
+./bin/run_autoencoder_train.py -s 42 --lr 1e-4 -t 44_1
+
+Run training autoencoder script...
+        With tag 44_1 and seed 42 at 2024-08-23 16:09:28.859708
+        validate_every_n_epoch 1,
+        batch_size 128, n_epochs 10001
+        learning rate 0.0001
+
+INFO: Saving model as version 14
+
+./bin/run_autoencoder_train.py -s 42 --lr 1e-5 -t 44_1
+
+Run training autoencoder script...
+        With tag 44_1 and seed 42 at 2024-08-24 18:35:36.021365
+        validate_every_n_epoch 1,
+        batch_size 128, n_epochs 10001
+        learning rate 1e-05
+
+INFO: Saving model as version 15
+
+./bin/run_autoencoder_train.py -s 42 --lr 5e-4 -t 44_1
+
+Run training autoencoder script...
+        With tag 44_1 and seed 42 at 2024-08-25 23:34:06.778415
+        validate_every_n_epoch 1,
+        batch_size 128, n_epochs 10001
+        learning rate 0.0005
+
+INFO: Saving model as version 16
+
+./bin/run_autoencoder_train.py -s 42 --lr 1e-3 -t 44_1
+
+Run training autoencoder script...
+        With tag 44_1 and seed 42 at 2024-08-27 01:18:37.421417
+        validate_every_n_epoch 1,
+        batch_size 128, n_epochs 10001
+        learning rate 0.001
+
+INFO: Saving model as version 17
+INFO: Saved checkpoint 'data/out/autoencoder/version_15/checkpoints/epoch=9977-val_loss=2692198.250.ckpt' as weights models/autoencoder.pt
+
+Run training autoencoder data generation script...
+        With tag 42_1 and seed 42 at 2024-08-29 17:06:08.539434, n_samples 245593.
+        Train, test, and val divided into 3 equal parts on full catalog after
+        SNR cut > 10 on catalog.
