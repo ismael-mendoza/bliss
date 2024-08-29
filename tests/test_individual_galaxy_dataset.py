@@ -16,6 +16,8 @@ def test_galaxy_blend_catalogs(home_dir: Path):
     snr_mask = catsim_table["snr"] > 10
     final_table = catsim_table[snr_mask]
 
+    assert np.all(catsim_table["i_ab"].value < 27.3)  # checking default pre-established
+
     ds = generate_individual_dataset(3000, final_table, psf, slen=53, replace=False)
 
     image_fluxes = reduce(ds["noiseless"], "b c h w -> b", "sum")
