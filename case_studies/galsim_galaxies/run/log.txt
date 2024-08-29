@@ -581,3 +581,23 @@ Run training autoencoder data generation script...
         With tag 42_1 and seed 42 at 2024-08-29 17:06:08.539434, n_samples 245593.
         Train, test, and val divided into 3 equal parts on full catalog after
         SNR cut > 10 on catalog.
+
+./bin/run_autoencoder_train.py -s 42 --lr 1e-5 -t 42_1
+
+Run training autoencoder script...
+        With tag 42_1 and seed 42 at 2024-08-29 18:15:18.304090
+        validate_every_n_epoch 1,
+        batch_size 128, n_epochs 10001
+        learning rate 1e-05
+
+INFO: Saving model as version 18
+
+Run training blend data generation script...
+        With tag 42_1 and seed 42 at 2024-08-29 19:48:04.175122
+        Galaxy density 185.0, star_density 0.0, and
+        Only bright 'True' (defined with snr > 10),
+        no padding galaxies 'False', n_samples 10000.
+        Samples will be divided into 3 datasets of blends with equal number.
+
+INFO: Smaller catalog with only bright sources of length: 245593
+INFO: Removing bright stars with i < 20 magnitude, final catalog length: 17434
