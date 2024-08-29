@@ -4,91 +4,13 @@ from pathlib import Path
 from typing import TextIO
 
 import pytorch_lightning as L
-import torch
-from astropy.table import Table
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader, Dataset
 
-from bliss.datasets.galsim_blends import SavedGalsimBlends, generate_dataset
-from bliss.datasets.lsst import get_default_lsst_psf
-from bliss.datasets.table_utils import column_to_tensor
+from bliss.datasets.galsim_blends import SavedGalsimBlends
 
 NUM_WORKERS = 0
-
-
-def create_dataset(
-    catsim_file: str,
-    stars_mag_file: str,
-    n_samples: int,
-    train_val_split: int,
-    train_ds_file: str,
-    val_ds_file: str,
-    max_shift: float,
-    max_n_sources: int,
-    slen: int = 40,
-    bp: int = 24,
-    only_bright=False,
-    add_galaxies_in_padding=True,
-    galaxy_density: float = 185,
-    star_density: float = 10,
-    log_file: TextIO = sys.stdout,
-):
-    print("INFO: Overwriting dataset...", file=log_file)
-
-    # prepare bigger dataset
-    catsim_table = Table.read(catsim_file)
-    all_star_mags = column_to_tensor(Table.read(stars_mag_file), "i_ab")
-    psf = get_default_lsst_psf()
-
-    if only_bright:
-        bright_mask = catsim_table["i_ab"] < 23
-        new_table = catsim_table[bright_mask]
-        print(
-            "INFO: Smaller catalog with only bright sources of length:",
-            len(new_table),
-            file=log_file,
-        )
-
-    else:
-        mask = catsim_table["i_ab"] < 27.3
-        new_table = catsim_table[mask]
-        print(
-            "INFO: Complete galaxy catalog with only i < 27.3 magnitude of length:",
-            len(new_table),
-            file=log_file,
-        )
-
-    # we mask stars with mag < 20 which corresponds to SNR >1000
-    # as the notebook `test-stars-with-new-model` shows.
-    new_all_star_mags = all_star_mags[all_star_mags > 20]
-    print(
-        "INFO: Removing bright stars with only i < 20 magnitude, final catalog length:",
-        len(new_all_star_mags),
-        file=log_file,
-    )
-
-    dataset = generate_dataset(
-        n_samples,
-        new_table,
-        new_all_star_mags,
-        psf=psf,
-        max_n_sources=max_n_sources,
-        galaxy_density=galaxy_density,
-        star_density=star_density,
-        slen=slen,
-        bp=bp,
-        max_shift=max_shift,
-        add_galaxies_in_padding=add_galaxies_in_padding,
-    )
-
-    # train, test split
-    train_ds = {p: q[:train_val_split] for p, q in dataset.items()}
-    val_ds = {p: q[train_val_split:] for p, q in dataset.items()}
-
-    # now save  data
-    torch.save(train_ds, train_ds_file)
-    torch.save(val_ds, val_ds_file)
 
 
 def setup_training_objects(
