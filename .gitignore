@@ -32,3 +32,4 @@ venv
 case_studies/galsim_galaxies/data/*.pt
 **/out
 **/data
+!**/data/catsim_snr.fits
