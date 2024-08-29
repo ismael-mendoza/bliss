@@ -33,7 +33,7 @@ def main(seed: int, tag: str):
     if Path(train_ds_file).exists():
         raise IOError("Training file already exists")
 
-    with open("log.txt", "a") as f:
+    with open("run/log.txt", "a") as f:
         now = datetime.datetime.now()
         print("", file=f)
         log_msg = f"""Run training autoencoder data generation script...
@@ -48,12 +48,13 @@ def main(seed: int, tag: str):
     # shuffled because of indices in random.choice
     dataset = generate_individual_dataset(n_rows, CATSIM_TABLE, PSF, slen=53, replace=False)
 
-    # train, val split
+    # train, val, test split
+    # no galaxies shared
     train_ds = {p: q[: n_rows // 3] for p, q in dataset.items()}
     val_ds = {p: q[n_rows // 3 : 2 * n_rows // 3] for p, q in dataset.items()}
     test_ds = {p: q[2 * n_rows // 3 :] for p, q in dataset.items()}
 
-    # now save  data
+    # now save data
     torch.save(train_ds, train_ds_file)
     torch.save(val_ds, val_ds_file)
     torch.save(test_ds, test_ds_file)
