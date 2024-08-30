@@ -12,11 +12,11 @@ from bliss.reporting import get_single_galaxy_ellipticities, get_snr
 
 def test_galaxy_blend_catalogs(home_dir: Path):
     psf = get_default_lsst_psf()
-    catsim_table = Table.read(home_dir / "data" / "catsim_snr.fits")
-    snr_mask = catsim_table["snr"] > 10
-    final_table = catsim_table[snr_mask]
+    _catsim_table = Table.read(home_dir / "data" / "catsim_snr.fits")
+    assert np.all(_catsim_table["i_ab"].value < 27.3)  # checking default pre-established
 
-    assert np.all(catsim_table["i_ab"].value < 27.3)  # checking default pre-established
+    snr_mask = _catsim_table["snr"] > 10
+    final_table = _catsim_table[snr_mask]
 
     ds = generate_individual_dataset(3000, final_table, psf, slen=53, replace=False)
 
@@ -33,17 +33,28 @@ def test_galaxy_blend_catalogs(home_dir: Path):
     cat_fluxes = convert_mag_to_flux(mags)
 
     # check indices match
-    assert np.all(np.isin(ds["indices"].numpy(), final_table["galtileid"]))
+    ids = ds["indices"].numpy()
+    cat_ids = final_table["galtileid"].value
+    assert np.all(np.isin(ids, cat_ids)), "All ids should be contained in OG catalog"
 
     # check fluxes match
     assert np.allclose(cat_fluxes, saved_fluxes, rtol=1e-4, atol=0)
     res = (adjusted_fluxes - image_fluxes) / adjusted_fluxes
     assert np.all(res.numpy() > 0)
-    assert sum(res.numpy() > 0.1) / 3000 < 0.01  # not too many big galaxies
+    assert sum(res.numpy() > 0.1) / 3000 < 0.01  # small fraction of big galaxies
 
     # check snr cut was correctly propagated to images
     image_snr = get_snr(ds["noiseless"], ds["background"]).numpy()
     assert np.all(image_snr > 9.9)  # fudge factor
+
+    # check snr matches what is in the catalog to 1%
+    mask = np.isin(cat_ids, ids)
+    cat1 = final_table[mask]
+    cat1.sort(keys="galtileid")  # sort in place
+    assert np.all(cat1["galtileid"].value == np.sort(cat1["galtileid"].value))
+    assert np.all(np.isin(cat1["galtileid"], ids))
+    sorted_indices = np.argsort(ids)
+    assert np.allclose(cat1["snr"], image_snr[sorted_indices])
 
     # check ellpiticity distribution is correct
     ellips = get_single_galaxy_ellipticities(ds["noiseless"][:, 0, :, :])
