@@ -15,7 +15,7 @@ from experiment.scripts_figures.ae_figures import AutoEncoderFigures
 from experiment.scripts_figures.blend_figures import BlendSimulationFigure
 from experiment.scripts_figures.toy_figures import ToySeparationFigure
 
-ALL_FIGS = ("single_gal", "blend_gal", "toy")
+ALL_FIGS = {"single", "blend", "toy"}
 
 pl.seed_everything(42)
 
@@ -56,13 +56,13 @@ def _load_models(device):
     return encoder, decoder
 
 
-def _make_autoencoder_figures(device, overwrite: bool):
+def _make_autoencoder_figures(device, tag: str, overwrite: bool):
     print("INFO: Creating autoencoder figures...")
     autoencoder = OneCenteredGalaxyAE()
     autoencoder.load_state_dict(torch.load("models/autoencoder.pt"))
     autoencoder = autoencoder.to(device).eval()
     autoencoder.requires_grad_(False)
-    galaxies_file = "/nfs/turbo/lsa-regier/scratch/ismael/datasets/test_ae_ds_42_1.pt"
+    galaxies_file = f"/nfs/turbo/lsa-regier/scratch/ismael/datasets/test_ae_ds_{tag}.pt"
 
     # arguments for figures
     args = (autoencoder, galaxies_file)
@@ -74,9 +74,9 @@ def _make_autoencoder_figures(device, overwrite: bool):
     )
 
 
-def _make_blend_figures(encoder, decoder, overwrite: bool):
+def _make_blend_figures(encoder, decoder, tag: str, overwrite: bool):
     print("INFO: Creating figures for metrics on simulated blended galaxies.")
-    blend_file = Path("/nfs/turbo/lsa-regier/scratch/ismael/datasets/blends_test.pt")
+    blend_file = Path(f"/nfs/turbo/lsa-regier/scratch/ismael/datasets/test_ds_{tag}.pt")
     cachedir = "/nfs/turbo/lsa-regier/scratch/ismael/cache/"
     BlendSimulationFigure(overwrite=overwrite, figdir="figures", cachedir=cachedir)(
         blend_file, encoder, decoder
@@ -85,20 +85,23 @@ def _make_blend_figures(encoder, decoder, overwrite: bool):
 
 @click.command()
 @click.option("-m", "--mode", required=True, type=str, help="which figure to make")
+@click.option("-t", "--tag", default=None, type=str, help="dataset tag for testing")
 @click.option("-o", "--overwrite", is_flag=True, default=False)
-def main(mode: str, overwrite: bool):
-    assert mode in {"single_gal", "toy", "blend_gal"}
+def main(mode: str, tag: str, overwrite: bool):
+    assert mode in ALL_FIGS
     device = torch.device("cuda:0")
 
     # FIGURE 1: Autoencoder single galaxy reconstruction
-    if mode == "single_gal":
-        _make_autoencoder_figures(device, overwrite)
+    if mode == "single":
+        assert tag is not None
+        _make_autoencoder_figures(device, tag, overwrite)
 
-    if mode in {"toy", "blend_gal"}:
+    if mode in {"toy", "blend"}:
         encoder, decoder = _load_models(device)
 
-    if mode == "blend_gal":
-        _make_blend_figures(encoder, decoder, overwrite)
+    if mode == "blend":
+        assert tag is not None
+        _make_blend_figures(encoder, decoder, tag, overwrite)
 
     if mode == "toy":
         print("INFO: Creating figures for testing BLISS on pair galaxy toy example.")
