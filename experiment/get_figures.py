@@ -11,9 +11,9 @@ from bliss.encoders.binary import BinaryEncoder
 from bliss.encoders.deblend import GalaxyEncoder
 from bliss.encoders.detection import DetectionEncoder
 from bliss.encoders.encoder import Encoder
-from case_studies.galsim_galaxies.scripts_figures.ae_figures import AutoEncoderFigures
-from case_studies.galsim_galaxies.scripts_figures.blend_figures import BlendSimulationFigure
-from case_studies.galsim_galaxies.scripts_figures.toy_figures import ToySeparationFigure
+from experiment.galsim_galaxies.scripts_figures.ae_figures import AutoEncoderFigures
+from experiment.galsim_galaxies.scripts_figures.blend_figures import BlendSimulationFigure
+from experiment.galsim_galaxies.scripts_figures.toy_figures import ToySeparationFigure
 
 ALL_FIGS = ("single_gal", "blend_gal", "toy")
 

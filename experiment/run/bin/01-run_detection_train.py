@@ -5,10 +5,7 @@ from pathlib import Path
 import pytorch_lightning as L
 
 from bliss.encoders.detection import DetectionEncoder
-from case_studies.galsim_galaxies.run.training_functions import (
-    create_dataset,
-    setup_training_objects,
-)
+from experiment.galsim_galaxies.run.training_functions import create_dataset, setup_training_objects
 
 OVERWRITE = True
 N_SAMPLES = 1028 * 20

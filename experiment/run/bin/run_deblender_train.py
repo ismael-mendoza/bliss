@@ -6,7 +6,7 @@ from pathlib import Path
 import click
 
 from bliss.encoders.deblend import GalaxyEncoder
-from case_studies.galsim_galaxies.run.training_functions import run_encoder_training
+from experiment.galsim_galaxies.run.training_functions import run_encoder_training
 
 NUM_WORKERS = 0
 AE_STATE_DICT = "../models/autoencoder.pt"

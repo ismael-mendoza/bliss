@@ -118,6 +118,8 @@ class ToySeparationFigure(BlissFigure):
             }
             full_cat = FullCatalog(slen, slen, d)
             image, _, _ = render_full_catalog(full_cat, psf, slen, bp)
+
+            # TODO: Maybe fix noise realization for a given image.
             images[ii] = add_noise_and_background(image, background[ii])
 
         # predictions from encoder

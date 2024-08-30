@@ -13,7 +13,7 @@ from bliss.encoders.detection import DetectionEncoder
 
 
 def test_encoder_forward(home_dir, tmp_path):
-    ae_state_dict = home_dir / "case_studies" / "galsim_galaxies" / "models" / "autoencoder.pt"
+    ae_state_dict = home_dir / "experiment" / "galsim_galaxies" / "models" / "autoencoder.pt"
 
     catsim_table = Table.read(home_dir / "data" / "OneDegSq.fits")
     all_star_mags = column_to_tensor(

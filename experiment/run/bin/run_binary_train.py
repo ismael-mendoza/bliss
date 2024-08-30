@@ -3,7 +3,7 @@
 import click
 
 from bliss.encoders.binary import BinaryEncoder
-from case_studies.galsim_galaxies.run.training_functions import run_encoder_training
+from experiment.galsim_galaxies.run.training_functions import run_encoder_training
 
 NUM_WORKERS = 0
 
