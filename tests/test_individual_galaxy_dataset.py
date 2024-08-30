@@ -64,8 +64,10 @@ def test_galaxy_blend_catalogs(home_dir: Path):
     e1 = e1[mask]
     e2 = e2[mask]
 
+    # symmetric
     np.allclose(np.mean(e1), 0.0, rtol=0.0, atol=1e-2)
     np.allclose(np.mean(e2), 0.0, rtol=0.0, atol=1e-2)
 
+    # reasonable scatter
     np.allclose(np.std(e1), 0.15, rtol=0.0, atol=1e-2)
     np.allclose(np.std(e2), 0.15, rtol=0.0, atol=1e-2)
