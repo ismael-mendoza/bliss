@@ -2,7 +2,7 @@
 import click
 
 from bliss.encoders.detection import DetectionEncoder
-from experiment.galsim_galaxies.run.training_functions import run_encoder_training
+from experiment.run.training_functions import run_encoder_training
 
 
 @click.command()
