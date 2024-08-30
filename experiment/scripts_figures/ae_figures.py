@@ -6,7 +6,7 @@ from torch import Tensor
 
 from bliss.encoders.autoencoder import OneCenteredGalaxyAE
 from bliss.plotting import BlissFigure, plot_image, scatter_shade_plot
-from bliss.reporting import get_single_galaxy_measurements
+from bliss.reporting import get_single_galaxy_measurements, get_snr
 
 
 class AutoEncoderFigures(BlissFigure):
@@ -37,12 +37,13 @@ class AutoEncoderFigures(BlissFigure):
     def compute_data(self, autoencoder: OneCenteredGalaxyAE, images_file: str):
         device = autoencoder.device  # GPU is better otherwise slow.
         image_data = torch.load(images_file)
-        images: Tensor = image_data["images"]
+        images: Tensor = image_data["images"].float()  # for NN
+        backgrounds = image_data["background"].float()  # for NN
+        background: Tensor = backgrounds[0].reshape(1, 1, 53, 53).to(device)
+        noiseless_images: Tensor = image_data["noiseless"].float()  # for NN
+
+        snr: Tensor = get_snr(noiseless_images, backgrounds)
         recon_means = torch.tensor([])
-        backgrounds = image_data["background"]
-        background: Tensor = image_data["background"][0].reshape(1, 1, 53, 53).to(device)
-        noiseless_images: Tensor = image_data["noiseless"]
-        snr: Tensor = image_data["snr"].reshape(-1)
 
         print("INFO: Computing reconstructions from saved autoencoder model...")
         n_images = images.shape[0]
