@@ -55,8 +55,6 @@ def test_galaxy_blend_catalogs(home_dir: Path):
     assert gbools.shape == (100, max_n_sources, 1)
     assert max_n_sources >= n_sources.max()
 
-    # TODO: checks on tiles parameters
-
     # plocs
     assert torch.all(plocs / slen >= 0) and torch.all(plocs / slen <= 1)
 
