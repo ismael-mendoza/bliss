@@ -601,3 +601,35 @@ Run training blend data generation script...
 
 INFO: Smaller catalog with only bright sources of length: 245593
 INFO: Removing bright stars with i < 20 magnitude, final catalog length: 17434
+
+INFO: Saved checkpoint 'data/out/autoencoder/version_18/checkpoints/epoch=6595-val_loss=2703479.000.ckpt' as weights models/autoencoder.pt
+
+./bin/run_autoencoder_train.py -s 42 --lr 5e-5 -t 42_1
+
+Run training autoencoder script...
+        With tag 42_1 and seed 42 at 2024-08-30 20:24:02.937318
+        validate_every_n_epoch 1,
+        batch_size 128, n_epochs 10001
+        learning rate 5e-05
+
+INFO: Saving model as version 19
+
+./bin/run_autoencoder_train.py -s 42 --lr 1e-6 -t 42_1
+
+Run training autoencoder script...
+        With tag 42_1 and seed 42 at 2024-08-31 22:10:39.534207
+        validate_every_n_epoch 1,
+        batch_size 128, n_epochs 10001
+        learning rate 1e-06
+
+INFO: Saving model as version 20
+
+./bin/run_autoencoder_train.py -s 42 --lr 5e-6 -t 42_1
+
+Run training autoencoder script...
+        With tag 42_1 and seed 42 at 2024-09-01 22:47:27.520386
+        validate_every_n_epoch 1,
+        batch_size 128, n_epochs 10001
+        learning rate 5e-06
+
+INFO: Saving model as version 21
