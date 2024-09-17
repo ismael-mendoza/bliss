@@ -12,6 +12,7 @@ from astropy.table import Table
 from bliss.datasets.galsim_blends import generate_dataset
 from bliss.datasets.lsst import (
     GALAXY_DENSITY,
+    STAR_DENSITY,
     get_default_lsst_psf,
     prepare_final_galaxy_catalog,
     prepare_final_star_catalog,
@@ -35,7 +36,7 @@ PSF = get_default_lsst_psf()
 @click.option("--only-bright", is_flag=True, default=False)
 @click.option("--no-padding-galaxies", is_flag=True, default=False)
 @click.option("--galaxy-density", default=GALAXY_DENSITY, type=float)
-@click.option("--star-density", default=10, type=float)
+@click.option("--star-density", default=STAR_DENSITY, type=float)
 def main(
     seed: int,
     tag: str,
