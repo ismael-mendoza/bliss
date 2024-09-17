@@ -11,7 +11,9 @@ from astropy.table import Table
 
 from bliss.datasets.galsim_blends import generate_dataset
 from bliss.datasets.lsst import (
+    DEFAULT_SLEN,
     GALAXY_DENSITY,
+    MAX_N_SOURCES,
     STAR_DENSITY,
     get_default_lsst_psf,
     prepare_final_galaxy_catalog,
@@ -33,16 +35,12 @@ PSF = get_default_lsst_psf()
 @click.option("-s", "--seed", default=42, type=int)
 @click.option("-t", "--tag", required=True, type=str, help="Dataset tag")
 @click.option("-n", "--n-samples", default=10000, type=int)  # equally divided total blends
-@click.option("--only-bright", is_flag=True, default=False)
-@click.option("--no-padding-galaxies", is_flag=True, default=False)
 @click.option("--galaxy-density", default=GALAXY_DENSITY, type=float)
 @click.option("--star-density", default=STAR_DENSITY, type=float)
 def main(
     seed: int,
     tag: str,
     n_samples: int,
-    only_bright: bool,
-    no_padding_galaxies: bool,
     galaxy_density: float,
     star_density: float,
 ):
@@ -61,38 +59,20 @@ def main(
         print("", file=f)
         log_msg = f"""Run training blend data generation script...
         With tag {tag} and seed {seed} at {now}
-        Galaxy density {galaxy_density}, star_density {star_density}, and
-        Only bright '{only_bright}' (defined with snr > 10),
-        no padding galaxies '{no_padding_galaxies}', n_samples {n_samples}.
+        Galaxy density {galaxy_density}, star_density {star_density}, and n_samples {n_samples}.
         Samples will be divided into 3 datasets of blends with equal number.
         """
         print(log_msg, file=f)
 
-        if only_bright:
-            bright_mask = CATSIM_CAT["snr"] > 10
-            new_table = CATSIM_CAT[bright_mask]
-            print(
-                "INFO: Smaller catalog with only bright sources of length:",
-                len(new_table),
-                file=f,
-            )
-        else:
-            new_table = CATSIM_CAT
-
-        print(
-            "INFO: Removing bright stars with i < 20 magnitude, final catalog length:",
-            len(STAR_MAGS),
-            file=f,
-        )
-
-    n_rows = len(new_table)
+    # indepent tables of different galaxies
+    n_rows = len(CATSIM_CAT)
     shuffled_indices = np.random.choice(np.arange(n_rows), size=n_rows, replace=False)
     train_indices = shuffled_indices[: n_rows // 3]
     val_indices = shuffled_indices[n_rows // 3 : n_rows // 3 * 2]
     test_indices = shuffled_indices[n_rows // 3 * 2 : n_rows]
-    table1 = new_table[train_indices]
-    table2 = new_table[val_indices]
-    table3 = new_table[test_indices]
+    table1 = CATSIM_CAT[train_indices]
+    table2 = CATSIM_CAT[val_indices]
+    table3 = CATSIM_CAT[test_indices]
 
     dss = []
     for t in (table1, table2, table3):
@@ -102,14 +82,12 @@ def main(
                 t,
                 STAR_MAGS,
                 psf=PSF,
-                # https://www.wolframalpha.com/input?i=poisson+distribution+with+mean+3.5
-                max_n_sources=10,
+                max_n_sources=MAX_N_SOURCES,
                 galaxy_density=galaxy_density,
                 star_density=star_density,
-                slen=40,
+                slen=DEFAULT_SLEN,
                 bp=24,
                 max_shift=0.5,
-                add_galaxies_in_padding=not no_padding_galaxies,
             )
         )
 
