@@ -10,21 +10,22 @@ import torch
 from astropy.table import Table
 
 from bliss.datasets.galsim_blends import generate_dataset
-from bliss.datasets.lsst import get_default_lsst_psf
+from bliss.datasets.lsst import (
+    GALAXY_DENSITY,
+    get_default_lsst_psf,
+    prepare_final_galaxy_catalog,
+    prepare_final_star_catalog,
+)
 from bliss.datasets.table_utils import column_to_tensor
 
 HOME_DIR = Path(__file__).parent.parent.parent
-CATSIM_TABLE = Table.read(HOME_DIR / "data" / "catsim_snr.fits")
-_stars_mags = column_to_tensor(Table.read(HOME_DIR / "data" / "stars_med_june2018.fits"), "i_ab")
-
-
-# we mask out stars with mag < 20 which corresponds to SNR >1000
-# as the notebook `test-stars-with-new-model` shows.
-STAR_MAGS = _stars_mags[_stars_mags > 20]  # remove very bright stars
+_cat = Table.read(HOME_DIR / "data" / "OneDegSq.fits")
+_star_mags = column_to_tensor(Table.read(HOME_DIR / "data" / "stars_med_june2018.fits"), "i_ab")
+CATSIM_CAT = prepare_final_galaxy_catalog(_cat)
+STAR_MAGS = prepare_final_star_catalog(_star_mags)
 
 
 PSF = get_default_lsst_psf()
-assert np.all(CATSIM_TABLE["i_ab"].value < 27.3)
 
 
 @click.command()
@@ -33,7 +34,7 @@ assert np.all(CATSIM_TABLE["i_ab"].value < 27.3)
 @click.option("-n", "--n-samples", default=10000, type=int)  # equally divided total blends
 @click.option("--only-bright", is_flag=True, default=False)
 @click.option("--no-padding-galaxies", is_flag=True, default=False)
-@click.option("--galaxy-density", default=185, type=float)
+@click.option("--galaxy-density", default=GALAXY_DENSITY, type=float)
 @click.option("--star-density", default=10, type=float)
 def main(
     seed: int,
@@ -67,15 +68,15 @@ def main(
         print(log_msg, file=f)
 
         if only_bright:
-            bright_mask = CATSIM_TABLE["snr"] > 10
-            new_table = CATSIM_TABLE[bright_mask]
+            bright_mask = CATSIM_CAT["snr"] > 10
+            new_table = CATSIM_CAT[bright_mask]
             print(
                 "INFO: Smaller catalog with only bright sources of length:",
                 len(new_table),
                 file=f,
             )
         else:
-            new_table = CATSIM_TABLE
+            new_table = CATSIM_CAT
 
         print(
             "INFO: Removing bright stars with i < 20 magnitude, final catalog length:",

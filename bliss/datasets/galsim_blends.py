@@ -11,7 +11,12 @@ from tqdm import tqdm
 
 from bliss.catalog import FullCatalog, TileCatalog
 from bliss.datasets.background import add_noise_and_background, get_constant_background
-from bliss.datasets.lsst import PIXEL_SCALE, convert_mag_to_flux, get_default_lsst_background
+from bliss.datasets.lsst import (
+    GALAXY_DENSITY,
+    PIXEL_SCALE,
+    convert_mag_to_flux,
+    get_default_lsst_background,
+)
 from bliss.datasets.table_utils import catsim_row_to_galaxy_params
 
 
@@ -111,7 +116,7 @@ def generate_dataset(
     all_star_mags: np.ndarray,  # i-band
     psf: galsim.GSObject,
     max_n_sources: int,
-    galaxy_density: float = 185,  # counts / sq. arcmin
+    galaxy_density: float = GALAXY_DENSITY,  # counts / sq. arcmin
     star_density: float = 10,  # counts / sq. arcmin
     slen: int = 40,
     bp: int = 24,
