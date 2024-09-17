@@ -18,6 +18,8 @@ PIXEL_SCALE = 0.2  # arcsecs / pixel
 MAX_MAG = 27.0  # both galaxies and stars
 MIN_STAR_MAG = 20.0  # stars with lower magnitude have > 1000 SNR
 
+GALAXY_DENSITY = 160  # arcmin^{-2}, with mag cut above
+
 
 def convert_mag_to_flux(mag: Tensor) -> Tensor:
     """Assuming gain = 1 always."""
