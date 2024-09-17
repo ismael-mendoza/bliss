@@ -64,7 +64,7 @@ def main(
         """
         print(log_msg, file=f)
 
-    # indepent tables of different galaxies
+    # disjointed tables with different galaxies
     n_rows = len(CATSIM_CAT)
     shuffled_indices = np.random.choice(np.arange(n_rows), size=n_rows, replace=False)
     train_indices = shuffled_indices[: n_rows // 3]
