@@ -41,5 +41,5 @@ def test_encoder_forward(home_dir, tmp_path):
             detection_encoder.get_loss(im, bg, tc)
 
         for b in dl2:
-            im, bg, tc, pd = parse_dataset(b)
-            galaxy_encoder.get_loss(im, pd, bg, tc)
+            im, bg, tc, sf = parse_dataset(b)
+            galaxy_encoder.get_loss(im, sf, bg, tc)

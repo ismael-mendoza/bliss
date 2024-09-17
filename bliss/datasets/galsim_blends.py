@@ -12,8 +12,10 @@ from tqdm import tqdm
 from bliss.catalog import FullCatalog, TileCatalog
 from bliss.datasets.background import add_noise_and_background, get_constant_background
 from bliss.datasets.lsst import (
+    DEFAULT_SLEN,
     GALAXY_DENSITY,
     PIXEL_SCALE,
+    STAR_DENSITY,
     convert_mag_to_flux,
     get_default_lsst_background,
 )
@@ -24,9 +26,8 @@ class SavedGalsimBlends(Dataset):
     def __init__(
         self,
         dataset_file: str,
-        slen: int = 40,
+        slen: int = DEFAULT_SLEN,
         tile_slen: int = 4,
-        keep_padding: bool = False,
     ) -> None:
         super().__init__()
         ds: dict[str, Tensor] = torch.load(dataset_file)
@@ -35,18 +36,13 @@ class SavedGalsimBlends(Dataset):
         self.background = ds.pop("background").float()
         self.epoch_size = len(self.images)
 
+        # stars need to be subratected for deblender
+        self.stars = ds.pop("star_fields").float()
+
         # don't need for training
         ds.pop("centered_sources")
         ds.pop("uncentered_sources")
         ds.pop("noiseless")
-
-        # avoid large memory usage if we don't need padding.
-        if not keep_padding:
-            ds.pop("paddings")
-            self.paddings = torch.tensor([0]).float()
-        else:
-            self.paddings = ds.pop("paddings").float()
-        self.keep_padding = keep_padding
 
         full_catalog = FullCatalog(slen, slen, ds)
         tile_catalogs = full_catalog.to_tile_params(tile_slen, ignore_extra_sources=True)
@@ -60,7 +56,7 @@ class SavedGalsimBlends(Dataset):
         return {
             "images": self.images[index],
             "background": self.background[index],
-            "paddings": self.paddings[index] if self.keep_padding else self.paddings,
+            "star_fields": self.stars[index],
             **tile_params_ii,
         }
 
@@ -117,53 +113,42 @@ def generate_dataset(
     psf: galsim.GSObject,
     max_n_sources: int,
     galaxy_density: float = GALAXY_DENSITY,  # counts / sq. arcmin
-    star_density: float = 10,  # counts / sq. arcmin
-    slen: int = 40,
+    star_density: float = STAR_DENSITY,  # counts / sq. arcmin
+    slen: int = DEFAULT_SLEN,
     bp: int = 24,
     max_shift: float = 0.5,  # within tile, 0.5 -> maximum
-    add_galaxies_in_padding: bool = True,
 ) -> dict[str, Tensor]:
+    assert slen > bp * 2, f"Need to add back padding galaxies if want slen: {slen}"
 
     images_list = []
     noiseless_images_list = []
     uncentered_sources_list = []
     centered_sources_list = []
-    paddings_list = []
+    star_fields_list = []
     params_list = []
 
     size = slen + 2 * bp
 
     background = get_constant_background(get_default_lsst_background(), (n_samples, 1, size, size))
 
-    # internal region
-    mean_sources_in = (galaxy_density + star_density) * (slen * PIXEL_SCALE / 60) ** 2
-    mean_sources_out = (
-        (galaxy_density + star_density) * (size**2 - slen**2) * (PIXEL_SCALE / 60) ** 2
-    )
+    # internal region, no galaxies in padding
+    mean_sources = (galaxy_density + star_density) * (slen * PIXEL_SCALE / 60) ** 2
     galaxy_prob = galaxy_density / (galaxy_density + star_density)
 
     for ii in tqdm(range(n_samples)):
         full_cat = sample_full_catalog(
             catsim_table,
             all_star_mags,
-            mean_sources=mean_sources_in,
+            mean_sources=mean_sources,
             max_n_sources=max_n_sources,
             slen=slen,
             max_shift=max_shift,
             galaxy_prob=galaxy_prob,
         )
-        center_noiseless, uncentered_sources, centered_sources = render_full_catalog(
+        noiseless, uncentered_sources, centered_sources = render_full_catalog(
             full_cat, psf, slen, bp
         )
 
-        if add_galaxies_in_padding:
-            padding_noiseless = _render_padded_image(
-                catsim_table, all_star_mags, mean_sources_out, galaxy_prob, psf, slen, bp
-            )
-        else:
-            padding_noiseless = torch.zeros_like(center_noiseless)
-
-        noiseless = center_noiseless + padding_noiseless
         noisy = add_noise_and_background(noiseless, background[ii, None])
 
         images_list.append(noisy)
@@ -172,18 +157,16 @@ def generate_dataset(
         centered_sources_list.append(centered_sources)
         params_list.append(full_cat.to_tensor_dict())
 
-        # separately keep padding since it's needed in the deblender loss function
-        # for that same purpose we also add central stars
+        # separately keep stars since it's needed in the deblender loss function
         sbool = rearrange(full_cat["star_bools"], "1 ms 1 -> ms 1 1 1")
         all_stars = reduce(uncentered_sources * sbool, "ms 1 h w -> 1 h w", "sum")
-        padding_with_stars_noiseless = padding_noiseless + all_stars
-        paddings_list.append(padding_with_stars_noiseless)
+        star_fields_list.append(all_stars)
 
     images, _ = pack(images_list, "* c h w")
     noiseless, _ = pack(noiseless_images_list, "* c h w")
     centered_sources, _ = pack(centered_sources_list, "* n c h w")
     uncentered_sources, _ = pack(uncentered_sources_list, "* n c h w")
-    paddings, _ = pack(paddings_list, "* c h w")
+    star_fields, _ = pack(star_fields_list, "* c h w")
     paramss = torch.cat(params_list, dim=0)
 
     assert centered_sources.shape[:3] == (n_samples, max_n_sources, 1)
@@ -195,46 +178,9 @@ def generate_dataset(
         "noiseless": noiseless,
         "uncentered_sources": uncentered_sources,
         "centered_sources": centered_sources,
-        "paddings": paddings,
+        "star_fields": star_fields,
         **paramss,
     }
-
-
-def _render_padded_image(
-    catsim_table: Table,
-    all_star_mags: np.ndarray,
-    mean_sources: float,
-    galaxy_prob: float,
-    psf: galsim.GSObject,
-    slen: int,
-    bp: int,
-):
-    """We need to include galaxies outside the padding for realism. Return noiseless version."""
-    size = slen + 2 * bp
-    n_sources = _sample_poisson_n_sources(mean_sources, torch.inf)
-    image = torch.zeros((1, size, size))
-
-    # we don't need to record or keep track, just produce the image in padding
-    # we will construct the image galaxy by galaxy
-    for _ in range(n_sources):
-
-        # offset always needs to be out of the central square
-        x, y = _uniform_out_of_square(slen, size)
-        offset = torch.tensor([x, y])
-
-        is_galaxy = _bernoulli(galaxy_prob, 1).bool().item()
-        if is_galaxy:
-            params, _ = _sample_galaxy_params(catsim_table, 1, 1)
-            assert params.shape == (1, 11)
-            one_galaxy_params = params[0]
-            galaxy = _render_one_galaxy(one_galaxy_params, psf, size, offset)
-            image += galaxy
-        else:
-            star_flux = _sample_star_fluxes(all_star_mags, 1, 1).item()
-            star = _render_one_star(psf, star_flux, size, offset)
-            image += star
-
-    return image
 
 
 def parse_dataset(dataset: dict[str, Tensor], tile_slen: int = 4):
@@ -242,8 +188,8 @@ def parse_dataset(dataset: dict[str, Tensor], tile_slen: int = 4):
     params = dataset.copy()  # make a copy to not change argument.
     images = params.pop("images")
     background = params.pop("background")
-    paddings = params.pop("paddings")
-    return images, background, TileCatalog(tile_slen, params), paddings
+    star_fields = params.pop("star_fields")
+    return images, background, TileCatalog(tile_slen, params), star_fields
 
 
 def sample_source_params(
@@ -251,7 +197,7 @@ def sample_source_params(
     all_star_mags: np.ndarray,  # i-band
     mean_sources: float,
     max_n_sources: int,
-    slen: int = 40,
+    slen: int = 100,
     max_shift: float = 0.5,
     galaxy_prob: float = 0.9,
 ) -> dict[str, Tensor]:
@@ -413,22 +359,6 @@ def _sample_poisson_n_sources(mean_sources: float, max_n_sources: int | float) -
 def _uniform(a, b, n_samples=1) -> Tensor:
     """Uses pytorch to return a single float ~ U(a, b)."""
     return (a - b) * torch.rand(n_samples) + b
-
-
-def _uniform_out_of_square(a: float, b: float) -> float:
-    """Returns two uniformly random numbers outside of central square with side-length a."""
-    assert a < b
-    x = _uniform(-b / 2, b / 2).item()
-    if abs(x) < a / 2:
-        is_left: bool = np.random.choice([False, True])
-        if is_left:
-            y = _uniform(-b / 2, -a / 2).item()
-        else:
-            y = _uniform(a / 2, b / 2).item()
-    else:
-        y = _uniform(-b / 2, b / 2).item()
-
-    return x, y
 
 
 def _bernoulli(prob, n_samples=1) -> Tensor:
