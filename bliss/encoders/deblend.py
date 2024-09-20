@@ -60,7 +60,7 @@ class GalaxyEncoder(pl.LightningModule):
         return self._enc(centered_ptiles)
 
     def get_loss(
-        self, images: Tensor, star_fields: Tensor, background: Tensor, tile_catalog: TileCatalog
+        self, images: Tensor, paddings: Tensor, background: Tensor, tile_catalog: TileCatalog
     ):
         _, nth, ntw, _ = tile_catalog.locs.shape
 
@@ -91,7 +91,7 @@ class GalaxyEncoder(pl.LightningModule):
         )
         assert recon_ptiles.shape[-1] == recon_ptiles.shape[-2] == self.ptile_slen
         recon_mean = reconstruct_image_from_ptiles(recon_ptiles, self.tile_slen)
-        recon_mean += background + star_fields  # target only galaxies within tiles.
+        recon_mean += background + paddings  # target only galaxies within tiles.
         assert recon_mean.ndim == 4 and recon_mean.shape[-1] == images.shape[-1]
         assert not torch.any(torch.logical_or(torch.isnan(recon_mean), torch.isinf(recon_mean)))
 
@@ -117,15 +117,15 @@ class GalaxyEncoder(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         """Pytorch lightning training step."""
-        images, background, tile_catalog, star_fields = parse_dataset(batch, self.tile_slen)
-        loss = self.get_loss(images, star_fields, background, tile_catalog)
+        images, background, tile_catalog, paddings = parse_dataset(batch, self.tile_slen)
+        loss = self.get_loss(images, paddings, background, tile_catalog)
         self.log("train/loss", loss, batch_size=len(images))
         return loss
 
     def validation_step(self, batch, batch_idx):
         """Pytorch lightning validation step."""
-        images, background, tile_catalog, star_fields = parse_dataset(batch, self.tile_slen)
-        loss = self.get_loss(images, star_fields, background, tile_catalog)
+        images, background, tile_catalog, paddings = parse_dataset(batch, self.tile_slen)
+        loss = self.get_loss(images, paddings, background, tile_catalog)
         self.log("val/loss", loss, batch_size=len(images))
         return loss
 
