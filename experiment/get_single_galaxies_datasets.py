@@ -8,7 +8,7 @@ import pytorch_lightning as L
 import torch
 from astropy.table import Table
 
-from bliss.datasets.galsim_blends import generate_individual_dataset
+from bliss.datasets.generate_galaxies import generate_individual_dataset
 from bliss.datasets.lsst import get_default_lsst_psf, prepare_final_galaxy_catalog
 
 NUM_WORKERS = 0

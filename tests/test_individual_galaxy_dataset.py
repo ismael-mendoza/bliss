@@ -5,7 +5,7 @@ import torch
 from astropy.table import Table
 from einops import reduce
 
-from bliss.datasets.galsim_blends import generate_individual_dataset
+from bliss.datasets.generate_galaxies import generate_individual_dataset
 from bliss.datasets.lsst import convert_mag_to_flux, get_default_lsst_psf
 from bliss.reporting import get_single_galaxy_ellipticities
 

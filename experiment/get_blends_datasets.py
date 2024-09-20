@@ -9,9 +9,8 @@ import pytorch_lightning as L
 import torch
 from astropy.table import Table
 
-from bliss.datasets.galsim_blends import generate_dataset
+from bliss.datasets.generate_galaxies import generate_dataset
 from bliss.datasets.lsst import (
-    DEFAULT_SLEN,
     GALAXY_DENSITY,
     MAX_N_SOURCES,
     STAR_DENSITY,
@@ -34,7 +33,7 @@ PSF = get_default_lsst_psf()
 @click.command()
 @click.option("-s", "--seed", default=42, type=int)
 @click.option("-t", "--tag", required=True, type=str, help="Dataset tag")
-@click.option("-n", "--n-samples", default=10000, type=int)  # equally divided total blends
+@click.option("-n", "--n-samples", default=1000, type=int)  # equally divided total blends
 @click.option("--galaxy-density", default=GALAXY_DENSITY, type=float)
 @click.option("--star-density", default=STAR_DENSITY, type=float)
 def main(
@@ -46,6 +45,7 @@ def main(
 ):
 
     L.seed_everything(seed)
+    rng = np.random.default_rng(seed)
 
     train_ds_file = f"/nfs/turbo/lsa-regier/scratch/ismael/datasets/train_ds_{tag}.pt"
     val_ds_file = f"/nfs/turbo/lsa-regier/scratch/ismael/datasets/val_ds_{tag}.pt"
@@ -66,7 +66,7 @@ def main(
 
     # disjointed tables with different galaxies
     n_rows = len(CATSIM_CAT)
-    shuffled_indices = np.random.choice(np.arange(n_rows), size=n_rows, replace=False)
+    shuffled_indices = rng.choice(np.arange(n_rows), size=n_rows, replace=False)
     train_indices = shuffled_indices[: n_rows // 3]
     val_indices = shuffled_indices[n_rows // 3 : n_rows // 3 * 2]
     test_indices = shuffled_indices[n_rows // 3 * 2 : n_rows]
@@ -85,7 +85,7 @@ def main(
                 max_n_sources=MAX_N_SOURCES,
                 galaxy_density=galaxy_density,
                 star_density=star_density,
-                slen=DEFAULT_SLEN,
+                slen=100,
                 bp=24,
                 max_shift=0.5,
             )

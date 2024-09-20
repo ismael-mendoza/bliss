@@ -4,7 +4,7 @@ import torch
 from astropy.table import Table
 from torch.utils.data import DataLoader
 
-from bliss.datasets.galsim_blends import SavedGalsimBlends, generate_dataset, parse_dataset
+from bliss.datasets.generate_galaxies import SavedGalsimBlends, generate_dataset, parse_dataset
 from bliss.datasets.lsst import get_default_lsst_psf
 from bliss.datasets.table_utils import column_to_tensor
 from bliss.encoders.binary import BinaryEncoder
