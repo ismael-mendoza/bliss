@@ -30,7 +30,7 @@ def _save_weights(weight_save_path: str, model_checkpoint_path: str):
     model_state_dict = model_checkpoint["state_dict"]
     weight_file_path = Path(weight_save_path)
     assert weight_file_path.parent.exists()
-    assert not weight_file_path.exists()
+    assert not weight_file_path.exists(), "Weight with same seed already exists."
     torch.save(model_state_dict, weight_save_path)
 
 
