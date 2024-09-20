@@ -45,9 +45,9 @@ def main(
     L.seed_everything(seed)
     rng = np.random.default_rng(seed)  # for catalog indices
 
-    train_ds_file = f"/nfs/turbo/lsa-regier/scratch/ismael/datasets/train_ds_{TAG}.pt"
-    val_ds_file = f"/nfs/turbo/lsa-regier/scratch/ismael/datasets/val_ds_{TAG}.pt"
-    test_ds_file = f"/nfs/turbo/lsa-regier/scratch/ismael/datasets/test_ds_{TAG}.pt"
+    train_ds_file = f"/nfs/turbo/lsa-regier/scratch/ismael/datasets/train_ds_{seed}_{TAG}.pt"
+    val_ds_file = f"/nfs/turbo/lsa-regier/scratch/ismael/datasets/val_ds_{seed}_{TAG}.pt"
+    test_ds_file = f"/nfs/turbo/lsa-regier/scratch/ismael/datasets/test_ds_{seed}_{TAG}.pt"
 
     if Path(train_ds_file).exists():
         raise IOError("Training file already exists")
