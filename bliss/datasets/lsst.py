@@ -22,8 +22,6 @@ GALAXY_DENSITY = 160  # arcmin^{-2}, with mag cut above
 STAR_DENSITY = 10  # arcmin^{-2}, NOTE: placeholder, need to update
 MAX_N_SOURCES = 30  # https://www.wolframalpha.com/input?i=poisson+distribution+with++mean+%3D+17.7
 
-DEFAULT_SLEN = 100  # avoid padding
-
 
 def convert_mag_to_flux(mag: Tensor) -> Tensor:
     """Assuming gain = 1 always."""
