@@ -57,6 +57,7 @@ def generate_dataset(
         (galaxy_density + star_density) * (size**2 - slen**2) * (PIXEL_SCALE / 60) ** 2
     )
     galaxy_prob = galaxy_density / (galaxy_density + star_density)
+    print(galaxy_prob)
 
     for ii in tqdm(range(n_samples)):
         full_cat = sample_full_catalog(
@@ -64,9 +65,9 @@ def generate_dataset(
             all_star_mags,
             mean_sources=mean_sources_in,
             max_n_sources=max_n_sources,
+            galaxy_prob=galaxy_prob,
             slen=slen,
             max_shift=max_shift,
-            galaxy_prob=galaxy_prob,
         )
         center_noiseless, uncentered_sources, centered_sources = render_full_catalog(
             full_cat, psf, slen, bp
@@ -121,8 +122,8 @@ def parse_dataset(dataset: dict[str, Tensor], tile_slen: int = 4):
     params = dataset.copy()  # make a copy to not change argument.
     images = params.pop("images")
     background = params.pop("background")
-    star_fields = params.pop("star_fields")
-    return images, background, TileCatalog(tile_slen, params), star_fields
+    paddings = params.pop("paddings")
+    return images, background, TileCatalog(tile_slen, params), paddings
 
 
 def render_full_catalog(full_cat: FullCatalog, psf: galsim.GSObject, slen: int, bp: int):
@@ -160,6 +161,32 @@ def render_full_catalog(full_cat: FullCatalog, psf: galsim.GSObject, slen: int, 
     return image, uncentered_noiseless, centered_noiseless
 
 
+def sample_full_catalog(
+    catsim_table: Table,
+    all_star_mags: np.ndarray,  # i-band
+    mean_sources: float,
+    max_n_sources: int,
+    galaxy_prob: float,
+    slen: int = 40,
+    max_shift: float = 0.5,
+):
+    params = sample_source_params(
+        catsim_table,
+        all_star_mags,
+        mean_sources=mean_sources,
+        max_n_sources=max_n_sources,
+        galaxy_prob=galaxy_prob,
+        slen=slen,
+        max_shift=max_shift,
+    )
+
+    for p, q in params.items():
+        if p != "n_sources":
+            params[p] = rearrange(q, "n d -> 1 n d")
+
+    return FullCatalog(slen, slen, params)
+
+
 def sample_source_params(
     catsim_table: Table,
     all_star_mags: np.ndarray,  # i-band
@@ -178,6 +205,7 @@ def sample_source_params(
 
     galaxy_bools = torch.zeros(max_n_sources, 1)
     star_bools = torch.zeros(max_n_sources, 1)
+    print(galaxy_prob)
     galaxy_bools[:n_sources, :] = sample_bernoulli(galaxy_prob, n_sources)[:, None]
     star_bools[:n_sources, :] = 1 - galaxy_bools[:n_sources, :]
 
@@ -195,23 +223,3 @@ def sample_source_params(
         "star_fluxes": star_fluxes * star_bools,
         "fluxes": params[:, -1, None] * galaxy_bools + star_fluxes * star_bools,
     }
-
-
-def sample_full_catalog(
-    catsim_table: Table,
-    all_star_mags: np.ndarray,  # i-band
-    mean_sources: float,
-    max_n_sources: int,
-    slen: int = 40,
-    max_shift: float = 0.5,
-    galaxy_prob: float = 0.9,
-):
-    params = sample_source_params(
-        catsim_table, all_star_mags, mean_sources, max_n_sources, slen, max_shift, galaxy_prob
-    )
-
-    for p, q in params.items():
-        if p != "n_sources":
-            params[p] = rearrange(q, "n d -> 1 n d")
-
-    return FullCatalog(slen, slen, params)

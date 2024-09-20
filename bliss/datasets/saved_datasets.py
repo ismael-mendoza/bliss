@@ -1,26 +1,10 @@
 """Datasets actually used to train models based on cached galaxy iamges."""
 
-from typing import Optional
-
-import galsim
-import numpy as np
 import torch
-from astropy.table import Table
-from einops import pack, rearrange, reduce
 from torch import Tensor
 from torch.utils.data import Dataset
-from tqdm import tqdm
 
-from bliss.catalog import FullCatalog, TileCatalog
-from bliss.datasets.background import add_noise_and_background, get_constant_background
-from bliss.datasets.lsst import (
-    GALAXY_DENSITY,
-    PIXEL_SCALE,
-    STAR_DENSITY,
-    convert_mag_to_flux,
-    get_default_lsst_background,
-)
-from bliss.datasets.table_utils import catsim_row_to_galaxy_params
+from bliss.catalog import FullCatalog
 
 
 class SavedGalsimBlends(Dataset):
@@ -29,6 +13,7 @@ class SavedGalsimBlends(Dataset):
         dataset_file: str,
         slen: int = 40,
         tile_slen: int = 4,
+        keep_padding: bool = False,
     ) -> None:
         super().__init__()
         ds: dict[str, Tensor] = torch.load(dataset_file)
@@ -37,13 +22,18 @@ class SavedGalsimBlends(Dataset):
         self.background = ds.pop("background").float()
         self.epoch_size = len(self.images)
 
-        # stars need to be subratected for deblender
-        self.stars = ds.pop("star_fields").float()
-
         # don't need for training
         ds.pop("centered_sources")
         ds.pop("uncentered_sources")
         ds.pop("noiseless")
+
+        # avoid large memory usage if we don't need padding.
+        if not keep_padding:
+            ds.pop("paddings")
+            self.paddings = torch.tensor([0]).float()
+        else:
+            self.paddings = ds.pop("paddings").float()
+        self.keep_padding = keep_padding
 
         full_catalog = FullCatalog(slen, slen, ds)
         tile_catalogs = full_catalog.to_tile_params(tile_slen, ignore_extra_sources=True)
@@ -57,7 +47,7 @@ class SavedGalsimBlends(Dataset):
         return {
             "images": self.images[index],
             "background": self.background[index],
-            "star_fields": self.stars[index],
+            "paddings": self.paddings[index] if self.keep_padding else self.paddings,
             **tile_params_ii,
         }
 

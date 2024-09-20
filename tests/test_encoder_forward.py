@@ -21,7 +21,7 @@ def test_encoder_forward(home_dir, tmp_path):
         Table.read(home_dir / "data" / "stars_med_june2018.fits"), "i_ab"
     )
     psf = get_default_lsst_psf()
-    blends_ds = generate_dataset(32, catsim_table, all_star_mags, psf, 10)
+    blends_ds = generate_dataset(10, catsim_table, all_star_mags, psf, 10)
 
     saved_ds_path = tmp_path / "train_ds.pt"
     torch.save(blends_ds, saved_ds_path)
