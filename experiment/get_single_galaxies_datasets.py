@@ -17,6 +17,7 @@ HOME_DIR = Path(__file__).parent.parent.parent
 _cat = Table.read(HOME_DIR / "data" / "OneDegSq.fits")
 CATSIM_CAT = prepare_final_galaxy_catalog(_cat)
 PSF = get_default_lsst_psf()
+
 TAG = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 
 
