@@ -62,7 +62,7 @@ def render_padded_image(
     return image
 
 
-def generate_padded_tiles(  # noqa: WPS231 # pylint: disable=too-many-statements
+def generate_padded_tiles(  # noqa: WPS231, WPS213 # pylint: disable=too-many-statements
     n_samples: int,
     catsim_table: Table,
     all_star_mags: np.ndarray,
