@@ -12,7 +12,6 @@ from astropy.table import Table
 from bliss.datasets.generate_blends import generate_dataset
 from bliss.datasets.lsst import (
     GALAXY_DENSITY,
-    MAX_N_SOURCES,
     STAR_DENSITY,
     get_default_lsst_psf,
     prepare_final_galaxy_catalog,
@@ -82,7 +81,7 @@ def main(
                 t,
                 STAR_MAGS,
                 psf=PSF,
-                max_n_sources=MAX_N_SOURCES,
+                max_n_sources=10,
                 galaxy_density=galaxy_density,
                 star_density=star_density,
                 slen=100,

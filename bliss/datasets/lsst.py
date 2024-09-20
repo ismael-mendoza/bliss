@@ -20,7 +20,6 @@ MIN_STAR_MAG = 20.0  # stars with lower magnitude have > 1000 SNR
 
 GALAXY_DENSITY = 160  # arcmin^{-2}, with mag cut above
 STAR_DENSITY = 10  # arcmin^{-2}, NOTE: placeholder, need to update
-MAX_N_SOURCES = 30  # https://www.wolframalpha.com/input?i=poisson+distribution+with++mean+%3D+17.7
 
 
 def convert_mag_to_flux(mag: Tensor) -> Tensor:
