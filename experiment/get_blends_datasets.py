@@ -31,7 +31,7 @@ TAG = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 
 
 @click.command()
-@click.option("-s", "--seed", default=42, type=int)
+@click.option("-s", "--seed", required=True, type=int)
 @click.option("-n", "--n-samples", default=1000, type=int)  # equally divided total blends
 @click.option("--galaxy-density", default=GALAXY_DENSITY, type=float)
 @click.option("--star-density", default=STAR_DENSITY, type=float)
