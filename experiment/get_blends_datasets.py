@@ -44,7 +44,7 @@ def main(
 ):
 
     L.seed_everything(seed)
-    rng = np.random.default_rng(seed)
+    rng = np.random.default_rng(seed)  # for catalog indices
 
     train_ds_file = f"/nfs/turbo/lsa-regier/scratch/ismael/datasets/train_ds_{tag}.pt"
     val_ds_file = f"/nfs/turbo/lsa-regier/scratch/ismael/datasets/val_ds_{tag}.pt"
@@ -84,7 +84,7 @@ def main(
                 max_n_sources=10,
                 galaxy_density=galaxy_density,
                 star_density=star_density,
-                slen=100,
+                slen=40,
                 bp=24,
                 max_shift=0.5,
             )
