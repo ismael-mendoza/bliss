@@ -13,7 +13,7 @@ from bliss.datasets.lsst import (
     STAR_DENSITY,
     get_default_lsst_background,
 )
-from bliss.datasets.utils import (
+from bliss.datasets.render_utils import (
     render_one_galaxy,
     render_one_star,
     sample_bernoulli,
@@ -62,7 +62,7 @@ def render_padded_image(
     return image
 
 
-def generate_padded_tiles(
+def generate_padded_tiles(  # noqa:WPS213
     n_samples: int,
     catsim_table: Table,
     all_star_mags: np.ndarray,
@@ -113,7 +113,7 @@ def generate_padded_tiles(
         if galaxy_bool == 1 and n_sources == 1:
             galaxy_params, _ = sample_galaxy_params(catsim_table, 1, 1)
             galaxy_params = rearrange(galaxy_params, "1 p -> p")
-            star_flux = 0.0
+            star_flux = 0
             assert galaxy_params.shape == (11,)
             uncentered_noiseless = render_one_galaxy(galaxy_params, psf, size, offset=offset)
             centered_noiseless = render_one_galaxy(galaxy_params, psf, size, offset=None)
@@ -123,7 +123,7 @@ def generate_padded_tiles(
             uncentered_noiseless = render_one_star(psf, star_flux, size, offset=offset)
             centered_noiseless = render_one_star(psf, star_flux, size, offset=None)
         else:
-            star_flux = 0.0
+            star_flux = 0
             galaxy_params = torch.zeros((11,)).float()
             uncentered_noiseless = torch.zeros((1, size, size))
             centered_noiseless = torch.zeros((1, size, size))

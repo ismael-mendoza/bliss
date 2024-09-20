@@ -66,5 +66,5 @@ def prepare_final_galaxy_catalog(cat: Table) -> Table:
 
 
 def prepare_final_star_catalog(mags: Tensor) -> Tensor:
-    mask = (mags > MIN_STAR_MAG) & (mags < MAX_MAG)
+    mask = torch.logical_and(mags > MIN_STAR_MAG, mags < MAX_MAG)
     return mags[mask]

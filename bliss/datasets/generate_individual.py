@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from bliss.datasets.background import add_noise_and_background, get_constant_background
 from bliss.datasets.lsst import get_default_lsst_background
-from bliss.datasets.utils import render_one_galaxy, sample_galaxy_params
+from bliss.datasets.render_utils import render_one_galaxy, sample_galaxy_params
 
 
 def generate_individual_dataset(

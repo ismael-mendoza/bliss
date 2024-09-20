@@ -15,7 +15,7 @@ from bliss.datasets.lsst import (
     get_default_lsst_background,
 )
 from bliss.datasets.padded_tiles import render_padded_image
-from bliss.datasets.utils import (
+from bliss.datasets.render_utils import (
     render_one_galaxy,
     render_one_star,
     sample_bernoulli,
@@ -57,7 +57,6 @@ def generate_dataset(
         (galaxy_density + star_density) * (size**2 - slen**2) * (PIXEL_SCALE / 60) ** 2
     )
     galaxy_prob = galaxy_density / (galaxy_density + star_density)
-    print(galaxy_prob)
 
     for ii in tqdm(range(n_samples)):
         full_cat = sample_full_catalog(
@@ -205,7 +204,6 @@ def sample_source_params(
 
     galaxy_bools = torch.zeros(max_n_sources, 1)
     star_bools = torch.zeros(max_n_sources, 1)
-    print(galaxy_prob)
     galaxy_bools[:n_sources, :] = sample_bernoulli(galaxy_prob, n_sources)[:, None]
     star_bools[:n_sources, :] = 1 - galaxy_bools[:n_sources, :]
 
