@@ -9,7 +9,7 @@ import pytorch_lightning as L
 import torch
 from astropy.table import Table
 
-from bliss.datasets.generate_galaxies import generate_dataset
+from bliss.datasets.generate_blends import generate_dataset
 from bliss.datasets.lsst import (
     GALAXY_DENSITY,
     MAX_N_SOURCES,
