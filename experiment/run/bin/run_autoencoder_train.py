@@ -18,7 +18,7 @@ NUM_WORKERS = 0
 @click.option("--train-file", required=True, type=str)
 @click.option("--val-file", required=True, type=str)
 @click.option("-b", "--batch-size", default=128)
-@click.option("-e", "--n-epochs", default=10001)
+@click.option("-e", "--n-epochs", default=20000)
 @click.option("--validate-every-n-epoch", default=1, type=int)
 @click.option("--lr", default=1e-5, type=float)
 def main(
