@@ -62,7 +62,7 @@ def render_padded_image(
     return image
 
 
-def generate_padded_tiles(  # noqa:WPS213
+def generate_padded_tiles(  # noqa: WPS231 # pylint: disable=too-many-statements
     n_samples: int,
     catsim_table: Table,
     all_star_mags: np.ndarray,
@@ -71,7 +71,7 @@ def generate_padded_tiles(  # noqa:WPS213
     bp: int = 24,
     p_source_in: float | None = None,
     galaxy_prob: float = 1.0,
-    density: float = GALAXY_DENSITY + STAR_DENSITY,
+    density: float = GALAXY_DENSITY + STAR_DENSITY,  # noqa: WPS404
     max_shift: float = 0.5,
 ):
     """Generated padded tiles with sources in the padding for training of ML models.
