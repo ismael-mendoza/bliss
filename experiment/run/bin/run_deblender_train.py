@@ -14,7 +14,7 @@ assert Path(AE_STATE_DICT).exists()
 
 
 @click.command()
-@click.option("-s", "--seed", default=42, type=int)
+@click.option("-s", "--seed", required=True, type=int)
 @click.option("--train-file", required=True, type=str)
 @click.option("--val-file", required=True, type=str)
 @click.option("-b", "--batch-size", default=128)
