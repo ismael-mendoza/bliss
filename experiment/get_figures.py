@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import warnings
 from copy import deepcopy
 from pathlib import Path
 
@@ -14,6 +15,8 @@ from bliss.encoders.encoder import Encoder
 from experiment.scripts_figures.ae_figures import AutoEncoderFigures
 from experiment.scripts_figures.blend_figures import BlendSimulationFigure
 from experiment.scripts_figures.toy_figures import ToySeparationFigure
+
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 ALL_FIGS = {"single", "blend", "toy"}
 
@@ -57,7 +60,7 @@ def _load_models(seed: int, device):
 def _make_autoencoder_figures(seed: int, device, test_file: str, overwrite: bool):
     print("INFO: Creating autoencoder figures...")
     autoencoder = OneCenteredGalaxyAE()
-    autoencoder.load_state_dict(torch.load(f"models/autoencoder_{seed}.pt"))
+    autoencoder.load_state_dict(torch.load(f"models/autoencoder_{seed}.pt", weights_only=True))
     autoencoder = autoencoder.to(device).eval()
     autoencoder.requires_grad_(False)
 
@@ -93,8 +96,8 @@ def main(mode: str, seed: int, test_file_single: str, test_file_blends: str, ove
 
     # FIGURE 1: Autoencoder single galaxy reconstruction
     if mode == "single":
-        assert test_file_single != "" and (test_file_single).exists()
-        _make_autoencoder_figures(device, seed, test_file_single, overwrite)
+        assert test_file_single != "" and Path(test_file_single).exists()
+        _make_autoencoder_figures(seed, device, test_file_single, overwrite)
 
     if mode in {"toy", "blend"}:
         encoder, decoder = _load_models(seed, device)
