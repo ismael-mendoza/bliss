@@ -26,15 +26,21 @@ def _load_models(seed: int, device):
 
     # encoders
     detection = DetectionEncoder().to(device).eval()
-    detection.load_state_dict(torch.load(f"models/detection_{seed}.pt", map_location=device))
+    detection.load_state_dict(
+        torch.load(f"models/detection_{seed}.pt", map_location=device, weights_only=True)
+    )
     detection.requires_grad_(False)
 
     binary = BinaryEncoder().to(device).eval()
-    binary.load_state_dict(torch.load(f"models/binary_{seed}.pt", map_location=device))
+    binary.load_state_dict(
+        torch.load(f"models/binary_{seed}.pt", map_location=device, weights_only=True)
+    )
     binary.requires_grad_(False)
 
     deblender = GalaxyEncoder("models/autoencoder.pt")
-    deblender.load_state_dict(torch.load(f"models/deblend_{seed}.pt", map_location=device))
+    deblender.load_state_dict(
+        torch.load(f"models/deblend_{seed}.pt", map_location=device, weights_only=True)
+    )
     deblender.requires_grad_(False)
 
     encoder = Encoder(
@@ -104,7 +110,7 @@ def main(mode: str, seed: int, test_file_single: str, test_file_blends: str, ove
 
     if mode == "blend":
         assert test_file_blends != "" and Path(test_file_blends).exists()
-        _make_blend_figures(encoder, decoder, test_file_single, overwrite)
+        _make_blend_figures(encoder, decoder, test_file_blends, overwrite)
 
     if mode == "toy":
         print("INFO: Creating figures for testing BLISS on pair galaxy toy example.")
