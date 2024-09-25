@@ -10,21 +10,21 @@ from bliss.encoders.deblend import GalaxyEncoder
 from experiment.run.training_functions import run_encoder_training
 
 NUM_WORKERS = 0
-AE_STATE_DICT = "../models/autoencoder.pt"
-assert Path(AE_STATE_DICT).exists()
 
 
 @click.command()
 @click.option("-s", "--seed", required=True, type=int)
+@click.option("--ae-model-path", required=True, type=str)
 @click.option("--train-file", required=True, type=str)
 @click.option("--val-file", required=True, type=str)
 @click.option("-b", "--batch-size", default=128)
 @click.option("--lr", default=1e-4, type=float)
 @click.option("-e", "--n-epochs", default=8000)
 @click.option("--validate-every-n-epoch", default=20, type=int)
-@click.option("--log-every-n-steps", default=10, type=float, help="Fraction of training epoch")
+@click.option("--log-every-n-steps", default=10, type=float)
 def main(
     seed: int,
+    ae_model_path: str,
     train_file: str,
     val_file: str,
     batch_size: int,
@@ -34,8 +34,11 @@ def main(
     log_every_n_steps: int,
 ):
 
+    ae_path = Path(ae_model_path)
+    assert ae_path.exists()
+
     # setup model to train
-    galaxy_encoder = GalaxyEncoder(AE_STATE_DICT, lr=lr)
+    galaxy_encoder = GalaxyEncoder(ae_path, lr=lr)
 
     # early stoppin callback based on 'mean_max_residual'
     early_stopping_cb = EarlyStopping(
