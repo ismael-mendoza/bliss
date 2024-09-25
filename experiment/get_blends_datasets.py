@@ -65,7 +65,7 @@ def main(
     shuffled_indices = rng.choice(np.arange(n_rows), size=n_rows, replace=False)
     train_indices = shuffled_indices[: n_rows // 3]
     val_indices = shuffled_indices[n_rows // 3 : n_rows // 3 * 2]
-    test_indices = shuffled_indices[n_rows // 3 * 2 : n_rows]
+    test_indices = shuffled_indices[n_rows // 3 * 2 :]
     table1 = CATSIM_CAT[train_indices]
     table2 = CATSIM_CAT[val_indices]
     table3 = CATSIM_CAT[test_indices]
