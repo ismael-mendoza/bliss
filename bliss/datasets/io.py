@@ -20,7 +20,6 @@ def load_dataset_h5py(fpath: str) -> dict[str, Tensor]:
     assert Path(fpath).exists(), "file path does not exists"
     ds = {}
     with h5py.File(fpath, "rb") as f:
-        for k in f:
-            v = f[k][...]
-            ds[k] = torch.from_numpy(v)
+        for k, v in f.items():
+            ds[k] = torch.from_numpy(v[...])
     return ds
