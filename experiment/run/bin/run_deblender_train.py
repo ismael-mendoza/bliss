@@ -62,6 +62,7 @@ def main(
         val_check_interval=None,
         log_every_n_steps=log_every_n_steps,
         early_stopping_cb=early_stopping_cb,
+        keep_padding=True,
     )
 
 
