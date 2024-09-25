@@ -91,8 +91,8 @@ class GalaxyEncoder(pl.LightningModule):
         )
         assert recon_ptiles.shape[-1] == recon_ptiles.shape[-2] == self.ptile_slen
         recon_mean = reconstruct_image_from_ptiles(recon_ptiles, self.tile_slen)
-        recon_mean += background + paddings  # target only galaxies within tiles.
         assert recon_mean.ndim == 4 and recon_mean.shape[-1] == images.shape[-1]
+        recon_mean += background + paddings  # target only galaxies within tiles.
         assert not torch.any(torch.logical_or(torch.isnan(recon_mean), torch.isinf(recon_mean)))
 
         recon_losses: Tensor = -Normal(recon_mean, recon_mean.sqrt()).log_prob(images)
