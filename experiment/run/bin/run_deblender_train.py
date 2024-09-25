@@ -19,7 +19,8 @@ assert Path(AE_STATE_DICT).exists()
 @click.option("--train-file", required=True, type=str)
 @click.option("--val-file", required=True, type=str)
 @click.option("-b", "--batch-size", default=128)
-@click.option("-e", "--n-epochs", default=10001)
+@click.option("--lr", default=1e-4, type=float)
+@click.option("-e", "--n-epochs", default=8000)
 @click.option("--validate-every-n-epoch", default=20, type=int)
 @click.option("--log-every-n-steps", default=10, type=float, help="Fraction of training epoch")
 def main(
@@ -27,13 +28,14 @@ def main(
     train_file: str,
     val_file: str,
     batch_size: int,
+    lr: float,
     n_epochs: int,
     validate_every_n_epoch: int,
     log_every_n_steps: int,
 ):
 
     # setup model to train
-    galaxy_encoder = GalaxyEncoder(AE_STATE_DICT)
+    galaxy_encoder = GalaxyEncoder(AE_STATE_DICT, lr=lr)
 
     # early stoppin callback based on 'mean_max_residual'
     early_stopping_cb = EarlyStopping(
