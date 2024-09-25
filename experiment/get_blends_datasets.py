@@ -28,7 +28,7 @@ TAG = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 
 @click.command()
 @click.option("-s", "--seed", required=True, type=int)
-@click.option("-n", "--n-samples", default=1000, type=int)  # equally divided total blends
+@click.option("-n", "--n-samples", default=int(3e4), type=int)  # equally divided total blends
 @click.option("--galaxy-density", default=GALAXY_DENSITY, type=float)
 @click.option("--star-density", default=STAR_DENSITY, type=float)
 def main(
@@ -70,27 +70,22 @@ def main(
     table2 = CATSIM_CAT[val_indices]
     table3 = CATSIM_CAT[test_indices]
 
-    dss = []
-    for t in (table1, table2, table3):
-        dss.append(
-            generate_dataset(
-                n_samples,
-                t,
-                STAR_MAGS,
-                psf=PSF,
-                max_n_sources=10,
-                galaxy_density=galaxy_density,
-                star_density=star_density,
-                slen=40,
-                bp=24,
-                max_shift=0.5,
-            )
+    files = (train_ds_file, val_ds_file, test_ds_file)
+    tables = (table1, table2, table3)
+    for f, t in zip(files, tables):
+        ds = generate_dataset(
+            n_samples,
+            t,
+            STAR_MAGS,
+            psf=PSF,
+            max_n_sources=10,
+            galaxy_density=galaxy_density,
+            star_density=star_density,
+            slen=40,
+            bp=24,
+            max_shift=0.5,
         )
-
-    # now save data
-    torch.save(dss[0], train_ds_file)
-    torch.save(dss[1], val_ds_file)
-    torch.save(dss[2], test_ds_file)
+        torch.save(ds, f)
 
 
 if __name__ == "__main__":
