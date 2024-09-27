@@ -19,9 +19,9 @@ NUM_WORKERS = 0
 @click.option("--val-file", required=True, type=str)
 @click.option("-b", "--batch-size", default=128)
 @click.option("--lr", default=1e-4, type=float)
-@click.option("-e", "--n-epochs", default=8000)
-@click.option("--validate-every-n-epoch", default=20, type=int)
-@click.option("--log-every-n-steps", default=10, type=float)
+@click.option("-e", "--n-epochs", type=int, default=10_000)
+@click.option("--validate-every-n-epoch", default=10, type=int)
+@click.option("--log-every-n-steps", default=100, type=int)
 def main(
     seed: int,
     ae_model_path: str,
@@ -40,16 +40,6 @@ def main(
     # setup model to train
     galaxy_encoder = GalaxyEncoder(ae_path, lr=lr)
 
-    # early stoppin callback based on 'mean_max_residual'
-    early_stopping_cb = EarlyStopping(
-        "val/mean_max_residual",
-        min_delta=0.1,
-        patience=10,
-        strict=True,
-        check_on_train_epoch_end=False,
-        mode="min",
-    )
-
     run_encoder_training(
         seed=seed,
         train_file=train_file,
@@ -61,7 +51,6 @@ def main(
         validate_every_n_epoch=validate_every_n_epoch,
         val_check_interval=None,
         log_every_n_steps=log_every_n_steps,
-        early_stopping_cb=early_stopping_cb,
         keep_padding=True,
     )
 
