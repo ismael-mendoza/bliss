@@ -19,6 +19,8 @@ from bliss.datasets.lsst import (
 
 HOME_DIR = Path(__file__).parent.parent.parent
 DATASETS_DIR = Path("/nfs/turbo/lsa-regier/scratch/ismael/datasets/")
+LOG_FILE = HOME_DIR / "experiment/run/log.txt"
+
 
 CATSIM_CAT = prepare_final_galaxy_catalog()
 STAR_MAGS = prepare_final_star_catalog()
@@ -28,6 +30,7 @@ PSF = get_default_lsst_psf()
 TAG = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 
 assert DATASETS_DIR.exists()
+assert LOG_FILE.exists()
 
 
 @click.command()
@@ -44,7 +47,7 @@ def main(seed: int, n_samples: int, galaxy_density: float, star_density: float):
     val_ds_file = DATASETS_DIR / f"val_ds_{seed}_{TAG}.pt"
     test_ds_file = DATASETS_DIR / f"test_ds_{seed}_{TAG}.pt"
 
-    with open("run/log.txt", "a") as f:
+    with open(LOG_FILE, "a") as f:
         now = datetime.datetime.now()
         print("", file=f)
         log_msg = f"""Run training blend data generation script...
@@ -62,6 +65,7 @@ def main(seed: int, n_samples: int, galaxy_density: float, star_density: float):
     train_indices = shuffled_indices[: n_rows // 3]
     val_indices = shuffled_indices[n_rows // 3 : n_rows // 3 * 2]
     test_indices = shuffled_indices[n_rows // 3 * 2 :]
+
     table1 = CATSIM_CAT[train_indices]
     table2 = CATSIM_CAT[val_indices]
     table3 = CATSIM_CAT[test_indices]
