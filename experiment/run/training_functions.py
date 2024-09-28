@@ -70,8 +70,8 @@ def run_encoder_training(
     validate_every_n_epoch: int,
     val_check_interval: float,
     log_every_n_steps: int,
-    early_stopping_cb=None,
     keep_padding=False,
+    extra_callbacks: list | None = None,  # list of additional callbacks to include
 ):
     assert model_name in {"detection", "binary", "deblender"}
 
@@ -105,7 +105,7 @@ def run_encoder_training(
             model_name=model_name,
             log_every_n_steps=log_every_n_steps,
             log_file=g,
-            early_stopping_cb=early_stopping_cb,
+            extra_callbacks=extra_callbacks,
         )
 
     trainer.fit(model=model, train_dataloaders=train_dl, val_dataloaders=val_dl)
