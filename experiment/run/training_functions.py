@@ -88,7 +88,7 @@ def run_encoder_training(
 
     L.seed_everything(seed)
 
-    if not Path(train_file).exists() and Path(val_file).exists():
+    if not Path(train_file).exists() or not Path(val_file).exists():
         raise IOError("Training datasets do not exists")
 
     with open("log.txt", "a") as g:
