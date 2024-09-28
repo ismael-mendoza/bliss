@@ -24,7 +24,7 @@ def setup_training_objects(
     model_name: str,
     log_every_n_steps: int = 16,
     log_file: TextIO = sys.stdout,
-    early_stopping_cb=None,
+    extra_callbacks: list | None = None,  # list of additional callbacks to include
 ):
     train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers)
     val_dl = DataLoader(val_ds, batch_size=batch_size, num_workers=num_workers)
@@ -42,7 +42,7 @@ def setup_training_objects(
     logger = TensorBoardLogger(save_dir="out", name=model_name, default_hp_metric=False)
     print(f"INFO: Saving model as version {logger.version}", file=log_file)
 
-    callbacks = [mckp, early_stopping_cb] if early_stopping_cb is not None else [mckp]
+    callbacks = [mckp] + extra_callbacks if extra_callbacks else [mckp]
 
     trainer = L.Trainer(
         limit_train_batches=1.0,
