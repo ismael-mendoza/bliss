@@ -12,7 +12,7 @@ from experiment.run.training_functions import run_encoder_training
 @click.option("-b", "--batch-size", default=32)
 @click.option("-e", "--n-epochs", default=25)
 @click.option("--validate-every-n-epoch", default=1, type=int)
-@click.option("--val-check-interval", default=0.15, type=float, help="Fraction of training epoch")
+@click.option("--val-check-interval", default=0.10, type=float, help="Fraction of training epoch")
 @click.option("--log-every-n-steps", default=16, type=int)
 def main(
     seed: int,
