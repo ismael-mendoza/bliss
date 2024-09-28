@@ -5,7 +5,6 @@ from pathlib import Path
 
 import click
 import pytorch_lightning as L
-from pytorch_lightning.callbacks import EarlyStopping
 
 from bliss.datasets.saved_datasets import SavedIndividualGalaxies
 from bliss.encoders.autoencoder import OneCenteredGalaxyAE
