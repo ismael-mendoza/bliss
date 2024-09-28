@@ -4,7 +4,6 @@
 from pathlib import Path
 
 import click
-from pytorch_lightning.callbacks import EarlyStopping
 
 from bliss.encoders.deblend import GalaxyEncoder
 from experiment.run.training_functions import run_encoder_training
