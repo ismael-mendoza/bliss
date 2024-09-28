@@ -750,3 +750,46 @@ Run training blend data generation script...
         With TAG: 20240927094038
 
 INFO: Saved checkpoint 'data/out/deblender/version_20/checkpoints/epoch=2709-val_loss=7583265.000.ckpt' as weights /home/imendoza/bliss/experiment/models/deblend_42.pt at 2024-09-27 09:45:12.820852
+
+Run training blend data generation script...
+        With seed 41 at 2024-09-27 14:36:47.067465
+        Galaxy density 160.0, star_density 15.5, and n_samples 50000.
+        Samples will be divided into 3 datasets of blends with equal number.
+
+        With TAG: 20240927143647
+
+
+./bin/run_detection_train.py --seed 41 --train-file ../data/datasets/train_ds_41_20240927143647.pt --val-file val_ds_41_20240927143647.pt
+
+Run training detection encoder script...
+        With seed 41 at 2024-09-27 23:43:35.007634 validate_every_n_epoch 1,
+        val_check_interval 0.1, batch_size 32, n_epochs 25
+
+        Using datasets: ../data/datasets/train_ds_41_20240927143647.pt, val_ds_41_20240927143647.pt
+
+
+./bin/run_binary_train.py --seed 41 --train-file ../data/datasets/train_ds_41_20240927143647.pt --val-file val_ds_41_20240927143647.pt
+
+Run training binary encoder script...
+        With seed 41 at 2024-09-27 23:49:45.126305 validate_every_n_epoch 1,
+        val_check_interval 0.1, batch_size 32, n_epochs 10
+
+        Using datasets: ../data/datasets/train_ds_41_20240927143647.pt, val_ds_41_20240927143647.pt
+
+
+./bin/run_deblender_train.py --seed 41 --ae-model-path ../models/autoencoder_42.pt --train-file ../data/datasets/train_ds_41_20240927143647.pt --val-file val_ds_41_20240927143647.pt --lr 1e-4
+
+Run training deblender encoder script...
+        With seed 41 at 2024-09-27 23:51:01.182738 validate_every_n_epoch 10,
+        val_check_interval None, batch_size 128, n_epochs 10000
+
+        Using datasets: ../data/datasets/train_ds_41_20240927143647.pt, val_ds_41_20240927143647.pt
+
+
+./bin/run_detection_train.py --seed 41 --train-file ../data/datasets/train_ds_41_20240927143647.pt --val-file ../data/datasets/val_ds_41_20240927143647.pt
+
+Run training detection encoder script...
+        With seed 41 at 2024-09-28 16:08:26.202248 validate_every_n_epoch 1,
+        val_check_interval 0.1, batch_size 32, n_epochs 25
+
+        Using datasets: ../data/datasets/train_ds_41_20240927143647.pt, ../data/datasets/val_ds_41_20240927143647.pt

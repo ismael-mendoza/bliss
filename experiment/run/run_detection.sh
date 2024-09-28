@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
 
-export CUDA_VISIBLE_DEVICES="5"
+export CUDA_VISIBLE_DEVICES="2"
 
-for i in {43..45};
-do
-    echo >> log.txt
-    cmd="./bin/run_detection_train.py -o -s $i -t "12_${i}""
-    echo $cmd >> log.txt
-    eval $cmd
-done
+echo >> log.txt
+cmd="./bin/run_detection_train.py --seed 41 --train-file ../data/datasets/train_ds_41_20240927143647.pt --val-file ../data/datasets/val_ds_41_20240927143647.pt"
+echo $cmd >> log.txt
+eval $cmd

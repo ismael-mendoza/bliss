@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-export CUDA_VISIBLE_DEVICES="6"
+export CUDA_VISIBLE_DEVICES="2"
 
 echo >> log.txt
-cmd="./bin/run_binary_train.py -s 44 -t "12_43""
+cmd="./bin/run_binary_train.py --seed 41 --train-file ../data/datasets/train_ds_41_20240927143647.pt --val-file ../data/datasets/val_ds_41_20240927143647.pt"
 echo $cmd >> log.txt
 eval $cmd
