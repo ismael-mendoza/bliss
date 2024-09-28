@@ -13,10 +13,17 @@ from bliss.datasets.lsst import get_default_lsst_psf, prepare_final_galaxy_catal
 NUM_WORKERS = 0
 
 HOME_DIR = Path(__file__).parent.parent
+DATASETS_DIR = Path("/nfs/turbo/lsa-regier/scratch/ismael/datasets/")
+LOG_FILE = HOME_DIR / "experiment/run/log.txt"
+
+
 CATSIM_CAT = prepare_final_galaxy_catalog()
 PSF = get_default_lsst_psf()
 
 TAG = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+
+assert DATASETS_DIR.exists()
+assert LOG_FILE.exists()
 
 
 @click.command()
@@ -25,20 +32,17 @@ def main(seed: int):
 
     L.seed_everything(seed)
 
-    train_ds_file = f"/nfs/turbo/lsa-regier/scratch/ismael/datasets/train_ae_ds_{seed}_{TAG}.pt"
-    val_ds_file = f"/nfs/turbo/lsa-regier/scratch/ismael/datasets/val_ae_ds_{seed}_{TAG}.pt"
-    test_ds_file = f"/nfs/turbo/lsa-regier/scratch/ismael/datasets/test_ae_ds_{seed}_{TAG}.pt"
+    train_ds_file = DATASETS_DIR / f"train_ae_ds_{seed}_{TAG}.pt"
+    val_ds_file = DATASETS_DIR / f"val_ae_ds_{seed}_{TAG}.pt"
+    test_ds_file = DATASETS_DIR / f"test_ae_ds_{seed}_{TAG}.pt"
 
-    if Path(train_ds_file).exists():
-        raise IOError("Training file already exists")
-
-    with open("run/log.txt", "a") as f:
+    with open(LOG_FILE, "a") as f:
         now = datetime.datetime.now()
         print("", file=f)
         log_msg = f"""Run training autoencoder data generation script...
         With seed {seed} at {now}, n_samples {len(CATSIM_CAT)}.
-        Train, test, and val divided into 3 equal parts (disjoint galaxies) on full catalog after
-        mag cut < 27.0 on catalog.
+        Train, test, and val divided into 3 parts of same size. A given galaxy only appears once
+        across the 3 groups.
 
         With TAG: {TAG}
         """
