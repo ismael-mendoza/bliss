@@ -6,7 +6,6 @@ from pathlib import Path
 import click
 import pytorch_lightning as L
 import torch
-from astropy.table import Table
 
 from bliss.datasets.generate_individual import generate_individual_dataset
 from bliss.datasets.lsst import get_default_lsst_psf, prepare_final_galaxy_catalog
