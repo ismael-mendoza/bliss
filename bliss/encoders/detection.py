@@ -250,16 +250,8 @@ def _compute_tiled_metrics(
     # f1
     f1 = 2 / (precision**-1 + recall**-1)
 
-    # average residual distance for true matches
-    match_mask = torch.logical_and(torch.eq(n_sources1, n_sources2), torch.eq(n_sources1, 1))
-    locs1_flat = rearrange(truth_cat.locs, "b nth ntw xy -> (b nth ntw) xy", xy=2)
-    locs2_flat = rearrange(pred_cat.locs, "b nth ntw xy -> (b nth ntw) xy", xy=2)
-    plocs1 = locs1_flat[match_mask] * tile_slen
-    plocs2 = locs2_flat[match_mask] * tile_slen
-    avg_dist = reduce((plocs1 - plocs2).pow(2), "np xy -> np", "sum").sqrt().mean()
-
     # prefix
-    out = {"precision": precision, "recall": recall, "f1": f1, "avg_dist": avg_dist}
+    out = {"precision": precision, "recall": recall, "f1": f1}
 
     return {f"{prefix}{p}": q for p, q in out.items()}
 
