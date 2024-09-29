@@ -4,10 +4,10 @@ import datetime
 
 import click
 import pytorch_lightning as L
-import torch
 
 from bliss import DATASETS_DIR, HOME_DIR
 from bliss.datasets.generate_individual import generate_individual_dataset
+from bliss.datasets.io import save_dataset_h5py
 from bliss.datasets.lsst import get_default_lsst_psf, prepare_final_galaxy_catalog
 
 NUM_WORKERS = 0
@@ -24,9 +24,9 @@ def main(seed: int):
 
     L.seed_everything(seed)
 
-    train_ds_file = DATASETS_DIR / f"train_ae_ds_{seed}.pt"
-    val_ds_file = DATASETS_DIR / f"val_ae_ds_{seed}.pt"
-    test_ds_file = DATASETS_DIR / f"test_ae_ds_{seed}.pt"
+    train_ds_file = DATASETS_DIR / f"train_ae_ds_{seed}.hdf5"
+    val_ds_file = DATASETS_DIR / f"val_ae_ds_{seed}.hdf5"
+    test_ds_file = DATASETS_DIR / f"test_ae_ds_{seed}.hdf5"
 
     n_rows = len(CATSIM_CAT)
 
@@ -40,9 +40,9 @@ def main(seed: int):
     test_ds = {p: q[2 * n_rows // 3 :] for p, q in dataset.items()}
 
     # now save data
-    torch.save(train_ds, train_ds_file)
-    torch.save(val_ds, val_ds_file)
-    torch.save(test_ds, test_ds_file)
+    save_dataset_h5py(train_ds, train_ds_file)
+    save_dataset_h5py(val_ds, val_ds_file)
+    save_dataset_h5py(test_ds, test_ds_file)
 
     # logging
     with open(LOG_FILE, "a") as f:
