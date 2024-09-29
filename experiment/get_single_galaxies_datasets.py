@@ -18,10 +18,6 @@ CATSIM_CAT = prepare_final_galaxy_catalog()
 PSF = get_default_lsst_psf()
 
 
-assert DATASETS_DIR.exists()
-assert LOG_FILE.exists()
-
-
 @click.command()
 @click.option("-s", "--seed", required=True, type=int)
 def main(seed: int):
@@ -51,8 +47,7 @@ def main(seed: int):
     # logging
     with open(LOG_FILE, "a") as f:
         now = datetime.datetime.now()
-        log_msg = f"\nRun training autoencoder data generation script with seed {seed} at {now}.
-        "
+        log_msg = f"\nRun training autoencoder data generation script with seed {seed} at {now}."
         print(log_msg, file=f)
 
 
