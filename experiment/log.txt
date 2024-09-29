@@ -1,0 +1,17 @@
+Run training autoencoder data generation script with seed 42 at 2024-09-20 16:48:41.649063.
+
+Training AE with seed 42, ds_seed 42, version 22 at 2024-09-20 17:16:40.758029.
+
+Training AE with seed 43, ds_seed 42, version 23 at 2024-09-24 16:00:47.915505.
+
+Blend data generation with seed 42 at 2024-09-25 14:46:02.909320.
+        Galaxy density 160.0, star_density 10.0, and n_samples 30000.
+
+Saved checkpoint 'data/out/autoencoder/version_22/checkpoints/epoch=19389-val_loss=2692034.750.ckpt' as weights /home/imendoza/bliss/experiment/models/autoencoder_42.pt at 2024-09-25 16:54:43.058543
+
+Saved checkpoint 'data/out/autoencoder/version_23/checkpoints/epoch=4429-val_loss=2692784.250.ckpt' as weights /home/imendoza/bliss/experiment/models/autoencoder_43.pt at 2024-09-25 16:55:25.565179
+
+Training deblender with seed 40, ds_seed 42, version 20 at 2024-09-26 17:52:11.368496.
+AE used was ../models/autoencoder_42.pt
+
+Saved checkpoint 'data/out/deblender/version_20/checkpoints/epoch=2709-val_loss=7583265.000.ckpt' as weights /home/imendoza/bliss/experiment/models/deblend_42.pt at 2024-09-27 09:45:12.820852
