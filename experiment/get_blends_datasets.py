@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 
 import datetime
+from pathlib import Path
 
 import click
 import numpy as np
 import pytorch_lightning as L
-import torch
 
 from bliss import DATASETS_DIR, HOME_DIR
 from bliss.datasets.generate_blends import generate_dataset
+from bliss.datasets.io import save_dataset_h5py
 from bliss.datasets.lsst import (
     GALAXY_DENSITY,
     STAR_DENSITY,
@@ -38,9 +39,13 @@ def main(seed: int, n_samples: int, galaxy_density: float, star_density: float):
     L.seed_everything(seed)
     rng = np.random.default_rng(seed)  # for catalog indices
 
-    train_ds_file = DATASETS_DIR / f"train_ds_{seed}.pt"
-    val_ds_file = DATASETS_DIR / f"val_ds_{seed}.pt"
-    test_ds_file = DATASETS_DIR / f"test_ds_{seed}.pt"
+    train_ds_file = DATASETS_DIR / f"train_ds_{seed}.hdf5"
+    val_ds_file = DATASETS_DIR / f"val_ds_{seed}.hdf5"
+    test_ds_file = DATASETS_DIR / f"test_ds_{seed}.hdf5"
+
+    assert not Path(train_ds_file).exists(), "files exist"
+    assert not Path(val_ds_file).exists(), "files exist"
+    assert not Path(test_ds_file).exists(), "files exist"
 
     # disjointed tables with different galaxies
     n_rows = len(CATSIM_CAT)
@@ -68,7 +73,7 @@ def main(seed: int, n_samples: int, galaxy_density: float, star_density: float):
             bp=24,
             max_shift=0.5,
         )
-        torch.save(ds, f)
+        save_dataset_h5py(ds, f)
 
     # logging
     with open(LOG_FILE, "a") as f:
