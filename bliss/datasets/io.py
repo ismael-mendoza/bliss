@@ -12,8 +12,8 @@ from torch import Tensor
 def save_dataset_h5py(ds: dict[str, Tensor], fpath: str) -> None:
     assert not Path(fpath).exists(), "overwriting existing ds"
     assert Path(fpath).suffix == ".hdf5"
-    with h5py.File(fpath, "w") as f:
-        for k, v in ds.items():
+    for k, v in ds.items():
+        with h5py.File(fpath, "a") as f:
             f.create_dataset(k, data=v.numpy())
 
 
