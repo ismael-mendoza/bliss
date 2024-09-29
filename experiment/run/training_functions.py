@@ -11,6 +11,7 @@ from bliss.datasets.saved_datasets import SavedGalsimBlends
 
 NUM_WORKERS = 0
 
+MODELS_DIR = HOME_DIR / "experiment/models"
 LOG_FILE = HOME_DIR / "experiment/log.txt"
 LOG_FILE_LONG = HOME_DIR / "experiment/log_long.txt"
 
@@ -78,6 +79,8 @@ def run_encoder_training(
 
     L.seed_everything(seed)
 
+    ds_seed = log_info_dict["ds_seed"]
+    assert not (MODELS_DIR / f"{model_name}_{ds_seed}_{seed}.pt").exists(), "model exists."
     if not Path(train_file).exists() or not Path(val_file).exists():
         raise IOError("Training datasets do not exists")
 

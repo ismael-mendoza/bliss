@@ -13,6 +13,7 @@ from experiment.run.training_functions import setup_training_objects
 
 NUM_WORKERS = 0
 
+MODELS_DIR = HOME_DIR / "experiment/models"
 LOG_FILE = HOME_DIR / "experiment/log.txt"
 LOG_FILE_LONG = HOME_DIR / "experiment/log_long.txt"
 
@@ -68,7 +69,7 @@ def main(
 
     L.seed_everything(seed)
 
-    assert not Path("models/autoencoder_{ds_seed}_{seed}.pt").exists(), "re-running existing model."
+    assert not (MODELS_DIR / f"autoencoder_{ds_seed}_{seed}.pt").exists(), "model exists."
     assert Path(train_file).exists(), f"Training dataset {train_file} is not available"
     assert Path(val_file).exists(), f"Training dataset {val_file} is not available"
 
