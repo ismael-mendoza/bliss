@@ -1,7 +1,5 @@
 """Utilites for calculating LSST survey related quantities."""
 
-from pathlib import Path
-
 import galcheat
 import galsim
 import torch
@@ -12,6 +10,7 @@ from einops import rearrange
 from galcheat.utilities import mag2counts, mean_sky_level
 from torch import Tensor
 
+from bliss import HOME_DIR
 from bliss.datasets.table_utils import column_to_tensor
 
 PIXEL_SCALE = 0.2  # arcsecs / pixel
@@ -27,7 +26,7 @@ GALAXY_DENSITY = 160  # arcmin^{-2}, with mag cut above
 STAR_DENSITY = 15.5  # arcmin^{-2}
 
 
-DATA_DIR = Path(__file__).parent.parent.parent / "data"
+DATA_DIR = HOME_DIR / "data"
 
 
 def convert_mag_to_flux(mag: Tensor) -> Tensor:
