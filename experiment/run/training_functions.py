@@ -131,6 +131,11 @@ def _log_info(seed: int, model: str, info: dict):
     Using datasets: {train_file}, {val_file}
     """
 
+    ae_path_msg = f"\nAE path: {info['ae_path']}" if model == "deblender" else ""
+
+    log_msg_short += ae_path_msg
+    log_msg_long += ae_path_msg
+
     with open(LOG_FILE, "a") as f:
         print(log_msg_short, file=f)
 
