@@ -1,26 +1,22 @@
 #!/usr/bin/env python3
 
 import datetime
-from pathlib import Path
 
 import click
 import pytorch_lightning as L
 import torch
 
+from bliss import DATASETS_DIR, HOME_DIR
 from bliss.datasets.generate_individual import generate_individual_dataset
 from bliss.datasets.lsst import get_default_lsst_psf, prepare_final_galaxy_catalog
 
 NUM_WORKERS = 0
 
-HOME_DIR = Path(__file__).parent.parent
-DATASETS_DIR = Path("/nfs/turbo/lsa-regier/scratch/ismael/datasets/")
-LOG_FILE = HOME_DIR / "experiment/run/log.txt"
-
+LOG_FILE = HOME_DIR / "experiment/log.txt"
 
 CATSIM_CAT = prepare_final_galaxy_catalog()
 PSF = get_default_lsst_psf()
 
-TAG = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 
 assert DATASETS_DIR.exists()
 assert LOG_FILE.exists()
@@ -32,21 +28,9 @@ def main(seed: int):
 
     L.seed_everything(seed)
 
-    train_ds_file = DATASETS_DIR / f"train_ae_ds_{seed}_{TAG}.pt"
-    val_ds_file = DATASETS_DIR / f"val_ae_ds_{seed}_{TAG}.pt"
-    test_ds_file = DATASETS_DIR / f"test_ae_ds_{seed}_{TAG}.pt"
-
-    with open(LOG_FILE, "a") as f:
-        now = datetime.datetime.now()
-        print("", file=f)
-        log_msg = f"""Run training autoencoder data generation script...
-        With seed {seed} at {now}, n_samples {len(CATSIM_CAT)}.
-        Train, test, and val divided into 3 parts of same size. A given galaxy only appears once
-        across the 3 groups.
-
-        With TAG: {TAG}
-        """
-        print(log_msg, file=f)
+    train_ds_file = DATASETS_DIR / f"train_ae_ds_{seed}.pt"
+    val_ds_file = DATASETS_DIR / f"val_ae_ds_{seed}.pt"
+    test_ds_file = DATASETS_DIR / f"test_ae_ds_{seed}.pt"
 
     n_rows = len(CATSIM_CAT)
 
@@ -63,6 +47,13 @@ def main(seed: int):
     torch.save(train_ds, train_ds_file)
     torch.save(val_ds, val_ds_file)
     torch.save(test_ds, test_ds_file)
+
+    # logging
+    with open(LOG_FILE, "a") as f:
+        now = datetime.datetime.now()
+        log_msg = f"\nRun training autoencoder data generation script with seed {seed} at {now}.
+        "
+        print(log_msg, file=f)
 
 
 if __name__ == "__main__":
