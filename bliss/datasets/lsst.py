@@ -2,6 +2,7 @@
 
 import galcheat
 import galsim
+import numpy as np
 import torch
 from astropy import units as u  # noqa: WPS347
 from astropy.table import Table
@@ -62,7 +63,7 @@ def get_default_lsst_psf_tensor(slen: int) -> Tensor:
 
 
 def get_default_lsst_background() -> float:
-    return mean_sky_level("LSST", "i").to_value("electron")
+    return mean_sky_level("LSST", "i").to_value("electron").astype(np.float32).item()
 
 
 def prepare_final_galaxy_catalog() -> Table:
