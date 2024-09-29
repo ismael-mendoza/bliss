@@ -16,6 +16,7 @@ NUM_WORKERS = 0
 @click.option("--ae-model-path", required=True, type=str)
 @click.option("--train-file", required=True, type=str)
 @click.option("--val-file", required=True, type=str)
+@click.option("--ds-seed", required=True, type=int)
 @click.option("-b", "--batch-size", default=128)
 @click.option("--lr", default=1e-4, type=float)
 @click.option("-e", "--n-epochs", type=int, default=10_000)
@@ -26,12 +27,24 @@ def main(
     ae_model_path: str,
     train_file: str,
     val_file: str,
+    ds_seed: int,
     batch_size: int,
     lr: float,
     n_epochs: int,
     validate_every_n_epoch: int,
     log_every_n_steps: int,
 ):
+
+    # for logging
+    info = {
+        "ds_seed": ds_seed,
+        "train_file": train_file,
+        "val_file": val_file,
+        "batch_size": batch_size,
+        "n_epochs": n_epochs,
+        "validate_every_n_epoch": validate_every_n_epoch,
+        "lr": lr,
+    }
 
     ae_path = Path(ae_model_path)
     assert ae_path.exists()
@@ -51,6 +64,7 @@ def main(
         val_check_interval=None,
         log_every_n_steps=log_every_n_steps,
         keep_padding=True,
+        log_info_dict=info,
     )
 
 
