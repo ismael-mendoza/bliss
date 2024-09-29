@@ -5,6 +5,7 @@ from torch import Tensor
 from torch.utils.data import Dataset
 
 from bliss.catalog import FullCatalog
+from bliss.datasets.io import load_dataset_h5py
 
 
 class SavedGalsimBlends(Dataset):
@@ -16,7 +17,7 @@ class SavedGalsimBlends(Dataset):
         keep_padding: bool = False,
     ) -> None:
         super().__init__()
-        ds: dict[str, Tensor] = torch.load(dataset_file)
+        ds: dict[str, Tensor] = load_dataset_h5py(dataset_file)
 
         self.images = ds.pop("images").float()  # needs to be a float for NN
         self.background = ds.pop("background").float()
@@ -55,7 +56,7 @@ class SavedGalsimBlends(Dataset):
 class SavedIndividualGalaxies(Dataset):
     def __init__(self, dataset_file: str) -> None:
         super().__init__()
-        ds: dict[str, Tensor] = torch.load(dataset_file)
+        ds: dict[str, Tensor] = load_dataset_h5py(dataset_file)
 
         self.images = ds.pop("images").float()  # needs to be a float for NN
         self.background = ds.pop("background").float()
