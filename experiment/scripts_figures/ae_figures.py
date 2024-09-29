@@ -39,10 +39,10 @@ class AutoEncoderFigures(BlissFigure):
     def compute_data(self, autoencoder: OneCenteredGalaxyAE, images_file: str):
         device = autoencoder.device  # GPU is better otherwise slow.
         image_data = load_dataset_h5py(images_file)
-        images: Tensor = image_data["images"].float()  # for NN
-        backgrounds = image_data["background"].float()  # for NN
+        images: Tensor = image_data["images"]
+        backgrounds = image_data["background"]
         background: Tensor = backgrounds[0].reshape(1, 1, 53, 53).to(device)
-        noiseless_images: Tensor = image_data["noiseless"].float()  # for NN
+        noiseless_images: Tensor = image_data["noiseless"]
 
         snr: Tensor = get_snr(noiseless_images, backgrounds)
         recon_means = torch.tensor([])

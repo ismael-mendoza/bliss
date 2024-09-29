@@ -32,7 +32,7 @@ DATA_DIR = HOME_DIR / "data"
 
 def convert_mag_to_flux(mag: Tensor) -> Tensor:
     """Assuming gain = 1 always."""
-    return torch.from_numpy(mag2counts(mag.numpy(), "LSST", "i").to_value("electron"))
+    return torch.from_numpy(mag2counts(mag.numpy(), "LSST", "i").to_value("electron")).float()
 
 
 def convert_flux_to_mag(counts: Tensor) -> Tensor:

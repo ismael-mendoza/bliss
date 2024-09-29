@@ -63,7 +63,7 @@ class DetectionMetrics(Metric):
         self.add_state("total_true_n_sources", default=torch.tensor(0), dist_reduce_fx="sum")
         self.add_state("total_correct_class", default=torch.tensor(0), dist_reduce_fx="sum")
         self.add_state("conf_matrix", default=torch.tensor([[0, 0], [0, 0]]), dist_reduce_fx="sum")
-        self.add_state("avg_distance", default=torch.tensor(0).float(), dist_reduce_fx="mean")
+        self.add_state("avg_distance", default=torch.tensor(0.0), dist_reduce_fx="mean")
 
     # pylint: disable=no-member
     def update(self, true: FullCatalog, est: FullCatalog) -> None:
