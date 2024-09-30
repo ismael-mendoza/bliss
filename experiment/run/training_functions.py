@@ -115,7 +115,7 @@ def _log_info(seed: int, model: str, info: dict):
     val_check_interval = info["val_check_interval"]
     batch_size = info["batch_size"]
     n_epochs = info["n_epochs"]
-    lr = info["learning_rate"]
+    lr = info["lr"]
     train_file = info["train_file"]
     val_file = info["val_file"]
     vnum = info["version"]

@@ -35,6 +35,7 @@ def main(
         "batch_size": batch_size,
         "n_epochs": n_epochs,
         "validate_every_n_epoch": validate_every_n_epoch,
+        "val_check_interval": val_check_interval,
         "lr": 1e-4,
     }
 
