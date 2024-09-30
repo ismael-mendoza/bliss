@@ -25,7 +25,7 @@ def _log_info(seed, info: dict):
     validate_every_n_epoch = info["validate_every_n_epoch"]
     batch_size = info["batch_size"]
     n_epochs = info["n_epochs"]
-    lr = info["learning_rate"]
+    lr = info["lr"]
     train_file = info["train_file"]
     val_file = info["val_file"]
     vnum = info["version"]
