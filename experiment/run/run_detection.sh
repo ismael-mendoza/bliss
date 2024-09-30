@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-export CUDA_VISIBLE_DEVICES="2"
+export CUDA_VISIBLE_DEVICES="0"
 
-./bin/run_detection_train.py --seed 41 --train-file ../data/datasets/train_ds_41_20240927143647.pt --val-file ../data/datasets/val_ds_41_20240927143647.pt
+./bin/run_detection_train.py --seed 42 --ds-seed 42 --train-file ../data/datasets/train_ds_42.hdf5 --val-file ../data/datasets/val_ds_42.hdf5
