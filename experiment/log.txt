@@ -15,3 +15,5 @@ Training deblender with seed 40, ds_seed 42, version 20 at 2024-09-26 17:52:11.3
 AE used was ../models/autoencoder_42.pt
 
 Saved checkpoint 'data/out/deblender/version_20/checkpoints/epoch=2709-val_loss=7583265.000.ckpt' as weights /home/imendoza/bliss/experiment/models/deblend_42.pt at 2024-09-27 09:45:12.820852
+
+Run training autoencoder data generation script with seed 42 at 2024-09-29 22:27:54.888667.
