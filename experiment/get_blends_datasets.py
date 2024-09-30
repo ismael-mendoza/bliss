@@ -78,7 +78,6 @@ def main(seed: int, n_samples: int, galaxy_density: float, star_density: float):
     # logging
     with open(LOG_FILE, "a") as f:
         now = datetime.datetime.now()
-        print("", file=f)
         log_msg = f"""\nBlend data generation with seed {seed} at {now}.
         Galaxy density {galaxy_density}, star_density {star_density}, and n_samples {n_samples}.
         """
