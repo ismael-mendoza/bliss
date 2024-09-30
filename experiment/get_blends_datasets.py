@@ -43,9 +43,9 @@ def main(seed: int, n_samples: int, galaxy_density: float, star_density: float):
     val_ds_file = DATASETS_DIR / f"val_ds_{seed}.hdf5"
     test_ds_file = DATASETS_DIR / f"test_ds_{seed}.hdf5"
 
-    assert not Path(train_ds_file).exists(), "files exist"
-    assert not Path(val_ds_file).exists(), "files exist"
-    assert not Path(test_ds_file).exists(), "files exist"
+    assert not train_ds_file.exists(), "files exist"
+    assert not val_ds_file.exists(), "files exist"
+    assert not test_ds_file.exists(), "files exist"
 
     # disjointed tables with different galaxies
     n_rows = len(CATSIM_CAT)
