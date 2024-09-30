@@ -14,15 +14,15 @@ os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
 
 def save_dataset_h5py(ds: dict[str, Tensor], fpath: str) -> None:
     assert not Path(fpath).exists(), "overwriting existing ds"
-    assert Path(fpath).suffix == ".hdf5" or Path(fpath).suffix == ".h5"
-    with h5py.File(fpath, "w") as f:
+    assert Path(fpath).suffix in {".hdf5", ".h5"}
+    with h5py.File(fpath, "w", locking=False) as f:
         for k, v in ds.items():
             f.create_dataset(k, data=v.numpy())
 
 
 def load_dataset_h5py(fpath: str) -> dict[str, Tensor]:
     assert Path(fpath).exists(), "file path does not exists"
-    assert Path(fpath).suffix == ".hdf5" or Path(fpath).suffix == ".h5"
+    assert Path(fpath).suffix in {".hdf5", ".h5"}
     ds = {}
     with h5py.File(fpath, "r") as f:
         for k, v in f.items():
