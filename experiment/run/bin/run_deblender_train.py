@@ -35,6 +35,9 @@ def main(
     log_every_n_steps: int,
 ):
 
+    ae_path = Path(ae_model_path)
+    assert ae_path.exists()
+
     # for logging
     info = {
         "ds_seed": ds_seed,
@@ -45,10 +48,8 @@ def main(
         "validate_every_n_epoch": validate_every_n_epoch,
         "val_check_interval": None,
         "lr": lr,
+        "ae_path": ae_path,
     }
-
-    ae_path = Path(ae_model_path)
-    assert ae_path.exists()
 
     # setup model to train
     galaxy_encoder = GalaxyEncoder(ae_path, lr=lr)
