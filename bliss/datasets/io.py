@@ -4,24 +4,22 @@
 
 from pathlib import Path
 
-import h5py
+import numpy as np
 import torch
 from torch import Tensor
 
 
-def save_dataset_h5py(ds: dict[str, Tensor], fpath: str | Path) -> None:
+def save_dataset_npz(ds: dict[str, Tensor], fpath: str | Path) -> None:
     assert not Path(fpath).exists(), "overwriting existing ds"
-    assert Path(fpath).suffix in {".hdf5", ".h5"}
-    with h5py.File(fpath, "w") as f:
-        for k, v in ds.items():
-            f.create_dataset(k, data=v.numpy(), chunks=True)
+    assert Path(fpath).suffix == ".npz"
+    ds_np = {k: v.numpy() for k, v in ds.items()}
+    np.savez(fpath, **ds_np)
 
 
-def load_dataset_h5py(fpath: str | Path) -> dict[str, Tensor]:
+def load_dataset_npz(fpath: str | Path) -> dict[str, Tensor]:
     assert Path(fpath).exists(), "file path does not exists"
-    assert Path(fpath).suffix in {".hdf5", ".h5"}
     ds = {}
-    with h5py.File(fpath, "r") as f:
-        for k, v in f.items():
-            ds[k] = torch.from_numpy(v[...])
+    npzfile = np.load(fpath)
+    for k in npzfile.files:
+        ds[k] = torch.from_numpy(npzfile[k])
     return ds
