@@ -7,7 +7,7 @@ from torch import Tensor
 from tqdm import tqdm
 
 from bliss.catalog import FullCatalog
-from bliss.datasets.io import load_dataset_h5py
+from bliss.datasets.io import load_dataset_npz
 from bliss.datasets.lsst import PIXEL_SCALE
 from bliss.encoders.autoencoder import CenteredGalaxyDecoder
 from bliss.encoders.encoder import Encoder
@@ -45,7 +45,7 @@ class BlendSimulationFigure(BlissFigure):
         )
 
     def compute_data(self, blend_file: str, encoder: Encoder, decoder: CenteredGalaxyDecoder):
-        blend_data: dict[str, Tensor] = load_dataset_h5py(blend_file)
+        blend_data: dict[str, Tensor] = load_dataset_npz(blend_file)
         images = blend_data.pop("images")
         background = blend_data.pop("background")
         uncentered_sources = blend_data.pop("uncentered_sources")

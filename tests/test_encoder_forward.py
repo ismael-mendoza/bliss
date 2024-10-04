@@ -5,7 +5,7 @@ from astropy.table import Table
 from torch.utils.data import DataLoader
 
 from bliss.datasets.generate_blends import generate_dataset, parse_dataset
-from bliss.datasets.io import save_dataset_h5py
+from bliss.datasets.io import save_dataset_npz
 from bliss.datasets.lsst import get_default_lsst_psf
 from bliss.datasets.saved_datasets import SavedGalsimBlends
 from bliss.datasets.table_utils import column_to_tensor
@@ -24,8 +24,8 @@ def test_encoder_forward(home_dir, tmp_path):
     psf = get_default_lsst_psf()
     blends_ds = generate_dataset(10, catsim_table, all_star_mags, psf, 10)
 
-    saved_ds_path = tmp_path / "train_ds.hdf5"
-    save_dataset_h5py(blends_ds, saved_ds_path)
+    saved_ds_path = tmp_path / "train_ds.npz"
+    save_dataset_npz(blends_ds, saved_ds_path)
     saved_ds1 = SavedGalsimBlends(saved_ds_path, keep_padding=False)
     saved_ds2 = SavedGalsimBlends(saved_ds_path, keep_padding=True)
 
