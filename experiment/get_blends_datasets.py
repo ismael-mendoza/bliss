@@ -9,7 +9,7 @@ import pytorch_lightning as L
 
 from bliss import DATASETS_DIR, HOME_DIR
 from bliss.datasets.generate_blends import generate_dataset
-from bliss.datasets.io import save_dataset_h5py
+from bliss.datasets.io import save_dataset_npz
 from bliss.datasets.lsst import (
     GALAXY_DENSITY,
     STAR_DENSITY,
@@ -39,9 +39,9 @@ def main(seed: int, n_samples: int, galaxy_density: float, star_density: float):
     L.seed_everything(seed)
     rng = np.random.default_rng(seed)  # for catalog indices
 
-    train_ds_file = DATASETS_DIR / f"train_ds_{seed}.hdf5"
-    val_ds_file = DATASETS_DIR / f"val_ds_{seed}.hdf5"
-    test_ds_file = DATASETS_DIR / f"test_ds_{seed}.hdf5"
+    train_ds_file = DATASETS_DIR / f"train_ds_{seed}.npz"
+    val_ds_file = DATASETS_DIR / f"val_ds_{seed}.npz"
+    test_ds_file = DATASETS_DIR / f"test_ds_{seed}.npz"
 
     assert not train_ds_file.exists(), "files exist"
     assert not val_ds_file.exists(), "files exist"
@@ -73,7 +73,7 @@ def main(seed: int, n_samples: int, galaxy_density: float, star_density: float):
             bp=24,
             max_shift=0.5,
         )
-        save_dataset_h5py(ds, f)
+        save_dataset_npz(ds, f)
 
     # logging
     with open(LOG_FILE, "a") as f:
