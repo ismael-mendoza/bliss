@@ -28,6 +28,10 @@ def main(seed: int):
     val_ds_file = DATASETS_DIR / f"val_ae_ds_{seed}.npz"
     test_ds_file = DATASETS_DIR / f"test_ae_ds_{seed}.npz"
 
+    assert not train_ds_file.exists(), "files exist"
+    assert not val_ds_file.exists(), "files exist"
+    assert not test_ds_file.exists(), "files exist"
+
     n_rows = len(CATSIM_CAT)
 
     # shuffled because of indices in random.choice
