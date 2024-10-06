@@ -13,10 +13,10 @@ NUM_WORKERS = 0
 
 @click.command()
 @click.option("-s", "--seed", required=True, type=int)
+@click.option("--ds-seed", required=True, type=int)
 @click.option("--ae-model-path", required=True, type=str)
 @click.option("--train-file", required=True, type=str)
 @click.option("--val-file", required=True, type=str)
-@click.option("--ds-seed", required=True, type=int)
 @click.option("-b", "--batch-size", default=128)
 @click.option("--lr", default=1e-4, type=float)
 @click.option("-e", "--n-epochs", type=int, default=10_000)
@@ -24,10 +24,10 @@ NUM_WORKERS = 0
 @click.option("--log-every-n-steps", default=100, type=int)
 def main(
     seed: int,
+    ds_seed: int,
     ae_model_path: str,
     train_file: str,
     val_file: str,
-    ds_seed: int,
     batch_size: int,
     lr: float,
     n_epochs: int,
