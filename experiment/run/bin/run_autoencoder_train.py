@@ -49,18 +49,18 @@ def _log_info(seed, info: dict):
 
 @click.command()
 @click.option("-s", "--seed", required=True, type=int)
+@click.option("--ds-seed", required=True, type=int, help="Random seed used for dataset")
 @click.option("--train-file", required=True, type=str)
 @click.option("--val-file", required=True, type=str)
-@click.option("--ds-seed", required=True, type=int, help="Random seed used for dataset")
 @click.option("-b", "--batch-size", default=128)
 @click.option("-e", "--n-epochs", default=10_000)
 @click.option("--validate-every-n-epoch", default=10, type=int)
 @click.option("--lr", default=1e-5, type=float)
 def main(
     seed: int,
+    ds_seed: int,
     train_file: str,
     val_file: str,
-    ds_seed: int,
     batch_size: int,
     n_epochs: int,
     validate_every_n_epoch: int,
