@@ -1,7 +1,19 @@
 #!/usr/bin/env bash
 
-export CUDA_VISIBLE_DEVICES="2"
+export CUDA_VISIBLE_DEVICES="0"
+export SEED="42"
+export AE_VERSION="25" # find next one in "out/autoencoder" folder
 
-./run_detection.sh
-./run_binary.sh
-./run_deblender.sh
+../get_single_galaxies_datasets.py --seed $SEED
+
+../get_blends_datasets.py --seed $SEED
+
+./run_autoencoder_train.py --seed $SEED --ds-seed $SEED --train-file ../data/datasets/train_ae_ds_${SEED}.npz --val-file ../data/datasets/val_ae_ds_${SEED}.npz
+
+../get_model_from_checkpoint.py -m "autoencoder" --seed $SEED --ds-seed $SEED --checkpoint-dir ../data/out/autoencoder/version_${AE_VERSION}/checkpoints
+
+./bin/run_detection_train.py --seed $SEED --ds-seed $SEED --train-file ../data/datasets/train_ds_${SEED}.npz --val-file ../data/datasets/val_ds_${SEED}.npz
+
+./bin/run_binary_train.py --seed $SEED --ds-seed $SEED --train-file ../data/datasets/train_ds_${SEED}.npz --val-file ../data/datasets/val_ds_${SEED}.npz
+
+./bin/run_deblender_train.py --seed $SEED --ds-seed $SEED --ae-model-path ../models/autoencoder_42_42.pt --train-file ../data/datasets/train_ds_${SEED}.npz --val-file ../data/datasets/val_ds_${SEED}.npz
