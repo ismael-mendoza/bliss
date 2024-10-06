@@ -16,8 +16,7 @@ NUM_WORKERS = 0
 @click.option("-b", "--batch-size", default=32)
 @click.option("-e", "--n-epochs", default=10)
 @click.option("--validate-every-n-epoch", default=1, type=int)
-@click.option("--val-check-interval", default=40, type=int, help="# of training batches")
-@click.option("--log-every-n-steps", default=10, type=int)
+@click.option("--log-every-n-steps", default=50, type=int)
 def main(
     seed: int,
     train_file: str,
@@ -26,7 +25,6 @@ def main(
     batch_size: int,
     n_epochs: int,
     validate_every_n_epoch: int,
-    val_check_interval: int,
     log_every_n_steps: int,
 ):
 
@@ -38,7 +36,7 @@ def main(
         "batch_size": batch_size,
         "n_epochs": n_epochs,
         "validate_every_n_epoch": validate_every_n_epoch,
-        "val_check_interval": val_check_interval,
+        "val_check_interval": None,
         "lr": 1e-4,
     }
 
@@ -53,7 +51,7 @@ def main(
         model=binary_encoder,
         model_name="binary",
         validate_every_n_epoch=validate_every_n_epoch,
-        val_check_interval=val_check_interval,
+        val_check_interval=None,
         log_every_n_steps=log_every_n_steps,
         log_info_dict=info,
     )
