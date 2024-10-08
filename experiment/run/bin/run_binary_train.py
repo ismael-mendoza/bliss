@@ -10,18 +10,18 @@ NUM_WORKERS = 0
 
 @click.command()
 @click.option("-s", "--seed", required=True, type=int)
+@click.option("--ds-seed", required=True, type=int)
 @click.option("--train-file", required=True, type=str)
 @click.option("--val-file", required=True, type=str)
-@click.option("--ds-seed", required=True, type=int)
 @click.option("-b", "--batch-size", default=32)
-@click.option("-e", "--n-epochs", default=10)
+@click.option("-e", "--n-epochs", default=50)
 @click.option("--validate-every-n-epoch", default=1, type=int)
 @click.option("--log-every-n-steps", default=50, type=int)
 def main(
     seed: int,
+    ds_seed: int,
     train_file: str,
     val_file: str,
-    ds_seed: int,
     batch_size: int,
     n_epochs: int,
     validate_every_n_epoch: int,
