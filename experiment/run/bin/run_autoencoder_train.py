@@ -56,6 +56,7 @@ def _log_info(seed, info: dict):
 @click.option("-e", "--n-epochs", default=10_000)
 @click.option("--validate-every-n-epoch", default=10, type=int)
 @click.option("--lr", default=1e-5, type=float)
+@click.option("--version", default="", type=str)
 def main(
     seed: int,
     ds_seed: int,
@@ -65,7 +66,17 @@ def main(
     n_epochs: int,
     validate_every_n_epoch: int,
     lr: float,
+    version: str,
 ):
+
+    # setup version
+    if version == "":
+        version = None
+    else:
+        try:
+            version = int(version)
+        except:
+            raise ValueError("Version must be a number if passed in.")
 
     L.seed_everything(seed)
 
@@ -88,6 +99,7 @@ def main(
         val_check_interval=None,
         model_name="autoencoder",
         log_every_n_steps=train_ds.epoch_size // batch_size,  # = number of batches in 1 epoch
+        version=version,
     )
 
     # logging
