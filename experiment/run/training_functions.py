@@ -27,6 +27,7 @@ def setup_training_objects(
     model_name: str,
     log_every_n_steps: int = 16,
     extra_callbacks: list | None = None,  # list of additional callbacks to include
+    version: int | str | None = None,  # sometimes specifying version is useful
 ):
     train_dl = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers)
     val_dl = DataLoader(val_ds, batch_size=batch_size, num_workers=num_workers)
@@ -41,7 +42,9 @@ def setup_training_objects(
         auto_insert_metric_name=False,
     )
 
-    logger = TensorBoardLogger(save_dir="out", name=model_name, default_hp_metric=False)
+    logger = TensorBoardLogger(
+        save_dir="out", name=model_name, default_hp_metric=False, version=version
+    )
 
     callbacks = [mckp] + extra_callbacks if extra_callbacks else [mckp]
 
