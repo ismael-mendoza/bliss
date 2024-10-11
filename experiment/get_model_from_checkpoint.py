@@ -29,7 +29,7 @@ def _find_best_checkpoint(checkpoint_dir: str):
 
 
 def _save_weights(weight_save_path: str, model_checkpoint_path: str):
-    model_checkpoint = torch.load(model_checkpoint_path, map_location="cpu")
+    model_checkpoint = torch.load(model_checkpoint_path, map_location="cpu", weights_only=True)
     model_state_dict = model_checkpoint["state_dict"]
     weight_file_path = Path(weight_save_path)
     assert weight_file_path.parent.exists()
