@@ -35,3 +35,11 @@ Training detection with seed 43, ds_seed 42, version 26 at 2024-10-08 16:39:00.6
 
 Training deblender with seed 42, ds_seed 42, version 24 at 2024-10-08 19:28:08.112222.
 AE path: ../models/autoencoder_42_42.pt
+
+Training AE with seed 44, ds_seed 42, version 31 at 2024-10-09 19:37:26.517541.
+
+ Saved checkpoint 'data/out/deblender/version_24/checkpoints/epoch=4999-val_loss=7476455.500.ckpt' as weights /home/imendoza/bliss/experiment/models/deblender_42_42.pt at 2024-10-11 18:04:54.113639
+
+ Saved checkpoint 'data/out/detection/version_26/checkpoints/epoch=8-val_loss=0.570.ckpt' as weights /home/imendoza/bliss/experiment/models/detection_42_43.pt at 2024-10-11 18:17:58.601791
+
+ Saved checkpoint 'data/out/binary/version_5/checkpoints/epoch=2-val_loss=0.462.ckpt' as weights /home/imendoza/bliss/experiment/models/binary_42_42.pt at 2024-10-11 18:20:43.177459
