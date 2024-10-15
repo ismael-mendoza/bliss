@@ -43,3 +43,14 @@ Training AE with seed 44, ds_seed 42, version 31 at 2024-10-09 19:37:26.517541.
  Saved checkpoint 'data/out/detection/version_26/checkpoints/epoch=8-val_loss=0.570.ckpt' as weights /home/imendoza/bliss/experiment/models/detection_42_43.pt at 2024-10-11 18:17:58.601791
 
  Saved checkpoint 'data/out/binary/version_5/checkpoints/epoch=2-val_loss=0.462.ckpt' as weights /home/imendoza/bliss/experiment/models/binary_42_42.pt at 2024-10-11 18:20:43.177459
+
+ Saved checkpoint 'data/out/detection/version_25/checkpoints/epoch=8-val_loss=0.405.ckpt' as weights /home/imendoza/bliss/experiment/models/detection_42_42.pt at 2024-10-11 18:30:21.773304
+
+ Saved checkpoint '../data/out/autoencoder/version_31/checkpoints/epoch=9489-val_loss=2691337.500.ckpt' as weights /home/imendoza/bliss/experiment/models/autoencoder_42_44.pt at 2024-10-11 18:32:46.202473
+
+Training detection with seed 44, ds_seed 42, version 27 at 2024-10-11 18:51:22.995579.
+
+Training binary with seed 44, ds_seed 42, version 6 at 2024-10-12 09:29:42.044399.
+
+Training deblender with seed 44, ds_seed 42, version 25 at 2024-10-12 14:47:52.536353.
+AE path: ../models/autoencoder_42_44.pt
