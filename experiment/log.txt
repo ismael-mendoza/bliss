@@ -54,3 +54,9 @@ Training binary with seed 44, ds_seed 42, version 6 at 2024-10-12 09:29:42.04439
 
 Training deblender with seed 44, ds_seed 42, version 25 at 2024-10-12 14:47:52.536353.
 AE path: ../models/autoencoder_42_44.pt
+
+ Saved checkpoint 'data/out/deblender/version_25/checkpoints/epoch=3809-val_loss=7474341.500.ckpt' as weights /home/imendoza/bliss/experiment/models/deblender_42_44.pt at 2024-10-15 13:32:17.339180
+
+ Saved checkpoint 'data/out/detection/version_27/checkpoints/epoch=11-val_loss=1.086.ckpt' as weights /home/imendoza/bliss/experiment/models/detection_42_44.pt at 2024-10-15 13:33:06.006949
+
+ Saved checkpoint 'data/out/binary/version_6/checkpoints/epoch=3-val_loss=0.404.ckpt' as weights /home/imendoza/bliss/experiment/models/binary_42_44.pt at 2024-10-15 13:34:51.816331
