@@ -18,7 +18,7 @@ from experiment.scripts_figures.toy_figures import ToySeparationFigure
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-ALL_FIGS = {"single", "blend", "toy"}
+ALL_FIGS = ("single", "blend", "toy")
 
 
 def _load_models(seed: int, ds_seed: int, device):
@@ -91,7 +91,7 @@ def _make_blend_figures(encoder, decoder, test_file: str, overwrite: bool):
 
 
 @click.command()
-@click.option("-m", "--mode", required=True, type=str, help="Which figure to make")
+@click.option("-m", "--mode", required=True, type=click.Choice(ALL_FIGS, case_sensitive=False))
 @click.option("-s", "--seed", required=True, type=int, help="Consistent seed used to train models.")
 @click.option("--ds-seed", required=True, type=int, help="Seed of training/testing set.")
 @click.option("--test-file-single", default="", type=str, help="Dataset file for testing AE.")
