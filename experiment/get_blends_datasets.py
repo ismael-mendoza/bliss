@@ -3,6 +3,7 @@
 import datetime
 
 import click
+import numpy as np
 import pytorch_lightning as L
 
 from bliss import DATASETS_DIR, HOME_DIR
@@ -29,7 +30,7 @@ assert LOG_FILE.exists()
 
 @click.command()
 @click.option("-s", "--seed", required=True, type=int)
-@click.option("-n", "--n-samples", default=50_000, type=int)  # equally divided total blends
+@click.option("-n", "--n-samples", default=50000, type=int)  # equally divided total blends
 @click.option("--galaxy-density", default=GALAXY_DENSITY, type=float)
 @click.option("--star-density", default=STAR_DENSITY, type=float)
 def main(seed: int, n_samples: int, galaxy_density: float, star_density: float):
@@ -47,7 +48,7 @@ def main(seed: int, n_samples: int, galaxy_density: float, star_density: float):
     # disjointed tables with different galaxies
     indices_fpath = DATASETS_DIR / f"indices_{seed}.pt"
     assert indices_fpath.exists()
-    indices_dict = load_dataset_npz(indices_fpath)
+    indices_dict = np.load(indices_fpath)
     train_indices = indices_dict["train"]
     val_indices = indices_dict["val"]
     test_indices = indices_dict["test"]
