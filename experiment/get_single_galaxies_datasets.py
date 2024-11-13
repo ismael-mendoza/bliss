@@ -60,7 +60,10 @@ def main(seed: int, fraction: float):
     # logging
     with open(LOG_FILE, "a") as f:
         now = datetime.datetime.now()
-        log_msg = f"\nRun training autoencoder data generation script with seed {seed} at {now}."
+        log_msg = (
+            f"\nRun single galaxy data generation script with seed {seed}, "
+            f"fraction{fraction} at {now}."
+        )
         print(log_msg, file=f)
 
 
