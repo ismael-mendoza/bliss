@@ -46,7 +46,7 @@ def main(seed: int, n_samples: int, galaxy_density: float, star_density: float):
     assert not test_ds_file.exists(), "files exist"
 
     # disjointed tables with different galaxies
-    indices_fpath = DATASETS_DIR / f"indices_{seed}.pt"
+    indices_fpath = DATASETS_DIR / f"indices_{seed}.npz"
     assert indices_fpath.exists()
     indices_dict = np.load(indices_fpath)
     train_indices = indices_dict["train"]
