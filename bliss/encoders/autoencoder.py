@@ -64,7 +64,7 @@ class OneCenteredGalaxyAE(pl.LightningModule):
         loss, loss_avg, recon_mean = self.get_loss(images)
 
         # max std. residual across all images
-        res = (images - recon_mean) / recon_mean.sqrt()
+        res = (images - recon_mean) / self.background_sqrt
         mean_max_residual = reduce(res.abs(), "b c h w -> b", "max").mean()
 
         self.log("val/loss", loss)
