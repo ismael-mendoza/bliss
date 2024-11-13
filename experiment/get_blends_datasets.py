@@ -8,7 +8,7 @@ import pytorch_lightning as L
 
 from bliss import DATASETS_DIR, HOME_DIR
 from bliss.datasets.generate_blends import generate_dataset
-from bliss.datasets.io import load_dataset_npz, save_dataset_npz
+from bliss.datasets.io import save_dataset_npz
 from bliss.datasets.lsst import (
     GALAXY_DENSITY,
     STAR_DENSITY,
