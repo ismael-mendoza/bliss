@@ -3,7 +3,7 @@
 import math
 
 import torch
-from einops import pack, rearrange
+from einops import rearrange
 from torch import Tensor, nn
 from tqdm import tqdm
 

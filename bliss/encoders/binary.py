@@ -1,6 +1,6 @@
 import pytorch_lightning as pl
 import torch
-from einops import pack, rearrange, reduce
+from einops import rearrange, reduce
 from torch import Tensor
 from torch.nn import BCELoss
 from torch.optim import Adam
