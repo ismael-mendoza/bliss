@@ -3,7 +3,9 @@
 import datetime
 
 import click
+import numpy as np
 import pytorch_lightning as L
+import torch
 
 from bliss import DATASETS_DIR, HOME_DIR
 from bliss.datasets.generate_individual import generate_individual_dataset
@@ -23,6 +25,7 @@ PSF = get_default_lsst_psf()
 def main(seed: int):
 
     L.seed_everything(seed)
+    rng = np.random.default_rng(seed)  # for catalog indices
 
     train_ds_file = DATASETS_DIR / f"train_ae_ds_{seed}.npz"
     val_ds_file = DATASETS_DIR / f"val_ae_ds_{seed}.npz"
@@ -33,20 +36,23 @@ def main(seed: int):
     assert not test_ds_file.exists(), "files exist"
 
     n_rows = len(CATSIM_CAT)
+    shuffled_indices = torch.from_numpy(rng.choice(np.arange(n_rows), size=n_rows, replace=False))
+    train_indices = shuffled_indices[: n_rows // 3]
+    val_indices = shuffled_indices[n_rows // 3 : n_rows // 3 * 2]
+    test_indices = shuffled_indices[n_rows // 3 * 2 :]
 
-    # shuffled because of indices in random.choice
-    dataset = generate_individual_dataset(n_rows, CATSIM_CAT, PSF, slen=53, replace=False)
+    # save indices, will reuse for blends.
+    save_dataset_npz(
+        {"train": train_indices, "val": val_indices, "test": test_indices},
+        DATASETS_DIR / f"indices_{seed}.npz",
+    )
 
-    # train, val, test split
-    # no galaxies are shared
-    train_ds = {p: q[: n_rows // 3] for p, q in dataset.items()}
-    val_ds = {p: q[n_rows // 3 : 2 * n_rows // 3] for p, q in dataset.items()}
-    test_ds = {p: q[2 * n_rows // 3 :] for p, q in dataset.items()}
-
-    # now save data
-    save_dataset_npz(train_ds, train_ds_file)
-    save_dataset_npz(val_ds, val_ds_file)
-    save_dataset_npz(test_ds, test_ds_file)
+    all_files = (train_ds_file, val_ds_file, test_ds_file)
+    all_indices = (train_indices, val_indices, test_indices)
+    for fpath, idxs in zip(all_files, all_indices):
+        cat = CATSIM_CAT[idxs]
+        ds = generate_individual_dataset(len(cat), cat, PSF, slen=53, replace=False)
+        save_dataset_npz(ds, fpath)
 
     # logging
     with open(LOG_FILE, "a") as f:
