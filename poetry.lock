@@ -4544,6 +4544,62 @@ files = [
 numpy = "*"
 
 [[package]]
+name = "sep-pjw"
+version = "1.3.7"
+description = "Astronomical source extraction and photometry library"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "sep_pjw-1.3.7-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:88f1c3eeacae93a03382eee08f5dea224a05d99c4b982a651e3ff5c38d52f060"},
+    {file = "sep_pjw-1.3.7-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:3d2bf70a759fbf9e147a3490c30523a752fc59f825fa0bbb8b0aaddb081b745e"},
+    {file = "sep_pjw-1.3.7-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:7236c2f8e827fc5f6ae0fe5006c5ba2453c4d0f3b48951b63f2f61cb05d97b0f"},
+    {file = "sep_pjw-1.3.7-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e27727c1bd10919ed795f082bfeb6aff3e3f8da0600d03cdb851eea4c0a57451"},
+    {file = "sep_pjw-1.3.7-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0d68f609d2396de7f4bc720fc03472df06a34deaba923ced4df432d2a8e6a99f"},
+    {file = "sep_pjw-1.3.7-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:4cd360a94c4af350c334e6d25aca5ffd584de777304a2ce6c38cb7dfb68704d5"},
+    {file = "sep_pjw-1.3.7-cp310-cp310-win32.whl", hash = "sha256:3cd8b4c9db0dd7cc021ad67965ba18710ec31866fdcf94fb742ef5072fe9be15"},
+    {file = "sep_pjw-1.3.7-cp310-cp310-win_amd64.whl", hash = "sha256:4cfec0783ecc6350f617d12391f843222b27c290291f32cb102621960e72eaad"},
+    {file = "sep_pjw-1.3.7-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:83cadd78e57608612bc1f39e92be4a4a7175323638bf37c9371af776f5b4e930"},
+    {file = "sep_pjw-1.3.7-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:9a13eb6ee958adbf1410f503273be069ef115e1b83bd37aeed220a78af468deb"},
+    {file = "sep_pjw-1.3.7-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:4b0bcddf7ac406b181dd278139cd312da9cd1fa2f8f65697033fe355fa3864c3"},
+    {file = "sep_pjw-1.3.7-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a0028c51e5a25f653fd81778b41c14594c90b9718d0e423abcbec84e4404f075"},
+    {file = "sep_pjw-1.3.7-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7b52d5afde93f3b3bb3a664245e8868d9de80ed0e20d711216877fee5aabc4fa"},
+    {file = "sep_pjw-1.3.7-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:1d45ff5ac670c701e4e1959172c1667c2f56fd54b7be9b8080f6dfb954b03854"},
+    {file = "sep_pjw-1.3.7-cp311-cp311-win32.whl", hash = "sha256:e6d7a2576f7477be556f1e664d0ff5159beeaffa6ec642951addf7169bc7c580"},
+    {file = "sep_pjw-1.3.7-cp311-cp311-win_amd64.whl", hash = "sha256:5e50894ad45e50e5025a2b6d002b2c720b263402bf6cde674ef8b966284d25f0"},
+    {file = "sep_pjw-1.3.7-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:e79e99ac34e3c49e1116c65bf27f6eeffad615c1de897fca5fab2e6aded98d3a"},
+    {file = "sep_pjw-1.3.7-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:ec4f62f033f26f8e2d6d0b8ec7c68bffc5196b06411398d5a562b4de8d3c640f"},
+    {file = "sep_pjw-1.3.7-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:66f6e95d9d2f6f29442be75421991183b90c15e9f6a908368bebd7fa8db7775c"},
+    {file = "sep_pjw-1.3.7-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:78597580739035d680a59fc66817cbcfb868bf63f6a7844480ac0675e9d27266"},
+    {file = "sep_pjw-1.3.7-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0aa827aa05e481a77072a312e4ce72dad9007a577ac7525e3452bd00210a80ab"},
+    {file = "sep_pjw-1.3.7-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:0cc1aff73137d7a86c95081bd0471df17d4c91bf5aa8052e646491467e07c12e"},
+    {file = "sep_pjw-1.3.7-cp312-cp312-win32.whl", hash = "sha256:f212d3c8594eb50871cc4391a830ce19c48c4c6f23ab559fe98e220efae23d88"},
+    {file = "sep_pjw-1.3.7-cp312-cp312-win_amd64.whl", hash = "sha256:6292a2915cceb8c934e9e9b9545bd074ccba17fb14a96a2063b8f984503a5710"},
+    {file = "sep_pjw-1.3.7-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:0ce5b082dd2c2e5749d5caba4cea62e121df2ed9d6f4f5e8853006105f8f766e"},
+    {file = "sep_pjw-1.3.7-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:c30d3daf15d28dc0b03abf53e9d4694fd686fdc0fdf4846a9e2b6f77682a8ef5"},
+    {file = "sep_pjw-1.3.7-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:088681a18753380e9236d98ab39121e21c7574531fb165297d57ab76630d3d5c"},
+    {file = "sep_pjw-1.3.7-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:06b1fba9c7ca1b5b02ed9cc7b22c4a64e64c0b22183ea4f1cae2a8a86a37b5e4"},
+    {file = "sep_pjw-1.3.7-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:15683faee891d3bcc32f6c1127b98404d8585b40b01ce07b334c8340b01aa560"},
+    {file = "sep_pjw-1.3.7-cp313-cp313-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:1229eaa924509745a0cf26b0cf23579848917ddb88156bc3a3104f0fc665dea3"},
+    {file = "sep_pjw-1.3.7-cp313-cp313-win32.whl", hash = "sha256:24c425aaad10ced2e5a325976c13a5b03147019744545d8a196bd1bda96c0f42"},
+    {file = "sep_pjw-1.3.7-cp313-cp313-win_amd64.whl", hash = "sha256:25c19f3ae1e87bd6d81b9ac51e7d835b3b734bf44fd0dd69d38a2ae2001c3f71"},
+    {file = "sep_pjw-1.3.7-cp39-cp39-macosx_10_9_universal2.whl", hash = "sha256:b71a4e7ae86d88258f50da876899088ad085f0c85348ab9f8424f7271c7d7593"},
+    {file = "sep_pjw-1.3.7-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:ce01275704ce4f6fec71fa055a44f698441b14a6694902651f56a6cfa2d9cb93"},
+    {file = "sep_pjw-1.3.7-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:6c28a36943a5b228d0a87b7dab12db5314b848a06b4de81e4f75e4fe7a5f5834"},
+    {file = "sep_pjw-1.3.7-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:d3b4ae08e800be5da2eb03dbc5b2ea436655d714b7af84e4e47f3f3804df4283"},
+    {file = "sep_pjw-1.3.7-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:b591c28dd3b889c8a36f8cd58975f2430cc1f48c676528f79ee979a00f2ea2da"},
+    {file = "sep_pjw-1.3.7-cp39-cp39-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:03fbc00cbdfa007f642e10c361c4e5b31c5b44be8b0e20c9cec8dcc026a00309"},
+    {file = "sep_pjw-1.3.7-cp39-cp39-win32.whl", hash = "sha256:4ab21fb2a202282e2940f47158d3a47e534cd1058411cfb24ac0748ccae66dfd"},
+    {file = "sep_pjw-1.3.7-cp39-cp39-win_amd64.whl", hash = "sha256:11f6027f60d6835e6a74f087f972a9dd9e634c9e4868b7db6202980702e8fff3"},
+    {file = "sep_pjw-1.3.7.tar.gz", hash = "sha256:67b71d527327caa249081cf9b5574924b46f1e04eaecafda8f4176c6061515fd"},
+]
+
+[package.dependencies]
+numpy = ">=1.23.5"
+
+[package.extras]
+docs = ["fitsio (>=1.2.1)", "furo (>=2024.1)", "jupyter", "matplotlib (>=3.6)", "myst-parser (>=2.0.0)", "nbsphinx (>=0.9.3)", "numpydoc (>=1.6)", "pandoc (>=2.3)", "sphinx (>=7.2)", "sphinx-copybutton (>=0.5)"]
+
+[[package]]
 name = "setuptools"
 version = "75.5.0"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"
@@ -5280,4 +5336,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10,<3.12"
-content-hash = "8978e215ab33e2b0088eaf33d75f948325bd59fb7b82d26ba315f6b906c5a412"
+content-hash = "9e05d956c5c88b80e866ccea873b384d14b21401ea242be1ca0c18ee9736dc1f"
