@@ -9,7 +9,7 @@ from torch.optim import Adam
 
 from bliss.catalog import TileCatalog
 from bliss.datasets.generate_blends import parse_dataset
-from bliss.datasets.lsst import get_default_lsst_background
+from bliss.datasets.lsst import BACKGROUND
 from bliss.encoders.autoencoder import CenteredGalaxyEncoder, OneCenteredGalaxyAE
 from bliss.grid import shift_sources_in_ptiles, validate_border_padding
 from bliss.render_tiles import (
@@ -17,8 +17,6 @@ from bliss.render_tiles import (
     reconstruct_image_from_ptiles,
     render_galaxy_ptiles,
 )
-
-BACKGROUND = torch.tensor(get_default_lsst_background())
 
 
 class GalaxyEncoder(pl.LightningModule):

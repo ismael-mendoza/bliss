@@ -1,9 +1,7 @@
 import torch
 from torch import Tensor
 
-from bliss.datasets.lsst import get_default_lsst_background
-
-BACKGROUND = torch.tensor(get_default_lsst_background())
+from bliss.datasets.lsst import BACKGROUND
 
 
 def add_noise(image: Tensor) -> Tensor:

@@ -13,7 +13,7 @@ from torchmetrics import Metric
 from tqdm import tqdm
 
 from bliss.catalog import FullCatalog
-from bliss.datasets.lsst import PIXEL_SCALE
+from bliss.datasets.lsst import BACKGROUND, PIXEL_SCALE
 
 
 class DetectionMetrics(Metric):
@@ -449,9 +449,9 @@ def get_single_galaxy_ellipticities(
     return ellips
 
 
-def get_snr(noiseless: Tensor, background: Tensor) -> Tensor:
+def get_snr(noiseless: Tensor) -> Tensor:
     """Compute SNR given noiseless, isolated iamges of galaxies and background."""
-    image_with_background = noiseless + background
+    image_with_background = noiseless + BACKGROUND
     snr2 = reduce(noiseless**2 / image_with_background, "b c h w -> b", "sum")
     return torch.sqrt(snr2)
 

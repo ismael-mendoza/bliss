@@ -3,11 +3,8 @@ import torch
 from astropy.table import Table
 from tqdm import tqdm
 
-from bliss.datasets.lsst import get_default_lsst_background
 from bliss.datasets.noise import add_noise
 from bliss.datasets.render_utils import render_one_galaxy, sample_galaxy_params
-
-BACKGROUND = torch.tensor(get_default_lsst_background())
 
 
 def generate_individual_dataset(

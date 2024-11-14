@@ -1,14 +1,11 @@
 import pytorch_lightning as pl
-import torch
 from einops import reduce
 from torch import Tensor, nn
 from torch.distributions import Normal
 from torch.nn.functional import relu
 from torch.optim import Adam
 
-from bliss.datasets.lsst import get_default_lsst_background
-
-BACKGROUND = torch.tensor(get_default_lsst_background())
+from bliss.datasets.lsst import BACKGROUND
 
 
 class OneCenteredGalaxyAE(pl.LightningModule):
