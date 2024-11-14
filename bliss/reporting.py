@@ -473,7 +473,6 @@ def get_blendedness(iso_image: Tensor):
 
 def get_single_galaxy_measurements(
     images: Tensor,
-    background: Tensor,
     pixel_scale: float = PIXEL_SCALE,
     no_bar: bool = True,
 ) -> tuple[Tensor, Tensor, Tensor]:
@@ -489,14 +488,13 @@ def get_single_galaxy_measurements(
     """
     _, c, h, w = images.shape
     assert h == w and c == 1
-    assert images.shape == background.shape
-    assert images.device == background.device == torch.device("cpu")
+    assert images.device == torch.device("cpu")
 
     # flux
     fluxes = reduce(images, "b c h w -> b", "sum")
 
     # snr
-    snrs = get_snr(images, background)
+    snrs = get_snr(images)
 
     # ellipticity
     # correctly handles 0s
