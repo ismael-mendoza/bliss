@@ -11,7 +11,7 @@ from bliss.catalog import TileCatalog
 from bliss.encoders.binary import BinaryEncoder
 from bliss.encoders.deblend import GalaxyEncoder
 from bliss.encoders.detection import DetectionEncoder
-from bliss.render_tiles import get_images_in_tiles
+from bliss.render_tiles import make_ptile_loader
 
 
 class Encoder(nn.Module):
@@ -35,8 +35,6 @@ class Encoder(nn.Module):
         detection_encoder: DetectionEncoder,
         binary_encoder: BinaryEncoder | None = None,
         galaxy_encoder: GalaxyEncoder | None = None,
-        n_images_per_batch: int = 10,
-        n_rows_per_batch: int = 15,
     ):
         """Initializes Encoder.
 
@@ -52,10 +50,6 @@ class Encoder(nn.Module):
                 returns a classification between stars and galaxies. Defaults to None.
             galaxy_encoder: Module that takes padded tiles and locations and returns the variational
                 distribution of the latent variable determining the galaxy shape. Defaults to None.
-            n_images_per_batch: How many images can be processed at a time on the GPU?
-                If not specified, defaults to an amount known to fit on my GPU.
-            n_rows_per_batch: How many vertical padded tiles can be processed at a time on the GPU?
-                If not specified, defaults to an amount known to fit on my GPU.
         """
         super().__init__()
         self._dummy_param = nn.Parameter(torch.empty(0))
@@ -63,9 +57,6 @@ class Encoder(nn.Module):
         self.detection_encoder = detection_encoder
         self.binary_encoder = binary_encoder
         self.galaxy_encoder = galaxy_encoder
-
-        self.n_images_per_batch = n_images_per_batch
-        self.n_rows_per_batch = n_rows_per_batch
 
     def forward(self, x):
         raise NotImplementedError("Unavailable. Use .variational_mode() or .sample() instead.")
@@ -92,7 +83,12 @@ class Encoder(nn.Module):
                 - 'galaxy_bools', 'star_bools', and 'galaxy_probs' from BinaryEncoder.
                 - 'galaxy_params' from GalaxyEncoder.
         """
-        n_tiles_h = (image.shape[2] - 2 * self.bp) // self.detection_encoder.tile_slen
+        ptile_loader = make_ptile_loader(
+            image,
+            out_device=self._dummy_param.device,
+            tile_slen=self.detection_encoder.tile_slen,
+            ptile_slen=self.detection_encoder.ptile_slen,
+        )
         ptile_loader = self.make_ptile_loader(image, n_tiles_h)
         tile_map_list: list[dict[str, Tensor]] = []
 
@@ -115,19 +111,6 @@ class Encoder(nn.Module):
             n_tiles_w,
             {k: v.squeeze(0) for k, v in tile_map.items()},
         )
-
-    def make_ptile_loader(self, image: Tensor, n_tiles_h: int):
-        n_images = image.shape[0]
-        for start_b in range(0, n_images, self.n_images_per_batch):
-            for row in range(0, n_tiles_h, self.n_rows_per_batch):
-                end_b = start_b + self.n_images_per_batch
-                end_row = row + self.n_rows_per_batch
-                start_h = row * self.detection_encoder.tile_slen
-                end_h = end_row * self.detection_encoder.tile_slen + 2 * self.bp
-                img_bg_cropped = image[start_b:end_b, :, start_h:end_h, :]
-                image_ptiles = self._get_images_in_ptiles(img_bg_cropped)
-                image_ptiles_flat = rearrange(image_ptiles, "b nth ntw c h w -> (b nth ntw) c h w")
-                yield image_ptiles_flat.to(self.device)
 
     @property
     def bp(self) -> int:
@@ -167,12 +150,6 @@ class Encoder(nn.Module):
                 tiled_params.update({"galaxy_params": galaxy_params})
 
         return tiled_params
-
-    def _get_images_in_ptiles(self, images):
-        """Run get_images_in_ptiles with correct tile_slen and ptile_slen."""
-        return get_images_in_tiles(
-            images, self.detection_encoder.tile_slen, self.detection_encoder.ptile_slen
-        )
 
 
 def _collate(tile_map_list: list[dict[str, Tensor]]) -> dict[str, Tensor]:
