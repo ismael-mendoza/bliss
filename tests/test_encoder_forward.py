@@ -15,7 +15,7 @@ from bliss.encoders.detection import DetectionEncoder
 
 
 def test_encoder_forward(home_dir, tmp_path):
-    # ae_state_dict = home_dir / "experiment" / "models" / "autoencoder_42_42.pt"
+    ae_state_dict = home_dir / "experiment" / "models" / "autoencoder_42_42.pt"
 
     catsim_table = Table.read(home_dir / "data" / "OneDegSq.fits")
     all_star_mags = column_to_tensor(
@@ -27,14 +27,14 @@ def test_encoder_forward(home_dir, tmp_path):
     saved_ds_path = tmp_path / "train_ds.npz"
     save_dataset_npz(blends_ds, saved_ds_path)
     saved_ds1 = SavedGalsimBlends(saved_ds_path, keep_padding=False)
-    # saved_ds2 = SavedGalsimBlends(saved_ds_path, keep_padding=True)
+    saved_ds2 = SavedGalsimBlends(saved_ds_path, keep_padding=True)
 
     dl1 = DataLoader(saved_ds1, batch_size=32, num_workers=0)
-    # dl2 = DataLoader(saved_ds2, batch_size=32, num_workers=0)
+    dl2 = DataLoader(saved_ds2, batch_size=32, num_workers=0)
 
     binary_encoder = BinaryEncoder()
     detection_encoder = DetectionEncoder()
-    # galaxy_encoder = GalaxyEncoder(ae_state_dict)
+    galaxy_encoder = GalaxyEncoder(ae_state_dict)
 
     with torch.no_grad():
         for b in dl1:
@@ -42,6 +42,6 @@ def test_encoder_forward(home_dir, tmp_path):
             binary_encoder.get_loss(im, tc)
             detection_encoder.get_loss(im, tc)
 
-        # for b in dl2:
-        #     im, bg, tc, sf = parse_dataset(b)
-        #     galaxy_encoder.get_loss(im, sf, bg, tc)
+        for b in dl2:
+            im, bg, tc, sf = parse_dataset(b)
+            galaxy_encoder.get_loss(im, sf, bg, tc)
