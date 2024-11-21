@@ -216,6 +216,7 @@ class FullCatalog(UserDict):
         assert self.plocs.shape[-1] == 2
         assert self.n_sources.max().int() <= self.max_n_sources
         assert self.n_sources.shape == (self.batch_size,)
+        assert self.n_sources.dtype == torch.int64
         super().__init__(**d)
 
     def __setitem__(self, key: str, item: Tensor) -> None:
