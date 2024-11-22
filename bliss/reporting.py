@@ -68,8 +68,57 @@ def match_by_locs(true_locs, est_locs, slack=1.0):
     return row_indx, col_indx, dist_keep, avg_distance
 
 
-def match_and_classify(truth: FullCatalog, est: FullCatalog) -> dict[str, Tensor]:
-    pass
+def match_and_classify(
+    truth: FullCatalog, est: FullCatalog, slack: float = 1.0
+) -> dict[str, Tensor]:
+    assert truth.batch_size == est.batch_size
+    all_tp_gal = []
+    all_fp_gal = []
+    all_tp_star = []
+    all_fp_star = []
+    all_n_gal = []
+    all_n_star = []
+
+    for b in range(truth.batch_size):
+        ntrue, nest = truth.n_sources[b].int().item(), est.n_sources[b].int().item()
+        tlocs, elocs = truth.plocs[b], est.plocs[b]
+        tgbools, egbools = truth["galaxy_bools"][b].reshape(-1), est["galaxy_bools"][b].reshape(-1)
+
+        if ntrue > 0 and nest > 0:
+            mtrue, mest, dkeep, _ = match_by_locs(tlocs, elocs, slack)
+            tgbool = tgbools[mtrue][dkeep].reshape(-1)
+            egbool = egbools[mest][dkeep].reshape(-1)
+            tsbool = 1 - tgbool  # every matched object is a true object, either star or galaxy
+            esbool = 1 - egbool
+
+            # only on matches
+            n_true_gal = tgbool.sum().int().item()
+            n_true_star = tsbool.sum().int().item()
+            assert len(tgbool) == n_true_gal + n_true_star  # n_matches
+            n_pred_gal = egbool.sum().int().item()  # no matches, empty = 0
+            n_pred_star = esbool.sum().int().item()
+
+            tp_gal = (tgbool.eq(egbool)).logical_and(tgbool.eq(1.0)).sum().int().item()
+            fp_gal = n_pred_gal - tp_gal
+            tp_star = (tsbool.eq(esbool)).logical_and(tsbool.eq(1.0)).sum().int().item()
+            fp_star = n_pred_star - tp_star
+
+            all_tp_gal.append(tp_gal)
+            all_fp_gal.append(fp_gal)
+            all_tp_star.append(tp_star)
+            all_fp_star.append(fp_star)
+
+            all_n_gal.append(n_true_gal)
+            all_n_star.append(n_true_star)
+
+    return {
+        "tp_gal": torch.tensor(all_tp_gal),
+        "fp_gal": torch.tensor(all_fp_gal),
+        "tp_star": torch.tensor(all_tp_star),
+        "fp_star": torch.tensor(all_fp_star),
+        "n_gal": torch.tensor(all_n_gal),
+        "n_star": torch.tensor(all_n_star),
+    }
 
 
 def compute_batch_tp_fp(truth: FullCatalog, est: FullCatalog) -> Tuple[Tensor, Tensor, Tensor]:
