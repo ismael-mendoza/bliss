@@ -89,11 +89,10 @@ class Encoder(nn.Module):
             tile_slen=self.detection_encoder.tile_slen,
             ptile_slen=self.detection_encoder.ptile_slen,
         )
-        ptile_loader = self.make_ptile_loader(image, n_tiles_h)
-        tile_map_list: list[dict[str, Tensor]] = []
-
         n_tiles_h = (image.shape[2] - 2 * self.bp) // self.detection_encoder.tile_slen
         n_tiles_w = (image.shape[3] - 2 * self.bp) // self.detection_encoder.tile_slen
+
+        tile_map_list: list[dict[str, Tensor]] = []
 
         n1 = math.ceil(image.shape[0] / self.n_images_per_batch)
         n2 = math.ceil(n_tiles_h / self.n_rows_per_batch)
