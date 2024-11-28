@@ -91,12 +91,12 @@ class GalaxyEncoder(pl.LightningModule):
 
         return recon_losses.sum(), recon_losses.mean(), recon_mean
 
-    def variational_mode(self, images: Tensor, tile_catalog: TileCatalog):
-        _, nth, ntw, _ = tile_catalog.locs.shape
+    def variational_mode(self, images: Tensor, tile_locs: Tensor):
+        _, nth, ntw, _ = tile_locs.shape
 
         image_ptiles = get_images_in_tiles(images, self.tile_slen, self.ptile_slen)
         image_ptiles_flat = rearrange(image_ptiles, "n nth ntw c h w -> (n nth ntw) c h w")
-        tile_locs_flat = rearrange(tile_catalog.locs, "n nth ntw xy -> (n nth ntw) xy")
+        tile_locs_flat = rearrange(tile_locs, "n nth ntw xy -> (n nth ntw) xy")
         galaxy_params_flat: Tensor = self(image_ptiles_flat, tile_locs_flat)
 
         return rearrange(galaxy_params_flat, "(b nth ntw) d -> b nth ntw d", nth=nth, ntw=ntw)
