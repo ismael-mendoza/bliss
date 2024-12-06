@@ -14,6 +14,8 @@ class TileCatalog(UserDict):
         "galaxy_params",
         "galaxy_bools",
         "fluxes",
+        "fluxes_sep",
+        "fluxerrs",
         "mags",
         "locs_sd",
         "ellips",
@@ -315,7 +317,7 @@ class FullCatalog(UserDict):
             for idx, coords in enumerate(tile_coords[ii][:n_sources]):
                 n_sources_in_tile = tile_n_sources[ii, coords[0], coords[1]]
                 assert n_sources_in_tile.ndim == 0
-                assert n_sources_in_tile.le(1) or n_sources_in_tile.ge(0)
+                assert n_sources_in_tile.le(1) and n_sources_in_tile.ge(0)
                 assert n_sources_in_tile.dtype is torch.int64
                 if n_sources_in_tile > 0:
                     if not ignore_extra_sources:
