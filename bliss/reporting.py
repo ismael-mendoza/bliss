@@ -4,6 +4,7 @@ from collections import defaultdict
 from typing import DefaultDict, Dict, Tuple
 
 import galsim
+import sep_pjw as sep
 import torch
 from einops import rearrange, reduce
 from scipy import optimize as sp_optim
@@ -66,59 +67,6 @@ def match_by_locs(true_locs, est_locs, slack=1.0):
     if dist_keep.sum() > 0:
         assert dist[dist_keep].max() <= slack
     return row_indx, col_indx, dist_keep, avg_distance
-
-
-def match_and_classify(
-    truth: FullCatalog, est: FullCatalog, slack: float = 1.0
-) -> dict[str, Tensor]:
-    assert truth.batch_size == est.batch_size
-    all_tp_gal = []
-    all_fp_gal = []
-    all_tp_star = []
-    all_fp_star = []
-    all_n_gal = []
-    all_n_star = []
-
-    for b in range(truth.batch_size):
-        ntrue, nest = truth.n_sources[b].int().item(), est.n_sources[b].int().item()
-        tlocs, elocs = truth.plocs[b], est.plocs[b]
-        tgbools, egbools = truth["galaxy_bools"][b].reshape(-1), est["galaxy_bools"][b].reshape(-1)
-
-        if ntrue > 0 and nest > 0:
-            mtrue, mest, dkeep, _ = match_by_locs(tlocs, elocs, slack)
-            tgbool = tgbools[mtrue][dkeep].reshape(-1)
-            egbool = egbools[mest][dkeep].reshape(-1)
-            tsbool = 1 - tgbool  # every matched object is a true object, either star or galaxy
-            esbool = 1 - egbool
-
-            # only on matches
-            n_true_gal = tgbool.sum().int().item()
-            n_true_star = tsbool.sum().int().item()
-            assert len(tgbool) == n_true_gal + n_true_star  # n_matches
-            n_pred_gal = egbool.sum().int().item()  # no matches, empty = 0
-            n_pred_star = esbool.sum().int().item()
-
-            tp_gal = (tgbool.eq(egbool)).logical_and(tgbool.eq(1.0)).sum().int().item()
-            fp_gal = n_pred_gal - tp_gal
-            tp_star = (tsbool.eq(esbool)).logical_and(tsbool.eq(1.0)).sum().int().item()
-            fp_star = n_pred_star - tp_star
-
-            all_tp_gal.append(tp_gal)
-            all_fp_gal.append(fp_gal)
-            all_tp_star.append(tp_star)
-            all_fp_star.append(fp_star)
-
-            all_n_gal.append(n_true_gal)
-            all_n_star.append(n_true_star)
-
-    return {
-        "tp_gal": torch.tensor(all_tp_gal),
-        "fp_gal": torch.tensor(all_fp_gal),
-        "tp_star": torch.tensor(all_tp_star),
-        "fp_star": torch.tensor(all_fp_star),
-        "n_gal": torch.tensor(all_n_gal),
-        "n_star": torch.tensor(all_n_star),
-    }
 
 
 def compute_batch_tp_fp(truth: FullCatalog, est: FullCatalog) -> Tuple[Tensor, Tensor, Tensor]:
@@ -255,76 +203,60 @@ def get_snr(noiseless: Tensor) -> Tensor:
     return torch.sqrt(snr2)
 
 
-def get_blendedness(iso_image: Tensor):
-    """Calculate blendedness given isolated images of galaxies in a blend.
+def get_blendedness(iso_image: Tensor, blend_image: Tensor) -> Tensor:
+    """Calculate blendedness.
 
     Args:
         iso_image: Array of shape = (B, N, C, H, W) corresponding to images of the isolated
-            galaxy you are calculating blendedness for.
+            galaxy you are calculating blendedness for (noiseless)
+        blend_image: Array of shape = (B, C, H, W) corresponding to the blended image (noiseless).
     """
     assert iso_image.ndim == 5
-    num = reduce(iso_image * iso_image, "b n c h w -> b n", "sum")
-    blend = rearrange(reduce(iso_image, "b n c h w -> b c h w", "sum"), "b c h w -> b 1 c h w")
-    denom = reduce(blend * iso_image, "b n c h w -> b n", "sum")
+    num = reduce(iso_image * iso_image, "b s c h w -> b s", "sum")
+    blend = rearrange(blend_image, "b c h w -> b 1 c h w")
+    denom = reduce(blend * iso_image, "b s c h w -> b s", "sum")
     blendedness = 1 - num / denom
     return torch.where(blendedness.isnan(), 0, blendedness)
 
 
-def get_single_galaxy_measurements(
+def get_fluxes_sep(
+    cat: FullCatalog,
     images: Tensor,
-    pixel_scale: float = PIXEL_SCALE,
-    no_bar: bool = True,
-) -> tuple[Tensor, Tensor, Tensor]:
-    """Compute individual galaxy measurements from noiseless isolated images of galaxies.
+    paddings: Tensor,
+    sources: Tensor,
+    bp: float,
+    r: float = 5.0,
+) -> Tuple[Tensor, Tensor, Tensor]:
+    """Obtain aperture photometry fluxes for each source in the catalog."""
+    n_batches = cat.n_sources.shape[0]
 
-    Args:
-        pixel_scale: Conversion from arcseconds to pixel.
-        images: Array of shape (n_samples, n_bands, slen, slen) containing images of
-            single-centered galaxies without noise or background.
+    fluxes = torch.zeros(n_batches, cat.max_n_sources, 1)
+    fluxerrs = torch.zeros(n_batches, cat.max_n_sources, 1)
+    snrs = torch.zeros(n_batches, cat.max_n_sources, 1)
 
-    Returns:
-        Dictionary containing fluxes, magnitudes, and ellipticities of `images`.
-    """
-    _, c, h, w = images.shape
-    assert h == w and c == 1
-    assert images.device == torch.device("cpu")
+    for ii in range(n_batches):
+        n_sources = cat.n_sources[ii].item()
+        y = cat.plocs[ii, :, 0].numpy() + bp - 0.5
+        x = cat.plocs[ii, :, 1].numpy() + bp - 0.5
 
-    # flux
-    fluxes = reduce(images, "b c h w -> b", "sum")
+        # obtain residual images for each galaxy to measure SNR
+        image = images[ii, 0] - paddings[ii, 0]
+        each_galaxy = sources[ii, :, 0]  # n h w
+        all_galaxies = rearrange(reduce(each_galaxy, "n h w -> h w", "sum"), "h w -> 1 h w")
+        other_galaxies = all_galaxies - each_galaxy
+        residual_images = rearrange(image, "h w -> 1 h w") - other_galaxies
 
-    # snr
-    snrs = get_snr(images)
+        fluxes = []
+        fluxerrs = []
+        for jj in range(n_sources):
+            f, ferr, _ = sep.sum_circle(
+                residual_images[jj].numpy(), [x[jj]], [y[jj]], r, err=BACKGROUND.sqrt().item()
+            )
+            fluxes.append(f.item())
+            fluxerrs.append(ferr.item())
 
-    # ellipticity
-    # correctly handles 0s
-    ellips = get_single_galaxy_ellipticities(images[:, 0], pixel_scale, no_bar=no_bar)
+        fluxes[ii, :n_sources, 0] = torch.tensor(fluxes)
+        fluxerrs[ii, :n_sources, 0] = torch.tensor(fluxerrs)
+        snrs[ii, :n_sources, 0] = fluxes[ii, :n_sources, 0] / fluxerrs[ii, :n_sources, 0]
 
-    return fluxes, snrs, ellips
-
-
-# def run_sep(images: Tensor, thresh: float = 1.5, minarea: float = 5, bp: int = 24) -> FullCatalog:
-#     """Run SEP on background-subtracted images."""
-#     n_images, _, _, _ = images.shape
-
-#     n_sources = torch.zeros((n_images,))
-#     plocs = []
-
-#     for ii in range(n_images):
-#         im = images[ii, 0].numpy()
-
-#         bkg = sep.Background(im)
-#         catalog = sep.extract(im, thresh, err=bkg.globarms, minarea=minarea)
-
-#         x = catalog["x"]
-#         y = catalog["y"]
-
-#         ndet = x.shape[0]
-
-#         for jj in range(ndet):
-#             pass
-
-#         plocs = torch.zeros()
-
-
-# def get_flux_aperture_phot():
-#     pass
+    return fluxes, fluxerrs, snrs
