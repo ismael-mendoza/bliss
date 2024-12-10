@@ -102,7 +102,7 @@ class Encoder(nn.Module):
                 out_ptiles = self._encode_ptiles(ptiles)
                 tile_map_list.append(out_ptiles)
 
-        tile_map = _collate(tile_map_list)
+        tile_map = collate(tile_map_list)
 
         return TileCatalog.from_flat_dict(
             self.detection_encoder.tile_slen,
@@ -151,7 +151,7 @@ class Encoder(nn.Module):
         return tiled_params
 
 
-def _collate(tile_map_list: list[dict[str, Tensor]]) -> dict[str, Tensor]:
+def collate(tile_map_list: list[dict[str, Tensor]]) -> dict[str, Tensor]:
     """Combine multiple Tensors across dictionaries into a single dictionary."""
     assert tile_map_list  # not empty
 
