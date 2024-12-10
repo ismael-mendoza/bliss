@@ -107,7 +107,11 @@ ignore =
     WPS303,
 
     # print is useful
-    WPS421
+    WPS421,
 
     # still use torch.load for cache files
-    S614
+    S614,
+
+    # I like underscore variables
+    WPS121,
+    WPS122,
