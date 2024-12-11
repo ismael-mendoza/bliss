@@ -13,12 +13,12 @@ from bliss.encoders.deblend import GalaxyEncoder
 from bliss.encoders.detection import DetectionEncoder
 from bliss.encoders.encoder import Encoder
 from experiment.scripts_figures.ae_figures import AutoEncoderFigures
-from experiment.scripts_figures.blend_figures import BlendSimulationFigure
+from experiment.scripts_figures.detection_figures import BlendDetectionFigures
 from experiment.scripts_figures.toy_figures import ToySeparationFigure
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-ALL_FIGS = ("single", "blend", "toy")
+ALL_FIGS = ("single", "detection", "deblend", "toy")
 CACHEDIR = "/nfs/turbo/lsa-regier/scratch/ismael/cache/"
 
 
@@ -85,17 +85,25 @@ def _make_autoencoder_figures(seed: int, ds_seed: int, device, test_file: str, o
     )(*args)
 
 
-def _make_blend_figures(encoder, decoder, test_file: str, suffix: str, overwrite: bool):
-    print("INFO: Creating figures for metrics on simulated blended galaxies.")
-    BlendSimulationFigure(overwrite=overwrite, figdir="figures", suffix=suffix, cachedir=CACHEDIR)(
-        test_file, encoder, decoder
-    )
+def _make_detection_figure(
+    encoder: Encoder, test_file: str, *, aperture: float, suffix: str, overwrite: bool
+):
+    print("INFO: Creating figures for detection encoder performance simulated blended galaxies.")
+    _init_kwargs = {
+        "overwrite": overwrite,
+        "figdir": "figures",
+        "suffix": suffix,
+        "cachedir": CACHEDIR,
+        "aperture": aperture,
+    }
+    BlendDetectionFigures(**_init_kwargs)(detection=encoder.detection_encoder, ds_path=test_file)
 
 
 @click.command()
 @click.option("-m", "--mode", required=True, type=click.Choice(ALL_FIGS, case_sensitive=False))
 @click.option("-s", "--seed", required=True, type=int, help="Consistent seed used to train models.")
 @click.option("--ds-seed", required=True, type=int, help="Seed of training/testing set.")
+@click.option("--aperture", default=5.0, type=float, help="Aperture radius for results.")
 @click.option("--test-file-single", default="", type=str, help="Dataset file for testing AE.")
 @click.option("--test-file-blends", default="", type=str, help="Dataset file for testing Encoders.")
 @click.option("-o", "--overwrite", is_flag=True, default=False, help="Whether to overwrite cache.")
@@ -103,6 +111,7 @@ def main(
     mode: str,
     seed: int,
     ds_seed: int,
+    aperture: float,
     test_file_single: str,
     test_file_blends: str,
     overwrite: bool,
@@ -118,12 +127,14 @@ def main(
         assert test_file_single != "" and Path(test_file_single).exists()
         _make_autoencoder_figures(seed, ds_seed, device, test_file_single, overwrite)
 
-    if mode in {"toy", "blend"}:
+    if mode in {"toy", "detection", "deblend", "classification"}:
         encoder, decoder = _load_models(seed, ds_seed, device)
 
-    if mode == "blend":
+    if mode == "detection":
         assert test_file_blends != "" and Path(test_file_blends).exists()
-        _make_blend_figures(encoder, decoder, test_file_blends, suffix=suffix, overwrite=overwrite)
+        _make_detection_figure(
+            encoder, test_file_blends, suffix=suffix, overwrite=overwrite, aperture=aperture
+        )
 
     if mode == "toy":
         print("INFO: Creating figures for testing BLISS on pair galaxy toy example.")
