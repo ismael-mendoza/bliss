@@ -1,8 +1,10 @@
-import matplotlib.pyplot as plt
+"""Script to create detection encoder related figures."""
+
 import numpy as np
 import sep_pjw as sep
 import torch
 from einops import rearrange, reduce
+from matplotlib import pyplot as plt
 from tqdm import tqdm
 
 from bliss.catalog import FullCatalog, TileCatalog
@@ -147,7 +149,7 @@ class BlendDetectionFigures(BlissFigure):
             y1 = catalog["y"]
 
             # need to ignore detected sources that are in the padding
-            in_padding = (x1 < 23.5) | (x1 > 63.5) | (y1 < 23.5) | (y1 > 63.5)  # noqa
+            in_padding = (x1 < 23.5) | (x1 > 63.5) | (y1 < 23.5) | (y1 > 63.5)
 
             x = x1[np.logical_not(in_padding)]
             y = y1[np.logical_not(in_padding)]
@@ -226,8 +228,8 @@ class BlendDetectionFigures(BlissFigure):
         # colors for thresholds hsould go from blue (low) to red (high) threshold
 
         fig, axs = plt.subplots(1, 3, figsize=(30, 10))
+        axs = axs.flatten()
 
-        # thresholds = list(data["thresh_out"].keys())
         snr_middle = data["snr_bins"].mean(axis=-1)
 
         # precision
@@ -236,8 +238,8 @@ class BlendDetectionFigures(BlissFigure):
             color = plt.cm.coolwarm(tsh)
             ax.plot(snr_middle, out["precision"], color=color, label=f"{tsh:.2f}")
         ax.plot(snr_middle, data["sep"]["precision"], "-k", label="SEP")
-        ax.set_xlabel("\rm SNR")
-        ax.set_ylabel("\rm Precision")
+        ax.set_xlabel(r"\rm SNR")
+        ax.set_ylabel(r"\rm Precision")
         ax.set_xscale("log")
         ax.set_ylim(0, 1)
 
@@ -247,8 +249,8 @@ class BlendDetectionFigures(BlissFigure):
             color = plt.cm.coolwarm(tsh1)
             ax.plot(snr_middle, out1["recall"], color=color, label=f"{tsh1:.2f}")
         ax.plot(snr_middle, data["sep"]["recall"], "-k", label="SEP")
-        ax.set_xlabel("\rm SNR")
-        ax.set_ylabel("\rm Recall")
+        ax.set_xlabel(r"\rm SNR")
+        ax.set_ylabel(r"\rm Recall")
         ax.set_xscale("log")
         ax.set_ylim(0, 1)
 
@@ -258,8 +260,8 @@ class BlendDetectionFigures(BlissFigure):
             color = plt.cm.coolwarm(tsh2)
             ax.plot(snr_middle, out2["f1"], color=color, label=f"{tsh2:.2f}")
         ax.plot(snr_middle, data["sep"]["f1"], "-k", label="SEP")
-        ax.set_xlabel("\rm SNR")
-        ax.set_ylabel("\rm F1")
+        ax.set_xlabel(r"\rm SNR")
+        ax.set_ylabel(r"\rm $F_{1}$ Score")
         ax.set_xscale("log")
         ax.set_ylim(0, 1)
 
