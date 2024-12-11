@@ -7,10 +7,9 @@ from einops import rearrange, reduce
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
-from bliss.catalog import FullCatalog, TileCatalog
+from bliss.catalog import FullCatalog, TileCatalog, collate
 from bliss.datasets.io import load_dataset_npz
 from bliss.encoders.detection import DetectionEncoder
-from bliss.encoders.encoder import collate
 from bliss.plotting import BlissFigure
 from bliss.reporting import compute_tp_fp_per_bin, get_fluxes_sep
 
@@ -85,12 +84,12 @@ class BlendDetectionFigures(BlissFigure):
         n_batches = n_images // batch_size
         tiled_params_list = []
         for i in tqdm(range(n_batches)):
-            image_batch = images[i * batch_size : (i + 1) * batch_size]
+            image_batch = images[i * batch_size : (i + 1) * batch_size].to(detection.device)
             n_source_probs, locs_mean, locs_sd_raw = detection.forward(image_batch)
             tiled_params = {
                 "n_source_probs": n_source_probs.cpu(),
                 "locs_mean": locs_mean.cpu(),
-                "locs_sd_raw": locs_sd_raw.cpu(),
+                "locs_sd": locs_sd_raw.cpu(),
             }
             tiled_params_list.append(tiled_params)
 
@@ -126,11 +125,14 @@ class BlendDetectionFigures(BlissFigure):
 
         # obtain snr for the predicted catalogs (to calculate precision)
         for _, cat in pred_cats.items():
+            _dummy_images = torch.zeros(
+                images.shape[0], cat.max_n_sources, 1, images.shape[-2], images.shape[-1]
+            )
             _, _, _snr = get_fluxes_sep(
                 cat,
                 images,
                 torch.zeros_like(images),
-                torch.zeros_like(uncentered_sources),
+                _dummy_images,
                 bp=bp,
                 r=self.aperture,
             )
@@ -236,34 +238,35 @@ class BlendDetectionFigures(BlissFigure):
         ax = axs[0]
         for tsh, out in data["thresh_out"].items():
             color = plt.cm.coolwarm(tsh)
-            ax.plot(snr_middle, out["precision"], color=color, label=f"{tsh:.2f}")
-        ax.plot(snr_middle, data["sep"]["precision"], "-k", label="SEP")
+            ax.plot(snr_middle, out["precision"], color=color)
+        ax.plot(snr_middle, data["sep"]["precision"], "-k")
         ax.set_xlabel(r"\rm SNR")
         ax.set_ylabel(r"\rm Precision")
         ax.set_xscale("log")
-        ax.set_ylim(0, 1)
+        ax.set_ylim(0, 1.02)
 
         # recall
         ax = axs[1]
         for tsh1, out1 in data["thresh_out"].items():
             color = plt.cm.coolwarm(tsh1)
-            ax.plot(snr_middle, out1["recall"], color=color, label=f"{tsh1:.2f}")
-        ax.plot(snr_middle, data["sep"]["recall"], "-k", label="SEP")
+            ax.plot(snr_middle, out1["recall"], color=color)
+        ax.plot(snr_middle, data["sep"]["recall"], "-k")
         ax.set_xlabel(r"\rm SNR")
         ax.set_ylabel(r"\rm Recall")
         ax.set_xscale("log")
-        ax.set_ylim(0, 1)
+        ax.set_ylim(0, 1.02)
 
         # f1
         ax = axs[2]
         for tsh2, out2 in data["thresh_out"].items():
             color = plt.cm.coolwarm(tsh2)
-            ax.plot(snr_middle, out2["f1"], color=color, label=f"{tsh2:.2f}")
-        ax.plot(snr_middle, data["sep"]["f1"], "-k", label="SEP")
+            ax.plot(snr_middle, out2["f1"], color=color, label=f"${tsh2:.2f}$")
+        ax.plot(snr_middle, data["sep"]["f1"], "-k", label=r"\rm SEP")
         ax.set_xlabel(r"\rm SNR")
         ax.set_ylabel(r"\rm $F_{1}$ Score")
         ax.set_xscale("log")
-        ax.set_ylim(0, 1)
+        ax.set_ylim(0, 1.02)
+        ax.legend()
 
         plt.tight_layout()
 
