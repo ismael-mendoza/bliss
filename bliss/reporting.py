@@ -246,17 +246,17 @@ def get_fluxes_sep(
         other_galaxies = all_galaxies - each_galaxy
         residual_images = rearrange(image, "h w -> 1 h w") - other_galaxies
 
-        fluxes = []
-        fluxerrs = []
+        _fluxes = []
+        _fluxerrs = []
         for jj in range(n_sources):
             f, ferr, _ = sep.sum_circle(
                 residual_images[jj].numpy(), [x[jj]], [y[jj]], r, err=BACKGROUND.sqrt().item()
             )
-            fluxes.append(f.item())
-            fluxerrs.append(ferr.item())
+            _fluxes.append(f.item())
+            _fluxerrs.append(ferr.item())
 
-        fluxes[ii, :n_sources, 0] = torch.tensor(fluxes)
-        fluxerrs[ii, :n_sources, 0] = torch.tensor(fluxerrs)
+        fluxes[ii, :n_sources, 0] = torch.tensor(_fluxes)
+        fluxerrs[ii, :n_sources, 0] = torch.tensor(_fluxerrs)
         snrs[ii, :n_sources, 0] = fluxes[ii, :n_sources, 0] / fluxerrs[ii, :n_sources, 0]
 
     return fluxes, fluxerrs, snrs
