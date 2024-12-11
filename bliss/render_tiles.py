@@ -129,26 +129,3 @@ def get_n_padded_tiles_hw(
     nh = ((height - ptile_slen) // tile_slen) + 1
     nw = ((width - ptile_slen) // tile_slen) + 1
     return nh, nw
-
-
-def make_ptile_loader(
-    image: Tensor,
-    out_device: torch.device,
-    tile_slen: int = 4,
-    ptile_slen: int = 52,
-    n_images_per_batch: int = 10,
-    n_rows_per_batch: int = 15,
-):
-    n_images = image.shape[0]
-    bp = validate_border_padding(tile_slen, ptile_slen)
-    n_tiles_h = (image.shape[2] - 2 * bp) // tile_slen
-    for start_b in range(0, n_images, n_images_per_batch):
-        for row in range(0, n_tiles_h, n_rows_per_batch):
-            end_b = start_b + n_images_per_batch
-            end_row = row + n_rows_per_batch
-            start_h = row * tile_slen
-            end_h = end_row * tile_slen + 2 * bp
-            img_bg_cropped = image[start_b:end_b, :, start_h:end_h, :]
-            image_ptiles = get_images_in_tiles(img_bg_cropped, tile_slen, ptile_slen)
-            image_ptiles_flat = rearrange(image_ptiles, "b nth ntw c h w -> (b nth ntw) c h w")
-            yield image_ptiles_flat.to(out_device)
