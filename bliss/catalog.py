@@ -395,3 +395,13 @@ def get_is_on_from_n_sources(n_sources: Tensor, max_n_sources: int) -> Tensor:
         is_on_array[..., i] = n_sources > i
 
     return is_on_array
+
+
+def collate(tile_map_list: list[dict[str, Tensor]]) -> dict[str, Tensor]:
+    """Combine multiple Tensors across dictionaries into a single dictionary."""
+    assert tile_map_list  # not empty
+
+    out: dict[str, Tensor] = {}
+    for k in tile_map_list[0]:
+        out[k] = torch.cat([d[k] for d in tile_map_list], dim=0)
+    return out
