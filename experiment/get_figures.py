@@ -9,6 +9,7 @@ import typer
 from bliss.encoders.binary import BinaryEncoder
 from bliss.encoders.deblend import GalaxyEncoder
 from bliss.encoders.detection import DetectionEncoder
+from experiment.scripts_figures.deblend_figures import DeblendingFigures
 from experiment.scripts_figures.detection_figures import BlendDetectionFigures
 
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -66,7 +67,28 @@ def _make_detection_figure(
         "aperture": aperture,
     }
     detection = _load_models(fpaths, "detection", device)
-    BlendDetectionFigures(**_init_kwargs)(detection=detection, ds_path=test_file)
+    BlendDetectionFigures(**_init_kwargs)(ds_path=test_file, detection=detection)
+
+
+def _make_deblend_figures(
+    fpaths: dict[str, str],
+    test_file: str,
+    *,
+    aperture: float,
+    suffix: str,
+    overwrite: bool,
+    device,
+):
+    print("INFO: Creating figures for detection encoder performance simulated blended galaxies.")
+    _init_kwargs = {
+        "overwrite": overwrite,
+        "figdir": "figures",
+        "suffix": suffix,
+        "cachedir": CACHEDIR,
+        "aperture": aperture,
+    }
+    deblend = _load_models(fpaths, "deblend", device)
+    DeblendingFigures(**_init_kwargs)(ds_path=test_file, deblend=deblend)
 
 
 def main(
@@ -98,6 +120,18 @@ def main(
         assert test_file_blends != "" and Path(test_file_blends).exists()
         assert detection_fpath != "" and Path(detection_fpath).exists()
         _make_detection_figure(
+            fpaths,
+            test_file_blends,
+            suffix=suffix,
+            overwrite=overwrite,
+            aperture=aperture,
+            device=device,
+        )
+
+    if mode == "deblend":
+        assert test_file_blends != "" and Path(test_file_blends).exists()
+        assert deblend_fpath != "" and Path(detection_fpath).exists()
+        _make_deblend_figures(
             fpaths,
             test_file_blends,
             suffix=suffix,
