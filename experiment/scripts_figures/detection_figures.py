@@ -36,7 +36,7 @@ class BlendDetectionFigures(BlissFigure):
 
     @property
     def cache_name(self) -> str:
-        return "blendsim"
+        return "detection"
 
     @property
     def fignames(self) -> tuple[str, ...]:
