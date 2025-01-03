@@ -2,6 +2,7 @@
 exclude =
     .git,
     tests/**
+    experiment/**
 max-line-length = 100
 inline-quotes = double
 docstring-convention=google
