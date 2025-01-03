@@ -9,12 +9,13 @@ import typer
 from bliss.encoders.binary import BinaryEncoder
 from bliss.encoders.deblend import GalaxyEncoder
 from bliss.encoders.detection import DetectionEncoder
+from experiment.scripts_figures.binary_figures import BinaryFigures
 from experiment.scripts_figures.deblend_figures import DeblendingFigures
 from experiment.scripts_figures.detection_figures import BlendDetectionFigures
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-ALL_FIGS = ("detection", "deblend", "toy")
+ALL_FIGS = ("detection", "binary", "deblend")
 CACHEDIR = "/nfs/turbo/lsa-regier/scratch/ismael/cache/"
 
 
@@ -91,6 +92,27 @@ def _make_deblend_figures(
     DeblendingFigures(**_init_kwargs)(ds_path=test_file, deblend=deblend)
 
 
+def _make_binary_figures(
+    fpaths: dict[str, str],
+    test_file: str,
+    *,
+    aperture: float,
+    suffix: str,
+    overwrite: bool,
+    device,
+):
+    print("INFO: Creating figures for detection encoder performance simulated blended galaxies.")
+    _init_kwargs = {
+        "overwrite": overwrite,
+        "figdir": "figures",
+        "suffix": suffix,
+        "cachedir": CACHEDIR,
+        "aperture": aperture,
+    }
+    binary = _load_models(fpaths, "binary", device)
+    BinaryFigures(**_init_kwargs)(ds_path=test_file, binary=binary)
+
+
 def main(
     mode: str,
     suffix: str,
@@ -140,6 +162,20 @@ def main(
             device=device,
         )
 
+    if mode == "binary":
+        assert test_file_blends != "" and Path(test_file_blends).exists()
+        assert binary_fpath != "" and Path(binary_fpath).exists()
+        _make_binary_figures(
+            fpaths,
+            test_file_blends,
+            suffix=suffix,
+            overwrite=overwrite,
+            aperture=aperture,
+            device=device,
+        )
+
+    else:
+        raise NotImplementedError("The requred figure has not been implemented.")
     # if mode == "toy":
     #     print("INFO: Creating figures for testing BLISS on pair galaxy toy example.")
     #     cachedir = "/nfs/turbo/lsa-regier/scratch/ismael/cache/"
