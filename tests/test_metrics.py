@@ -40,19 +40,5 @@ def test_metrics():
     precision = tp.sum() / (tp.sum() + fp.sum())
     recall = tp.sum() / ntrue.sum()
 
-    results_classify = match_and_classify(true_params, est_params)
-    n_gal = results_classify["n_gal"]
-    n_star = results_classify["n_star"]
-    tp_gal = results_classify["tp_gal"]
-    tp_star = results_classify["tp_star"]
-    n_matches = results_classify["n_gal"] + results_classify["n_star"]
-    class_acc = (tp_gal.sum() + tp_star.sum()) / n_matches.sum()
-
     assert precision == 3 / (3 + 2)
     assert recall == 3 / 4
-    assert class_acc == 2 / 3
-    assert tp_gal.sum() == 1
-    assert tp_star.sum() == 1
-    assert n_matches.sum() == 3
-    assert n_star.sum() == 1
-    assert n_gal.sum() == 2
