@@ -6,7 +6,7 @@ from torch import Tensor
 from torch.nn.functional import fold, unfold
 
 from bliss.encoders.autoencoder import CenteredGalaxyDecoder
-from bliss.grid import shift_sources_in_ptiles, validate_border_padding
+from bliss.grid import shift_sources_in_ptiles
 
 
 def render_galaxy_ptiles(

@@ -209,7 +209,9 @@ def get_blendedness(iso_image: Tensor, blend_image: Tensor) -> Tensor:
     Args:
         iso_image: Array of shape = (B, N, C, H, W) corresponding to images of the isolated
             galaxy you are calculating blendedness for (noiseless)
+
         blend_image: Array of shape = (B, C, H, W) corresponding to the blended image (noiseless).
+
     """
     assert iso_image.ndim == 5
     num = reduce(iso_image * iso_image, "b s c h w -> b s", "sum")
