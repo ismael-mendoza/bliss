@@ -1,7 +1,7 @@
 import torch
 
 from bliss.catalog import FullCatalog
-from bliss.reporting import compute_batch_tp_fp, match_and_classify
+from bliss.reporting import compute_batch_tp_fp
 
 
 def test_metrics():
