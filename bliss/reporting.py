@@ -1,6 +1,8 @@
 """Functions to evaluate the performance of BLISS predictions."""
 
+import math
 from collections import defaultdict
+from copy import deepcopy
 from typing import DefaultDict, Dict, Tuple
 
 import galsim
@@ -13,6 +15,8 @@ from tqdm import tqdm
 
 from bliss.catalog import FullCatalog
 from bliss.datasets.lsst import BACKGROUND, PIXEL_SCALE
+from bliss.encoders.autoencoder import CenteredGalaxyDecoder
+from bliss.render_tiles import reconstruct_image_from_ptiles, render_galaxy_ptiles
 
 
 def match_by_locs(true_locs, est_locs, slack=1.0):
@@ -221,12 +225,61 @@ def get_blendedness(iso_image: Tensor, blend_image: Tensor) -> Tensor:
     return torch.where(blendedness.isnan(), 0, blendedness)
 
 
+def get_deblended_reconstructions(
+    cat: FullCatalog,
+    dec: CenteredGalaxyDecoder,
+    *,
+    slen: int,
+    device,
+    batch_size: int = 50,
+    ptile_slen: int = 52,
+    bp: int = 24,
+    tile_slen: int = 4,
+    no_bar: bool = True,
+):
+
+    n_images = cat.batch_size
+    n_batches = math.ceil(n_images / batch_size)
+    image_size = slen + 2 * bp
+    recon_uncentered = torch.zeros((n_images, cat.max_n_sources, 1, image_size, image_size))
+
+    for jj in tqdm(range(cat.max_n_sources), desc="Obtaining reconstructions", disable=no_bar):
+        mask = torch.arange(cat.max_n_sources)
+        mask = mask[mask != jj]
+
+        # make a copy with all except one galaxy zeroed out
+        est_jj = FullCatalog(slen, slen, deepcopy(cat.to_dict()))
+        est_jj["galaxy_bools"][:, mask, :] = 0
+        est_jj["galaxy_bools"] = est_jj["galaxy_bools"].contiguous()
+        est_tiled_jj = est_jj.to_tile_params(tile_slen, ignore_extra_sources=False)
+
+        images_jj = []
+        for kk in range(n_batches):
+            start, end = kk * batch_size, (kk + 1) * batch_size
+            blocs = est_tiled_jj.locs[start:end].to(device)
+            bgparams = est_tiled_jj["galaxy_params"][start:end].to(device)
+            bgbools = est_tiled_jj["galaxy_bools"][start:end].to(device)
+
+            galaxy_tiles = render_galaxy_ptiles(
+                dec, blocs, bgparams, bgbools, ptile_slen, tile_slen
+            )
+
+            galaxy_images = reconstruct_image_from_ptiles(galaxy_tiles.to("cpu"), tile_slen)
+            images_jj.append(galaxy_images)
+
+        images_jj = torch.concatenate(images_jj, axis=0)
+        recon_uncentered[:, jj, :, :, :] = images_jj
+
+    return recon_uncentered
+
+
 def get_fluxes_sep(
     cat: FullCatalog,
     images: Tensor,
+    *,
     paddings: Tensor,
     sources: Tensor,
-    bp: float,
+    bp: int = 24,
     r: float = 5.0,
 ) -> Tuple[Tensor, Tensor, Tensor]:
     """Obtain aperture photometry fluxes for each source in the catalog."""
