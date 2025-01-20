@@ -152,7 +152,8 @@ def main(
 
     if mode == "deblend":
         assert test_file_blends != "" and Path(test_file_blends).exists()
-        assert deblend_fpath != "" and Path(detection_fpath).exists()
+        assert deblend_fpath != "" and Path(deblend_fpath).exists()
+        assert ae_fpath != "" and Path(ae_fpath).exists(), "Need to provide AE when deblending."
         _make_deblend_figures(
             fpaths,
             test_file_blends,
