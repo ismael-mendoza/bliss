@@ -13,11 +13,11 @@ from bliss.catalog import FullCatalog, TileCatalog
 from bliss.datasets.io import load_dataset_npz
 from bliss.encoders.deblend import GalaxyEncoder
 from bliss.plotting import BlissFigure
-from bliss.render_tiles import reconstruct_image_from_ptiles, render_galaxy_ptiles
 from bliss.reporting import get_blendedness, get_deblended_reconstructions, get_fluxes_sep
 
 
-def _calculate_statistics(residuals, x, x_bins, qs=(0.25, 0.75)):
+# defaults correspond to 1 sigma in Gaussian distribution
+def _calculate_statistics(residuals, x, x_bins, qs=(0.159, 0.841)):
     medians, q1s, q3s = [], [], []
     for ii in range(len(x_bins) - 1):
         _mask = (x > x_bins[ii]) * (x < x_bins[ii + 1])
@@ -87,7 +87,7 @@ class DeblendingFigures(BlissFigure):
         # get fluxes through sep (only galaxies)
         # paddings includes stars, so their fluxes are removed
         fluxes, _, snr = get_fluxes_sep(
-            _truth, images, paddings, galaxy_uncentered, bp, r=self.aperture
+            _truth, images, paddings=paddings, sources=galaxy_uncentered, bp=bp, r=self.aperture
         )
 
         # get blendedness
@@ -136,6 +136,7 @@ class DeblendingFigures(BlissFigure):
             slen=slen,
             ptile_slen=ptile_slen,
             tile_slen=tile_slen,
+            device=deblend.device,
             bp=bp,
             no_bar=False,
         )
@@ -237,10 +238,11 @@ class DeblendingFigures(BlissFigure):
         ax1.fill_between(10**snr_middle, qs21, qs22, color="b", alpha=0.5)
 
         ax1.set_xscale("log")
-        ax1.set_ylim(-0.025, 0.05)
+        ax1.set_ylim(-0.15, 0.2)
         ax1.set_xticks([3, 10, 100, 200])
         ax1.set_xlabel(r"\rm SNR")
-        ax1.set_ylabel(r"$ \Delta F / F$")
+        ax1.set_ylabel(r"$ (f_{\rm pred} - f_{\rm true}) / f_{\rm true}$")
+        ax1.axhline(0.0, linestyle="--", color="k")
 
         # blendedness
         bld_mask = (bld > 1e-2) * (bld <= 1)
@@ -260,8 +262,9 @@ class DeblendingFigures(BlissFigure):
         ax2.legend()
         ax2.set_xscale("log")
         ax2.set_xticks([1e-2, 1e-1, 1])
-        ax2.set_ylim(-0.25, 1.5)
+        ax2.set_ylim(-0.75, 2.2)
         ax2.set_xlabel(r"\rm Blendedness")
+        ax2.axhline(0.0, linestyle="--", color="k")
 
         plt.tight_layout()
 
