@@ -150,7 +150,7 @@ def main(
             device=device,
         )
 
-    if mode == "deblend":
+    elif mode == "deblend":
         assert test_file_blends != "" and Path(test_file_blends).exists()
         assert deblend_fpath != "" and Path(deblend_fpath).exists()
         assert ae_fpath != "" and Path(ae_fpath).exists(), "Need to provide AE when deblending."
@@ -163,7 +163,7 @@ def main(
             device=device,
         )
 
-    if mode == "binary":
+    elif mode == "binary":
         assert test_file_blends != "" and Path(test_file_blends).exists()
         assert binary_fpath != "" and Path(binary_fpath).exists()
         _make_binary_figures(
