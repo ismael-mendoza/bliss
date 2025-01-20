@@ -230,13 +230,14 @@ def get_deblended_reconstructions(
     dec: CenteredGalaxyDecoder,
     *,
     slen: int,
-    device,
-    batch_size: int = 50,
+    device: torch.device,
+    batch_size: int = 100,
     ptile_slen: int = 52,
     bp: int = 24,
     tile_slen: int = 4,
     no_bar: bool = True,
 ):
+    """Return deblended galaxy reconstructions on prediction locations on a full size stamp."""
 
     n_images = cat.batch_size
     n_batches = math.ceil(n_images / batch_size)
@@ -251,6 +252,8 @@ def get_deblended_reconstructions(
         est_jj = FullCatalog(slen, slen, deepcopy(cat.to_dict()))
         est_jj["galaxy_bools"][:, mask, :] = 0
         est_jj["galaxy_bools"] = est_jj["galaxy_bools"].contiguous()
+
+        # will fail if catalog does nto come from encoder(s)
         est_tiled_jj = est_jj.to_tile_params(tile_slen, ignore_extra_sources=False)
 
         images_jj = []
@@ -261,7 +264,12 @@ def get_deblended_reconstructions(
             bgbools = est_tiled_jj["galaxy_bools"][start:end].to(device)
 
             galaxy_tiles = render_galaxy_ptiles(
-                dec, blocs, bgparams, bgbools, ptile_slen, tile_slen
+                dec,
+                locs=blocs,
+                galaxy_params=bgparams,
+                galaxy_bools=bgbools,
+                ptile_slen=ptile_slen,
+                tile_slen=tile_slen,
             )
 
             galaxy_images = reconstruct_image_from_ptiles(galaxy_tiles.to("cpu"), tile_slen)
@@ -305,7 +313,7 @@ def get_fluxes_sep(
         _fluxerrs = []
         for jj in range(n_sources):
             f, ferr, _ = sep.sum_circle(
-                residual_images[jj].numpy(), [x[jj]], [y[jj]], r, err=BACKGROUND.sqrt().item()
+                residual_images[jj].numpy(), [x[jj]], [y[jj]], r=r, err=BACKGROUND.sqrt().item()
             )
             _fluxes.append(f.item())
             _fluxerrs.append(ferr.item())
