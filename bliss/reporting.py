@@ -165,6 +165,38 @@ def get_boostrap_precision_and_recall(
     return {"precision": precision_boot, "recall": recall_boot}
 
 
+def get_single_galaxy_ellipticities(images: Tensor, no_bar: bool = True) -> Tensor:
+    """Returns ellipticities of (noiseless, single-band) individual galaxy images.
+
+    Args:
+        images: Array of shape (n, slen, slen) containing single galaxies with no noise/background.
+        no_bar: Whether to use a progress bar.
+
+    Returns:
+        Tensor containing ellipticity measurements for each galaxy in `images`.
+    """
+    assert images.device == torch.device("cpu")
+    assert images.ndim == 3
+    n_samples, _, _ = images.shape
+    ellips = torch.zeros((n_samples, 2))  # 2nd shape: e1, e2
+    images_np = images.numpy()
+
+    # Now we use galsim to measure size and ellipticity
+    for ii in tqdm(range(n_samples), desc="Measuring galaxies", disable=no_bar):
+        image = images_np[ii]
+        if image.sum() > 0:  # skip empty images
+            galsim_image = galsim.Image(image, scale=PIXEL_SCALE)
+            # sigma ~ size of psf (in pixels)
+            out = galsim.hsm.FindAdaptiveMom(galsim_image, guess_sig=3, strict=False)
+            if out.error_message == "":
+                e1 = float(out.observed_e1)
+                e2 = float(out.observed_e2)
+            else:
+                e1, e2 = float("nan"), float("nan")  # noqa: WPS456
+            ellips[ii, :] = torch.tensor([e1, e2])
+    return ellips
+
+
 def get_snr(noiseless: Tensor) -> Tensor:
     """Compute SNR given noiseless, isolated iamges of galaxies and background."""
     image_with_background = noiseless + BACKGROUND
