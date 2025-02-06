@@ -11,7 +11,6 @@ from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.pyplot import Axes
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from tensordict import TensorDict
 
 CB_color_cycle = [
     "#377eb8",
@@ -31,9 +30,6 @@ def _to_numpy(d: dict):  # noqa:WPS231
         if isinstance(v, torch.Tensor):
             d[k] = v.numpy()
         elif isinstance(v, (float, int, np.ndarray)):
-            d[k] = v
-        elif isinstance(v, (dict, TensorDict)):
-            v = _to_numpy(v)
             d[k] = v
         else:
             msg = f"""Data returned can only be dict, tensor, array, tensordict, or

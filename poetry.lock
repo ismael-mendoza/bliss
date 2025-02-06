@@ -880,18 +880,6 @@ files = [
 colorama = {version = "*", markers = "platform_system == \"Windows\""}
 
 [[package]]
-name = "cloudpickle"
-version = "3.1.1"
-description = "Pickler class to extend the standard pickle.Pickler functionality"
-optional = false
-python-versions = ">=3.8"
-groups = ["main"]
-files = [
-    {file = "cloudpickle-3.1.1-py3-none-any.whl", hash = "sha256:c8c5a44295039331ee9dad40ba100a9c7297b6f988e50e87ccdf3765a668350e"},
-    {file = "cloudpickle-3.1.1.tar.gz", hash = "sha256:b216fa8ae4019d5482a8ac3c95d8f6346115d8835911fd4aefd1a445e4242c64"},
-]
-
-[[package]]
 name = "colorama"
 version = "0.4.6"
 description = "Cross-platform colored terminal text."
@@ -5631,43 +5619,6 @@ files = [
 ]
 
 [[package]]
-name = "tensordict"
-version = "0.3.1"
-description = ""
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "tensordict-0.3.1-cp310-cp310-macosx_10_15_x86_64.whl", hash = "sha256:adf8b1b4edb45a1eec7c3fd116e72c3ea1edf83b9d133635d7aad45464872ea1"},
-    {file = "tensordict-0.3.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:002b909ef19598f41c212da7ce3c6ea1315c43a431608a437567fa4e90d868f0"},
-    {file = "tensordict-0.3.1-cp310-cp310-manylinux1_x86_64.whl", hash = "sha256:1afc48c390b82e2214779bbbf35f4efd00598c48f56185f2158439573c1f83c3"},
-    {file = "tensordict-0.3.1-cp310-cp310-win_amd64.whl", hash = "sha256:f79175ba990b4fe77aa444a948d61249b318aa5f6ab20f44a92c6fa4e7cb14b2"},
-    {file = "tensordict-0.3.1-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:b0be3d10fe07763a567e5c2e9bb34e3f5d50b07c9d98f31b439b05e5d10c2174"},
-    {file = "tensordict-0.3.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:fd63da90dc0e654b08d5e9b8ced35bbc5b78a4e15062a1897fd563b379357e62"},
-    {file = "tensordict-0.3.1-cp311-cp311-manylinux1_x86_64.whl", hash = "sha256:516dfeebba0c30ec97ede4e9e0f35a2d87350cfea8e17805f66f89e4e14e60cc"},
-    {file = "tensordict-0.3.1-cp311-cp311-win_amd64.whl", hash = "sha256:d2b91bd9a9526e4c3ee3cb1dca2fe4faea0ca2e0315c6e5cff09fda1758c1986"},
-    {file = "tensordict-0.3.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:6627f5f9caf878f5ecb756094eb6660b1c02c6e94bbb8f5f8a3651b644519d74"},
-    {file = "tensordict-0.3.1-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:0e32770e41662658c34c586d5bdb207a0000f1c05d726c3eadc5fc14b54f08f4"},
-    {file = "tensordict-0.3.1-cp38-cp38-macosx_11_0_x86_64.whl", hash = "sha256:a006bfdd3741dd1ef64b24216b83a1650dd1be74927ae7bfc20ca7724ba4b9fa"},
-    {file = "tensordict-0.3.1-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:eb543e494fe1836b11a49f9f5ec06b8f116992fe037cb345e5b42c6060770f85"},
-    {file = "tensordict-0.3.1-cp38-cp38-win_amd64.whl", hash = "sha256:9ec996015684d1b54896d042edefafe1a4bf697201c66ae23466d3566b9c401c"},
-    {file = "tensordict-0.3.1-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:a5d79d6a07e8f5397e2f82f23765182aaa450224b6de2941e48033ceec33b7e4"},
-    {file = "tensordict-0.3.1-cp39-cp39-macosx_11_0_x86_64.whl", hash = "sha256:bafe1f4528cb607bb61a42b5008a074b2752049c2db6f688775fa0d67cb5be46"},
-    {file = "tensordict-0.3.1-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:d7521004e8a92bcb547a857adc73ce1d67a37a8b2202200830992a0b38181aae"},
-    {file = "tensordict-0.3.1-cp39-cp39-win_amd64.whl", hash = "sha256:b5a5ea072205bbc928b800a50d5c3762ea402fadc50f3b57c78a92e612ef9a21"},
-]
-
-[package.dependencies]
-cloudpickle = "*"
-numpy = "*"
-torch = ">=2.2.1"
-
-[package.extras]
-checkpointing = ["torchsnapshot-nightly"]
-h5 = ["h5py (>=3.8)"]
-tests = ["pytest", "pytest-benchmark", "pytest-instafail", "pytest-rerunfailures", "pyyaml"]
-
-[[package]]
 name = "terminado"
 version = "0.18.1"
 description = "Tornado websocket backend for the Xterm.js Javascript terminal emulator library."
@@ -6395,4 +6346,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10,<3.12"
-content-hash = "51a25da37a15b3ea9c6cee1f67aa4390bd2ed6474145d7b4bcd551675279940c"
+content-hash = "168ee29f15c13ee628cf4ef934e0075e68a872a4fe252691c2f57f9fa190c202"
