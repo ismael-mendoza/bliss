@@ -1,14 +1,12 @@
 from functools import partial
 
 import matplotlib.pyplot as plt
-import numpy as np
-import sep_pjw as sep
 import torch
 from einops import rearrange, reduce
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
-from bliss.catalog import FullCatalog, TileCatalog, collate
+from bliss.catalog import FullCatalog, TileCatalog
 from bliss.datasets.io import load_dataset_npz
 from bliss.encoders.deblend import GalaxyEncoder
 from bliss.encoders.detection import DetectionEncoder
@@ -230,10 +228,11 @@ class SamplingFigure(BlissFigure):
         sigmas_flat = []
 
         # now let's flatten across the true objects in each image
-        for ii in range(len(cats)):
+        for ii in tqdm(range(len(cats), desc="Flattening arrays")):
             f = []
             e = []
             s = []
+
             for jj in range(images.shape[0]):
                 nt = truth.n_sources[jj].item()
                 for kk in range(nt):
@@ -253,10 +252,24 @@ class SamplingFigure(BlissFigure):
         assert flat_fluxes.ndim == 4
         assert ellips_flat.shape[-1] == 2
 
+        # now flatten truth for convenience
+        snr_flat = []
+        bld_flat = []
+        for ii in range(images.shape[0]):
+            nt = truth.n_sources[ii].item()
+            for jj in range(nt):
+                snr_flat.append(truth["snr"][ii, jj, 0])
+                bld_flat.append(truth["bld"][ii, jj, 0])
+
+        snr_flat = torch.tensor(snr_flat).unsqueeze(-1)
+        bld_flat = torch.tensor(bld_flat).unsqueeze(-1)
+
         return {
             "fluxes": flat_fluxes,
             "ellips": ellips_flat,
             "sigmas": sigmas_flat,
+            "snr_flat": snr_flat,
+            "bld_flat": bld_flat,
             **additional_info,
         }
 
