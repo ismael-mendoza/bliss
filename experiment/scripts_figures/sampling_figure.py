@@ -195,7 +195,7 @@ class SamplingFigure(BlissFigure):
 
             for jj in range(images.shape[0]):
 
-                tns = truth.n_sources[jj].items()
+                tns = truth.n_sources[jj].item()
                 _tplocs = truth.plocs[jj]
                 _eplocs = cats[ii].plocs[jj]
 
@@ -223,32 +223,36 @@ class SamplingFigure(BlissFigure):
         assert fluxes.shape[0] == len(cats)
 
         fluxes_flat = []
-        ellips_flat = []
+        e1_flat = []
+        e2_flat = []
         sigmas_flat = []
 
         # now let's flatten across the true objects in each image
-        for ii in tqdm(range(len(cats), desc="Flattening arrays")):
+        for ii in tqdm(range(len(cats)), desc="Flattening arrays"):
             f = []
-            e = []
+            e1 = []
+            e2 = []
             s = []
 
             for jj in range(images.shape[0]):
                 nt = truth.n_sources[jj].item()
                 for kk in range(nt):
                     f.append(fluxes[ii, jj, kk, 0].item())
-                    e.append(ellips[ii, jj, kk, :])
+                    e1.append(ellips[ii, jj, kk, 0].item())
+                    e2.append(ellips[ii, jj, kk, 1].item())
                     s.append(sigmas[ii, jj, kk, 0].item())
             fluxes_flat.append(f)
-            ellips_flat.append(e)
+            e1_flat.append(e1)
+            e2_flat.append(e2)
             sigmas_flat.append(s)
 
         flat_fluxes = torch.tensor(fluxes_flat).unsqueeze(-1)
-        ellips_flat = torch.tensor(ellips_flat)
+        e1_flat = torch.tensor(e1_flat)
+        e2_flat = torch.tensor(e2_flat)
+        ellips_flat = torch.stack([e1_flat, e2_flat], axis=-1)
         sigmas_flat = torch.tensor(sigmas_flat).unsqueeze(-1)
 
-        assert flat_fluxes.shape[:1] == (images.shape[0], len(cats))
-        assert flat_fluxes.shape[-1] == 1
-        assert flat_fluxes.ndim == 4
+        assert flat_fluxes.shape[0] == len(cats)
         assert ellips_flat.shape[-1] == 2
 
         # now flatten truth for convenience
@@ -258,10 +262,12 @@ class SamplingFigure(BlissFigure):
             nt = truth.n_sources[ii].item()
             for jj in range(nt):
                 snr_flat.append(truth["snr"][ii, jj, 0])
-                bld_flat.append(truth["bld"][ii, jj, 0])
+                bld_flat.append(truth["blendedness"][ii, jj, 0])
 
         snr_flat = torch.tensor(snr_flat).unsqueeze(-1)
         bld_flat = torch.tensor(bld_flat).unsqueeze(-1)
+
+        assert snr_flat.shape == bld_flat.shape == flat_fluxes.shape[1:]
 
         return {
             "fluxes": flat_fluxes,
