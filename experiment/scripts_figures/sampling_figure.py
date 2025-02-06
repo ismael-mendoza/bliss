@@ -1,3 +1,5 @@
+from functools import partial
+
 import matplotlib.pyplot as plt
 import numpy as np
 import sep_pjw as sep
@@ -6,7 +8,7 @@ from einops import rearrange, reduce
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
-from bliss.catalog import FullCatalog, TileCatalog
+from bliss.catalog import FullCatalog, TileCatalog, collate
 from bliss.datasets.io import load_dataset_npz
 from bliss.encoders.deblend import GalaxyEncoder
 from bliss.encoders.detection import DetectionEncoder
@@ -16,6 +18,7 @@ from bliss.reporting import (
     get_deblended_reconstructions,
     get_residual_measurements,
     match_by_locs,
+    pred_in_batches,
 )
 
 
@@ -95,24 +98,39 @@ class SamplingFigure(BlissFigure):
 
         # add true snr to truth catalog using sep
         meas_truth = get_residual_measurements(
-            truth, images, paddings, galaxy_uncentered, bp=bp, r=self.aperture
+            truth, images, paddings=paddings, sources=galaxy_uncentered, bp=bp, r=self.aperture
         )
         truth["snr"] = meas_truth["snr"].clip(0)
         truth["blendedness"] = get_blendedness(galaxy_uncentered, noiseless).unsqueeze(-1)
-
         # we don't need to align here because we are matching later with the predictions
 
         # first get variational parameters that will be useful for diagnostics
-        n_source_probs, locs_mean, locs_sd = detection.forward(images.to(device))
-        additional_info = {
-            "n_source_probs": n_source_probs.cpu(),
-            "locs_mean": locs_mean.cpu(),
-            "locs_sd": locs_sd.cpu(),
-        }
+        def _pred_fnc1(x):
+            n_source_probs, locs_mean, locs_sd_raw = detection.forward(x)
+            return {
+                "n_source_probs": n_source_probs,
+                "locs_mean": locs_mean,
+                "locs_sd": locs_sd_raw,
+            }
+
+        additional_info = pred_in_batches(
+            _pred_fnc1,
+            images,
+            device=device,
+            desc="Encoding detections (MAP)",
+            no_bar=False,
+        )
 
         # now we sample location first
-        samples = detection.sample(images.to(device), n_samples=self.n_samples)
-        samples = {k: v.to("cpu") for k, v in samples.items()}
+        _pred_fnc2 = partial(detection.sample, n_samples=self.n_samples)
+        samples = pred_in_batches(
+            _pred_fnc2,
+            images,
+            device=device,
+            desc="Sampling images (detection)",
+            no_bar=False,
+            axis=1,
+        )
 
         # set n_sources to 0 if locs are out of bounds, also set locs to 0
         # otherwise `TileCatalog` below breaks
@@ -135,6 +153,11 @@ class SamplingFigure(BlissFigure):
         all_fluxes = []
         all_ellips = []
         all_sigmas = []
+
+        def _pred_fnc3(x, y):
+            return {"gparams": deblender.variational_mode(x, y)}
+
+        # NOTE: slow!
         for cat in tqdm(cats, total=len(cats), desc="Creating reconstructions for each sample"):
 
             # stars are excluded from all images, imopse that all detections are galaxies
@@ -142,7 +165,9 @@ class SamplingFigure(BlissFigure):
             tile_cat = cat.to_tile_params(tile_slen)
             tile_cat["galaxy_bools"] = rearrange(tile_cat.n_sources, "b x y -> b x y 1")
             _tile_locs = tile_cat.locs.to(device)
-            _tile_gparams = deblender.variational_mode(images.to(device), _tile_locs).to("cpu")
+
+            _d = pred_in_batches(_pred_fnc3, images, _tile_locs, device=device, batch_size=500)
+            _tile_gparams = _d["gparams"]
             _tile_gparams *= tile_cat["galaxy_bools"]
             tile_cat["galaxy_params"] = _tile_gparams
             new_cat = tile_cat.to_full_params()
@@ -157,7 +182,7 @@ class SamplingFigure(BlissFigure):
                 sources=recon_uncentered,
             )
 
-            all_fluxes.append(meas["fluxes"])
+            all_fluxes.append(meas["flux"])
             all_ellips.append(meas["ellips"])
             all_sigmas.append(meas["sigma"])
 
