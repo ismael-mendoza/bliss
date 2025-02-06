@@ -139,8 +139,7 @@ class SamplingFigure(BlissFigure):
 
         # get full catalogs from tile catalogs
         cats = []
-        n_samples = 100
-        for ii in range(n_samples):
+        for ii in range(self.n_samples):
             tile_cat = TileCatalog.from_flat_dict(
                 tile_slen, nth, ntw, {k: v[ii] for k, v in samples.items()}
             )
