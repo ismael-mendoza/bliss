@@ -361,7 +361,7 @@ def pred_in_batches(
     images: Tensor,
     *args,
     device: torch.device,
-    batch_size: int = 500,
+    batch_size: int = 200,
     desc: str = "",
     no_bar: bool = True,
     axis=0,
@@ -379,4 +379,4 @@ def pred_in_batches(
             d_cpu = {k: v.cpu() for k, v in d.items()}
             tiled_params_list.append(d_cpu)
 
-    return collate(d_cpu, axis=axis)
+    return collate(tiled_params_list, axis=axis)
