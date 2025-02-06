@@ -6,7 +6,7 @@ from copy import deepcopy
 from typing import Callable, DefaultDict, Dict, Tuple
 
 import galsim
-import sep_pjw as sep
+import sep
 import torch
 from einops import rearrange, reduce
 from scipy import optimize as sp_optim
