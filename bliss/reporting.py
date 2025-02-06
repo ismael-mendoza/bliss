@@ -3,7 +3,7 @@
 import math
 from collections import defaultdict
 from copy import deepcopy
-from typing import DefaultDict, Dict, Tuple
+from typing import Callable, DefaultDict, Dict, Tuple
 
 import galsim
 import sep_pjw as sep
@@ -13,7 +13,7 @@ from scipy import optimize as sp_optim
 from torch import Tensor
 from tqdm import tqdm
 
-from bliss.catalog import FullCatalog
+from bliss.catalog import FullCatalog, collate
 from bliss.datasets.lsst import BACKGROUND, PIXEL_SCALE
 from bliss.encoders.autoencoder import CenteredGalaxyDecoder
 from bliss.render_tiles import reconstruct_image_from_ptiles, render_galaxy_ptiles
@@ -354,3 +354,29 @@ def get_residual_measurements(
         sigmas[ii, :n_sources, 0] = torch.tensor(_sigmas)
 
     return {"flux": fluxes, "fluxerr": fluxerrs, "snr": snrs, "ellips": ellips, "sigma": sigmas}
+
+
+def pred_in_batches(
+    pred_fnc: Callable,
+    images: Tensor,
+    *args,
+    device: torch.device,
+    batch_size: int = 500,
+    desc: str = "",
+    no_bar: bool = True,
+    axis=0,
+):
+    # gotta ensure model.forward outputs a dict of Tensors
+    n_images = images.shape[0]
+    n_batches = math.ceil(n_images / batch_size)
+    tiled_params_list = []
+    with torch.no_grad():
+        for ii in tqdm(range(n_batches), desc=desc, disable=no_bar):
+            start, end = ii * batch_size, (ii + 1) * batch_size
+            image_batch = images[start:end].to(device)
+            args_batch = (x[start:end] for x in args)
+            d = pred_fnc(image_batch, *args_batch)
+            d_cpu = {k: v.cpu() for k, v in d.items()}
+            tiled_params_list.append(d_cpu)
+
+    return collate(d_cpu, axis=axis)
