@@ -70,7 +70,7 @@ class SamplingFigure(BlissFigure):
         dataset = load_dataset_npz(ds_path)
         _images = dataset["images"]
         _paddings = dataset["paddings"]
-        noiseless = dataset["noiseless"]
+        _noiseless = dataset["noiseless"]
 
         uncentered_sources = dataset["uncentered_sources"]
         galaxy_bools = dataset["galaxy_bools"]
@@ -83,6 +83,7 @@ class SamplingFigure(BlissFigure):
         all_stars = reduce(only_stars, "b n c h w -> b c h w", "sum")
         images = _images - all_stars
         paddings = _paddings - all_stars
+        noiseless = _noiseless - all_stars
 
         # more metadata
         slen = images.shape[-1] - 2 * bp
@@ -100,6 +101,9 @@ class SamplingFigure(BlissFigure):
         )
         truth["snr"] = meas_truth["snr"].clip(0)
         truth["blendedness"] = get_blendedness(galaxy_uncentered, noiseless).unsqueeze(-1)
+        truth["fluxes"] = meas_truth["flux"]
+        truth["ellips"] = meas_truth["ellips"]
+        truth["sigma"] = meas_truth["sigma"]
         # we don't need to align here because we are matching later with the predictions
 
         # first get variational parameters that will be useful for diagnostics
@@ -146,7 +150,6 @@ class SamplingFigure(BlissFigure):
             cat = tile_cat.to_full_params()
             cats.append(cat)
 
-        # we need to do some sort of matching for the galaxy we are targeting
         all_fluxes = []
         all_ellips = []
         all_sigmas = []
@@ -157,8 +160,8 @@ class SamplingFigure(BlissFigure):
         # NOTE: slow!
         for cat in tqdm(cats, total=len(cats), desc="Creating reconstructions for each sample"):
 
-            # stars are excluded from all images, imopse that all detections are galaxies
-
+            # stars are excluded from all images for now
+            # impose that all detections are galaxies
             tile_cat = cat.to_tile_params(tile_slen)
             tile_cat["galaxy_bools"] = rearrange(tile_cat.n_sources, "b x y -> b x y 1")
             _tile_locs = tile_cat.locs.to(device)
@@ -258,23 +261,49 @@ class SamplingFigure(BlissFigure):
         # now flatten truth for convenience
         snr_flat = []
         bld_flat = []
+        tflux_flat = []
+        te1_flat = []
+        te2_flat = []
+        tsigmas_flat = []
+        tgbools_flat = []
         for ii in range(images.shape[0]):
             nt = truth.n_sources[ii].item()
             for jj in range(nt):
                 snr_flat.append(truth["snr"][ii, jj, 0])
                 bld_flat.append(truth["blendedness"][ii, jj, 0])
+                tflux_flat.append(truth["fluxes"][ii, jj, 0])
+                te1_flat.append(truth["ellips"][ii, jj, 0])
+                te2_flat.append(truth["ellips"][ii, jj, 1])
+                tsigmas_flat.append(truth["sigma"][ii, jj, 0])
+                tgbools_flat.append(truth["galaxy_bools"][ii, jj, 0])
 
         snr_flat = torch.tensor(snr_flat).unsqueeze(-1)
         bld_flat = torch.tensor(bld_flat).unsqueeze(-1)
+        tflux_flat = torch.tensor(tflux_flat).unsqueeze(-1)
+        tsigmas_flat = torch.tensor(tsigmas_flat).unsqueeze(-1)
+        te1_flat = torch.tensor(te1_flat)
+        te2_flat = torch.tensor(te2_flat)
+        tellips_flat = torch.stack([te1_flat, te2_flat], dim=-1)
+        tgbools_flat = torch.tensor(tgbools_flat).unsqueeze(-1)
 
         assert snr_flat.shape == bld_flat.shape == flat_fluxes.shape[1:]
+        assert tellips_flat.shape[0] == snr_flat.shape[0]
+        assert tellips_flat.shape[-1] == 2
 
         return {
-            "fluxes": flat_fluxes,
-            "ellips": ellips_flat,
-            "sigmas": sigmas_flat,
-            "snr_flat": snr_flat,
-            "bld_flat": bld_flat,
+            "samples": {
+                "flux": flat_fluxes,
+                "ellips": ellips_flat,
+                "sigma": sigmas_flat,
+            },
+            "truth": {
+                "flux": tflux_flat,
+                "ellips": tellips_flat,
+                "sigma": tsigmas_flat,
+                "galaxy_bools": tgbools_flat,
+            },
+            "snr": snr_flat,
+            "bld": bld_flat,
             **additional_info,
         }
 
