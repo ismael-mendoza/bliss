@@ -243,7 +243,7 @@ def scatter_shade_plot(
     delta: float,
     color: str = "#377eb8",
     alpha: float = 0.5,
-    qs: Tuple[float, float] = (0.025, 0.975),  # 95% confidence interval
+    qs: Tuple[float, float] = (0.159, 0.841),  # 1-sigma Gaussian quantiles
     label: str = "",
     use_boot: bool = False,
     use_mean: bool = False,
