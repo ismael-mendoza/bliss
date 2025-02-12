@@ -1,14 +1,7 @@
 [project]
 authors = [{ name = "Ismael Mendoza", email = "imendoza@umich.edu" }]
 description = "Bayesian Light Source Separator"
-keywords = [
-  "cosmology",
-  "blending",
-  "weak lensing",
-  "bayesian",
-  "ml",
-  "pytorch",
-]
+keywords = ["cosmology", "blending", "weak lensing", "bayesian", "ml", "pytorch"]
 license = "MIT"
 name = "bliss-deblender"
 readme = "README.md"
@@ -39,13 +32,13 @@ dependencies = [
   "pylint>=3.1.0",
   "pytest>=8.0.0",
   "tqdm>=4.66.2",
-  "wemake-python-styleguide>=0.18.0",
   "pre-commit>=3.6.2",
   "jax[cuda12]>=0.4.30",
   "tensorflow-probability >=0.21.0",
   "quadax",
   "torch-jax-interop >=0.0.7",
   "galcheat (>=1.1.3,<2.0.0)",
+  "ruff (>=0.9.6,<0.10.0)",
 ]
 
 [tool.setuptools]
@@ -55,18 +48,72 @@ packages = ["bliss", "bliss.datasets", "bliss.encoders"]
 build-backend = "poetry.core.masonry.api"
 requires      = ["poetry-core>=1.0.0"]
 
-[tool.black]
-line-length    = 100
-target-version = ['py310']
 
-[tool.isort]
-profile                        = "black"
-include_trailing_comma         = "True"
-use_parentheses                = "True"
-ensure_newline_before_comments = "True"
-multi_line_output              = 3
-force_grid_wrap                = 0
-line_length                    = 100
+[tool.ruff]
+exclude = [
+  ".bzr",
+  ".direnv",
+  ".eggs",
+  ".git",
+  ".git-rewrite",
+  ".hg",
+  ".ipynb_checkpoints",
+  ".mypy_cache",
+  ".nox",
+  ".pants.d",
+  ".pyenv",
+  ".pytest_cache",
+  ".pytype",
+  ".ruff_cache",
+  ".svn",
+  ".tox",
+  ".venv",
+  ".vscode",
+  "__pypackages__",
+  "_build",
+  "buck-out",
+  "build",
+  "dist",
+  "node_modules",
+  "site-packages",
+  "venv",
+]
+
+# Same as Black.
+line-length  = 100
+indent-width = 4
+
+# Assume Python 3.12
+target-version = "py312"
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+exclude = ["*.ipynb"]
+
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "B", "SIM", "PLE", "PLC", "PLW", "RUF"]
+ignore = [
+  "C901",    # I want to decide what is 'too' complex
+  "E501",    # I don't care about formatting docstrings
+  "E731",    # I like lambda's sometimes
+  "PLC0206", # too picky, not always useful
+  "RUF027",  # does not account for shell scripts correctly
+  "RUF052",  # I find underscore variables useful
+]
+preview = true
+exclude = ["*.ipynb", "scripts/one_galaxy_shear.py", "scripts/benchmarks/*.py"]
 
 
 # pyproject.toml
