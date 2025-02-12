@@ -45,17 +45,9 @@ jobs:
         run: |
           poetry install
 
-      - name: Run black
-        run: |
-          poetry run black --check .
-
       - name: Run flake8
         run: |
-          poetry run flake8 bliss/
-
-      - name: Run pylint
-        run: |
-          poetry run pylint bliss/
+          poetry run ruff check --output-format=github bliss/
 
       - name: Run Tests
         run: |
