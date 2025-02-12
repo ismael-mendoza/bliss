@@ -4,7 +4,7 @@ from functools import partial
 
 import torch
 from einops import pack, rearrange, unpack
-from jax import Array, vmap
+from jax import Array, jit, vmap
 from jax_galsim import Image, InterpolatedImage
 from torch import Tensor
 from torch.nn.functional import grid_sample
@@ -87,6 +87,7 @@ def shift_sources_in_ptiles(
     return sampled_images
 
 
+@partial(jit, static_argnames=["slen", "pixel_scale"])
 def _shift_source_jax(image: Array, offset: Array, *, slen: int, pixel_scale: float = 0.2):
     gimg = Image(image, scale=pixel_scale)
     ii = InterpolatedImage(gimg, scale=pixel_scale)
@@ -98,7 +99,6 @@ def shift_sources(
     images: Tensor, locs: Tensor, *, tile_slen: int, slen: int, center: bool = False
 ) -> Array:
     """Shift source given offset or center source given position using jax_galsim."""
-
     images_jax = torch_to_jax(rearrange(images, "n 1 h w -> n h w"))
     sgn = -1 if center else 1
     _offsets = (locs * tile_slen - tile_slen / 2) * sgn
