@@ -146,7 +146,7 @@ class GalaxyEncoder(pl.LightningModule):
             image_ptiles,
             tile_locs_flat,
             tile_slen=self.tile_slen,
-            slenb=self.ptile_slen,
+            slen=self.ptile_slen,
             center=True,
         )
         assert shifted_ptiles.shape[-1] == shifted_ptiles.shape[-2] == self.ptile_slen
