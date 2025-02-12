@@ -6,7 +6,7 @@ from torch import Tensor
 from torch.nn.functional import fold, unfold
 
 from bliss.encoders.autoencoder import CenteredGalaxyDecoder
-from bliss.grid import shift_sources_in_ptiles
+from bliss.grid import shift_sources
 
 
 def render_galaxy_ptiles(
@@ -34,8 +34,8 @@ def render_galaxy_ptiles(
     assert galaxy_decoder.slen % 2 == 1  # so centered in central pixel
 
     # render galaxies in correct location within padded tile and trim to be size `ptile_slen`
-    uncentered_galaxies = shift_sources_in_ptiles(
-        centered_galaxies, locs_flat, tile_slen, ptile_slen, center=False
+    uncentered_galaxies = shift_sources(
+        centered_galaxies, locs_flat, tile_slen=tile_slen, slen=ptile_slen, center=False
     )
     assert uncentered_galaxies.shape[-1] == ptile_slen
 
