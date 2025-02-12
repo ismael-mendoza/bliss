@@ -3,7 +3,7 @@
 from functools import partial
 
 import torch
-from einops import pack, rearrange, unpack
+from einops import pack, rearrange, reduce, unpack
 from jax import Array, jit, vmap
 from jax_galsim import Image, InterpolatedImage
 from torch import Tensor
@@ -99,11 +99,22 @@ def shift_sources(
     images: Tensor, locs: Tensor, *, tile_slen: int, slen: int, center: bool = False
 ) -> Array:
     """Shift source given offset or center source given position using jax_galsim."""
-    images_jax = torch_to_jax(rearrange(images, "n 1 h w -> n h w"))
+
+    # need to mask to avoid issue with normalization
+    flux = reduce(images, "n 1 h w -> n", "sum")
+    mask = flux > 0
+    _images = images[mask]
+    _locs = locs[mask]
+
+    images_jax = torch_to_jax(rearrange(_images, "n 1 h w -> n h w"))
     sgn = -1 if center else 1
-    _offsets = (locs * tile_slen - tile_slen / 2) * sgn
-    offsets = torch_to_jax(_offsets)
+    offsets_torch = (_locs * tile_slen - tile_slen / 2) * sgn
+    offsets = torch_to_jax(offsets_torch)
+
     shift_fnc = vmap(partial(_shift_source_jax, slen=slen))
     shifted_images_jax = shift_fnc(images_jax, offsets)
     shifted_images = jax_to_torch(shifted_images_jax)
-    return rearrange(shifted_images, "n h w -> n 1 h w")
+
+    final_images = torch.zeros(images.shape[0], 1, slen, slen, device=images.device)
+    final_images[mask, 0] = shifted_images
+    return final_images
