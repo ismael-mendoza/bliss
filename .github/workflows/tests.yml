@@ -33,10 +33,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: "poetry"
 
-      - name: Create environment variables
-        run: |
-          echo "JUPYTER_PLATFORM_DIRS=1" >> $GITHUB_ENV
-
       - name: Install fftw3
         run: |
           sudo apt-get install libfftw3-dev
@@ -44,6 +40,7 @@ jobs:
       - name: Install poetry dependencies
         run: |
           poetry install
+          pip install --no-deps git+https://github.com/GalSim-developers/JAX-GalSim.git --no-build-isolation
 
       - name: Run flake8
         run: |
