@@ -9,7 +9,7 @@ from torch import Tensor
 
 
 class TileCatalog(UserDict):
-    allowed_params = {
+    allowed_params = (
         "galaxy_params",
         "galaxy_bools",
         "fluxes",
@@ -27,7 +27,7 @@ class TileCatalog(UserDict):
         "star_log_fluxes",
         "star_bools",
         "n_source_probs",
-    }
+    )
 
     def __init__(self, tile_slen: int, d: Dict[str, Tensor]):
         self.tile_slen = tile_slen

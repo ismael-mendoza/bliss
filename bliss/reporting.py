@@ -332,7 +332,7 @@ def get_residual_measurements(
             out = galsim.hsm.FindAdaptiveMom(
                 _galsim_img, guess_centroid=_centroid, guess_sig=3, strict=False
             )
-            if out.error_message == "":
+            if not out.error_message:
                 e1 = float(out.observed_e1)
                 e2 = float(out.observed_e2)
                 sigma = float(out.moments_sigma)
