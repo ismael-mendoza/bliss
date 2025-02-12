@@ -87,7 +87,7 @@ def shift_sources_in_ptiles(
     return sampled_images
 
 
-def shift_source_jax(image: Array, offset: Array, *, slen: int, pixel_scale: float = 0.2):
+def _shift_source_jax(image: Array, offset: Array, *, slen: int, pixel_scale: float = 0.2):
     gimg = Image(image, scale=pixel_scale)
     ii = InterpolatedImage(gimg, scale=pixel_scale)
     fimg = ii.drawImage(nx=slen, ny=slen, scale=pixel_scale, offset=offset, method="no_pixel")
@@ -98,12 +98,12 @@ def shift_sources(
     images: Tensor, locs: Tensor, *, tile_slen: int, slen: int, center: bool = False
 ) -> Array:
     """Shift source given offset or center source given position using jax_galsim."""
-    assert images.ndim == 4 and images.shape[1] == 1
-    images_jax = torch_to_jax(images[:, 0])
+
+    images_jax = torch_to_jax(rearrange(images, "n 1 h w -> n h w"))
     sgn = -1 if center else 1
     _offsets = (locs * tile_slen - tile_slen / 2) * sgn
     offsets = torch_to_jax(_offsets)
-    shift_fnc = vmap(partial(shift_source_jax, slen=slen))
+    shift_fnc = vmap(partial(_shift_source_jax, slen=slen))
     shifted_images_jax = shift_fnc(images_jax, offsets)
     shifted_images = jax_to_torch(shifted_images_jax)
     return rearrange(shifted_images, "n h w -> n 1 h w")
