@@ -89,8 +89,8 @@ def shift_sources_in_ptiles(
 
 @partial(jit, static_argnames=["slen", "pixel_scale"])
 def _shift_source_jax(image: Array, offset: Array, *, slen: int, pixel_scale: float = 0.2):
-    gimg = Image(image, scale=pixel_scale)
-    ii = InterpolatedImage(gimg, scale=pixel_scale)
+    img = Image(image, scale=pixel_scale)
+    ii = InterpolatedImage(img, scale=pixel_scale)
     fimg = ii.drawImage(nx=slen, ny=slen, scale=pixel_scale, offset=offset, method="no_pixel")
     return fimg.array
 
