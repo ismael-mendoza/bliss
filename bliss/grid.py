@@ -1,9 +1,33 @@
 """Functions for working with `torch.nn.functional.grid_sample`."""
 
+from functools import partial
+
 import torch
 from einops import pack, rearrange, unpack
+from jax import Array, vmap
+from jax_galsim import Image, InterpolatedImage
 from torch import Tensor
 from torch.nn.functional import grid_sample
+from torch_jax_interop import jax_to_torch, torch_to_jax
+
+
+def validate_border_padding(tile_slen: int, ptile_slen: int, bp: float | None = None) -> int:
+    # Border Padding
+    # Images are first rendered on *padded* tiles (aka ptiles).
+    # The padded tile consists of the tile and neighboring tiles
+    # The width of the padding is given by ptile_slen.
+    # border_padding is the amount of padding we leave in the final image. Useful for
+    # avoiding sources getting too close to the edges.
+    if bp is None:
+        # default value matches encoder default.
+        bp = (ptile_slen - tile_slen) / 2
+
+    n_tiles_of_padding = (ptile_slen / tile_slen - 1) / 2
+    ptile_padding = n_tiles_of_padding * tile_slen
+    assert float(bp).is_integer(), "amount of border padding must be an integer"
+    assert n_tiles_of_padding.is_integer(), "n_tiles_of_padding must be an integer"
+    assert bp <= ptile_padding, "Too much border, increase ptile_slen"
+    return int(bp)
 
 
 def get_mgrid(slen: int, device: torch.device):
@@ -63,20 +87,23 @@ def shift_sources_in_ptiles(
     return sampled_images
 
 
-def validate_border_padding(tile_slen: int, ptile_slen: int, bp: float = None) -> int:
-    # Border Padding
-    # Images are first rendered on *padded* tiles (aka ptiles).
-    # The padded tile consists of the tile and neighboring tiles
-    # The width of the padding is given by ptile_slen.
-    # border_padding is the amount of padding we leave in the final image. Useful for
-    # avoiding sources getting too close to the edges.
-    if bp is None:
-        # default value matches encoder default.
-        bp = (ptile_slen - tile_slen) / 2
+def shift_source_jax(image: Array, offset: Array, *, slen: int, pixel_scale: float = 0.2):
+    gimg = Image(image, scale=pixel_scale)
+    ii = InterpolatedImage(gimg, scale=pixel_scale)
+    fimg = ii.drawImage(nx=slen, ny=slen, scale=pixel_scale, offset=offset, method="no_pixel")
+    return fimg.array
 
-    n_tiles_of_padding = (ptile_slen / tile_slen - 1) / 2
-    ptile_padding = n_tiles_of_padding * tile_slen
-    assert float(bp).is_integer(), "amount of border padding must be an integer"
-    assert n_tiles_of_padding.is_integer(), "n_tiles_of_padding must be an integer"
-    assert bp <= ptile_padding, "Too much border, increase ptile_slen"
-    return int(bp)
+
+def shift_sources(
+    images: Tensor, locs: Tensor, *, tile_slen: int, slen: int, center: bool = False
+) -> Array:
+    """Shift source given offset or center source given position using jax_galsim."""
+    assert images.ndim == 4 and images.shape[1] == 1
+    images_jax = torch_to_jax(images[:, 0])
+    sgn = -1 if center else 1
+    _offsets = (locs * tile_slen - tile_slen / 2) * sgn
+    offsets = torch_to_jax(_offsets)
+    shift_fnc = vmap(partial(shift_source_jax, slen=slen))
+    shifted_images_jax = shift_fnc(images_jax, offsets)
+    shifted_images = jax_to_torch(shifted_images_jax)
+    return rearrange(shifted_images, "n h w -> n 1 h w")
