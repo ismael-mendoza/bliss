@@ -25,15 +25,15 @@ CB_color_cycle = [
 ]
 
 
-def _to_numpy(d: dict):  # noqa:WPS231
+def _to_numpy(d: dict):
     for k, v in d.items():
         if isinstance(v, torch.Tensor):
             d[k] = v.numpy()
         elif isinstance(v, (float, int, np.ndarray)):
             d[k] = v
         elif isinstance(v, dict):
-            v = _to_numpy(v)
-            d[k] = v
+            v1 = _to_numpy(v)
+            d[k] = v1
         else:
             msg = f"""Data returned can only be dict, tensor, array, or
                     float but got {type(v)}"""
@@ -201,7 +201,7 @@ def plot_plocs(
 
     x = plocs[:, 1] - 0.5 + bp
     y = plocs[:, 0] - 0.5 + bp
-    for i, (xi, yi) in enumerate(zip(x, y)):
+    for i, (xi, yi) in enumerate(zip(x, y, strict=False)):
         prob = galaxy_probs[i]
         cmp = mpl.colormaps[cmap]
         color = cmp(prob)
@@ -217,7 +217,7 @@ def add_loc_legend(ax: mpl.axes.Axes, labels: list, cmap1="cool", cmap2="bwr", s
     colors = (cmp1(1.0), cmp1(0), cmp2(1.0), cmp2(0))
     markers = ("+", "+", "x", "x")
     sizes = (s * 2, s * 2, s + 5, s + 5)
-    for label, c, m, size in zip(labels, colors, markers, sizes):
+    for label, c, m, size in zip(labels, colors, markers, sizes, strict=False):
         ax.scatter([], [], color=c, marker=m, label=label, s=size)
     ax.legend(
         bbox_to_anchor=(0, 1.2, 1.0, 0.102),

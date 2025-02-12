@@ -272,7 +272,7 @@ class FullCatalog(UserDict):
     def device(self):
         return self.plocs.device
 
-    def to_tile_params(  # noqa: WPS231
+    def to_tile_params(
         self, tile_slen: int, ignore_extra_sources=False
     ) -> TileCatalog:
         """Returns the TileCatalog (with at most 1 source per tile) for this FullCatalog.
@@ -318,14 +318,14 @@ class FullCatalog(UserDict):
                 assert n_sources_in_tile.dtype is torch.int64
                 if n_sources_in_tile > 0:
                     if not ignore_extra_sources:
-                        raise ValueError(  # noqa: WPS220
+                        raise ValueError(
                             "# of sources in at least one tile is larger than 1."
                         )
                     # pylint: disable-next=possibly-used-before-assignment
                     flux1 = rearrange(tile_fluxes[ii, coords[0], coords[1]], "->")
                     flux2 = rearrange(self["fluxes"][ii, idx], "1 ->")
                     if flux1 > flux2:  # keep current source in tile
-                        continue  # noqa: WPS220
+                        continue
                 tile_loc = (self.plocs[ii, idx] - coords * tile_slen) / tile_slen
                 tile_locs[ii, coords[0], coords[1]] = tile_loc
                 for p, q in tile_params.items():

@@ -78,7 +78,7 @@ def reconstruct_image_from_ptiles(image_ptiles: Tensor, tile_slen: int) -> Tenso
     Returns:
         Reconstructed image of size (batch_size x n_bands x height x width)
     """
-    _, nth, ntw, _, ptile_slen, _ = image_ptiles.shape  # noqa: WPS236
+    _, nth, ntw, _, ptile_slen, _ = image_ptiles.shape
     image_ptiles_prefold = rearrange(image_ptiles, "b nth ntw c h w -> b (c h w) (nth ntw)")
     kernel_size = (ptile_slen, ptile_slen)
     stride = (tile_slen, tile_slen)

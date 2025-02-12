@@ -188,11 +188,11 @@ def get_single_galaxy_ellipticities(images: Tensor, no_bar: bool = True) -> Tens
             galsim_image = galsim.Image(image, scale=PIXEL_SCALE)
             # sigma ~ size of psf (in pixels)
             out = galsim.hsm.FindAdaptiveMom(galsim_image, guess_sig=3, strict=False)
-            if out.error_message == "":
+            if not out.error_message:
                 e1 = float(out.observed_e1)
                 e2 = float(out.observed_e2)
             else:
-                e1, e2 = float("nan"), float("nan")  # noqa: WPS456
+                e1, e2 = float("nan"), float("nan")
             ellips[ii, :] = torch.tensor([e1, e2])
     return ellips
 
@@ -337,9 +337,9 @@ def get_residual_measurements(
                 e2 = float(out.observed_e2)
                 sigma = float(out.moments_sigma)
             else:
-                e1 = float("nan")  # noqa: WPS456
-                e2 = float("nan")  # noqa: WPS456
-                sigma = float("nan")  # noqa: WPS456
+                e1 = float("nan")
+                e2 = float("nan")
+                sigma = float("nan")
 
             _e1s.append(e1)
             _e2s.append(e2)
