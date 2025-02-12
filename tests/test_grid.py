@@ -4,7 +4,7 @@ from einops import rearrange
 from torch import Tensor
 from torch.nn.functional import grid_sample
 
-from bliss.grid import get_mgrid, shift_sources_in_ptiles, swap_locs_columns
+from bliss.grid import get_mgrid, shift_sources, shift_sources_in_ptiles, swap_locs_columns
 
 
 def _old_get_mgrid(slen: int):
@@ -118,4 +118,11 @@ def test_shifting_and_trimming():
 
     # applying again centers them and keeps the same size.
     centered_ptiles = shift_sources_in_ptiles(shifted_ptiles, tile_locs, 4, 52, center=True)
+    assert centered_ptiles.shape == (10, 1, 52, 52)
+
+    # test with new jax function
+    shifted_ptiles = shift_sources(ptiles, tile_locs, tile_slen=4, slen=52, center=False)
+    assert shifted_ptiles.shape == (10, 1, 52, 52)
+
+    centered_ptiles = shift_sources(shifted_ptiles, tile_locs, tile_slen=4, slen=52, center=True)
     assert centered_ptiles.shape == (10, 1, 52, 52)
