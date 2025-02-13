@@ -40,7 +40,6 @@ jobs:
       - name: Install poetry dependencies
         run: |
           poetry install
-          pip install --no-deps git+https://github.com/GalSim-developers/JAX-GalSim.git --no-build-isolation
 
       - name: Run ruff
         run: |
