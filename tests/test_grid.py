@@ -127,7 +127,7 @@ def test_shifting_and_trimming():
     assert centered_ptiles.shape == (10, 1, 52, 52)
 
     # test with new jax function
-    _shift_fnc = get_shift_sources_fnc
+    _shift_fnc = get_shift_sources_fnc(slen=52, pixel_scale=0.2)
     shifted_ptiles = shift_sources(
         ptiles, tile_locs, shift_fnc=_shift_fnc, tile_slen=4, slen=52, center=False
     )
