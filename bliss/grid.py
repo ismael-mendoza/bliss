@@ -82,7 +82,7 @@ def shift_sources_bilinear(
     offsets_xy_inflated = rearrange(offsets_xy, "npt xy -> npt 1 1 xy", xy=2)
     grid_locs = grid_inflated - offsets_xy_inflated
 
-    sampled_images = grid_sample(image_ptiles_flat, grid_locs, align_corners=True)
+    sampled_images = grid_sample(image_ptiles_flat, grid_locs, align_corners=True, mode="bilinear")
     assert sampled_images.shape[-1] == sampled_images.shape[-2] == ptile_slen
     return sampled_images
 

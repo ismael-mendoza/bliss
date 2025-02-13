@@ -9,9 +9,9 @@ from torch.optim import Adam
 
 from bliss.catalog import TileCatalog
 from bliss.datasets.generate_blends import parse_dataset
-from bliss.datasets.lsst import BACKGROUND, PIXEL_SCALE
+from bliss.datasets.lsst import BACKGROUND
 from bliss.encoders.autoencoder import CenteredGalaxyEncoder, OneCenteredGalaxyAE
-from bliss.grid import get_shift_sources_fnc, shift_sources, validate_border_padding
+from bliss.grid import shift_sources_bilinear, validate_border_padding
 from bliss.render_tiles import (
     get_images_in_tiles,
     reconstruct_image_from_ptiles,
@@ -54,8 +54,6 @@ class GalaxyEncoder(pl.LightningModule):
         self._dec.requires_grad_(False)
         self._dec.eval()
         del ae
-
-        self._shift_fnc = get_shift_sources_fnc(slen=self.ptile_slen, pixel_scale=PIXEL_SCALE)
 
         self.register_buffer("background_sqrt", BACKGROUND.sqrt())
 
@@ -145,10 +143,9 @@ class GalaxyEncoder(pl.LightningModule):
 
     def _get_centered_padded_tiles(self, image_ptiles: Tensor, tile_locs_flat: Tensor) -> Tensor:
         """Center padded tiles at given locations, and crop."""
-        shifted_ptiles = shift_sources(
+        shifted_ptiles = shift_sources_bilinear(
             image_ptiles,
             tile_locs_flat,
-            shift_fnc=self._shift_fnc,
             tile_slen=self.tile_slen,
             slen=self.ptile_slen,
             center=True,
