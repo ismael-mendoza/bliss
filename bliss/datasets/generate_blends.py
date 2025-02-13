@@ -34,7 +34,6 @@ def generate_dataset(
     max_shift: float = 0.5,  # within tile, 0.5 -> maximum
     add_galaxies_in_padding: bool = True,
 ) -> dict[str, Tensor]:
-
     images_list = []
     noiseless_images_list = []
     uncentered_sources_list = []
