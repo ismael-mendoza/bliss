@@ -113,11 +113,11 @@ def shift_sources(
     mask = torch.logical_and(flux > 0, mask1)
 
     _images = images[mask]
-    _locs = locs[mask]
+    _locs_trans = swap_locs_columns(locs[mask])
 
     sgn = -1 if center else 1
     images_flat = rearrange(_images, "n 1 h w -> n h w")
-    offsets = (_locs * tile_slen - tile_slen / 2) * sgn
+    offsets = (_locs_trans * tile_slen - tile_slen / 2) * sgn
     shifted_images = shift_fnc(images_flat, offsets)
 
     final_images = torch.zeros(images.shape[0], 1, slen, slen, device=images.device)
