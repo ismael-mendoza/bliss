@@ -1,5 +1,7 @@
 """Functions from producing images from tiled parameters of galaxies or stars."""
 
+from typing import Callable
+
 import torch
 from einops import rearrange
 from torch import Tensor
@@ -16,6 +18,8 @@ def render_galaxy_ptiles(
     galaxy_bools: Tensor,
     ptile_slen: int,
     tile_slen: int,
+    *,
+    shift_fnc: Callable,
     n_bands: int = 1,
 ) -> Tensor:
     """Render padded tiles of galaxies from tiled tensors."""
@@ -35,7 +39,12 @@ def render_galaxy_ptiles(
 
     # render galaxies in correct location within padded tile and trim to be size `ptile_slen`
     uncentered_galaxies = shift_sources(
-        centered_galaxies, locs_flat, tile_slen=tile_slen, slen=ptile_slen, center=False
+        centered_galaxies,
+        locs_flat,
+        shift_fnc=shift_fnc,
+        tile_slen=tile_slen,
+        slen=ptile_slen,
+        center=False,
     )
     assert uncentered_galaxies.shape[-1] == ptile_slen
 

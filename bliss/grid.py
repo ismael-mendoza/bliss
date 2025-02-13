@@ -1,14 +1,14 @@
 """Functions for working with `torch.nn.functional.grid_sample`."""
 
-from functools import partial
+from typing import Callable
 
 import torch
 from einops import pack, rearrange, reduce, unpack
 from jax import Array, jit, vmap
+from jax2torch import jax2torch
 from jax_galsim import Image, InterpolatedImage
 from torch import Tensor
 from torch.nn.functional import grid_sample
-from torch_jax_interop import jax_to_torch, torch_to_jax
 
 
 def validate_border_padding(tile_slen: int, ptile_slen: int, bp: float | None = None) -> int:
@@ -48,7 +48,7 @@ def swap_locs_columns(locs: Tensor) -> Tensor:
     return pack([y, x], "b *")[0]
 
 
-def shift_sources_in_ptiles(
+def shift_sources_bilinear(
     image_ptiles_flat: Tensor, tile_locs_flat: Tensor, tile_slen: int, ptile_slen: int, center=False
 ) -> Tensor:
     """Shift sources at given padded tiles to given locations.
@@ -87,7 +87,6 @@ def shift_sources_in_ptiles(
     return sampled_images
 
 
-@partial(jit, static_argnames=["slen", "pixel_scale"])
 def _shift_source_jax(image: Array, offset: Array, *, slen: int, pixel_scale: float = 0.2):
     img = Image(image, scale=pixel_scale)
     ii = InterpolatedImage(img, scale=pixel_scale)
@@ -95,25 +94,31 @@ def _shift_source_jax(image: Array, offset: Array, *, slen: int, pixel_scale: fl
     return fimg.array
 
 
-def shift_sources(
-    images: Tensor, locs: Tensor, *, tile_slen: int, slen: int, center: bool = False
-) -> Array:
-    """Shift source given offset or center source given position using jax_galsim."""
+def get_shift_sources_fnc(slen: int, pixel_scale: float = 0.2):
+    fnc = lambda x, y: _shift_source_jax(x, y, slen=slen, pixel_scale=pixel_scale)
+    return jax2torch(vmap(jit(fnc)))
 
-    # need to mask to avoid issue with normalization
+
+def shift_sources(
+    images: Tensor,
+    locs: Tensor,
+    *,
+    shift_fnc: Callable,
+    tile_slen: int,
+    slen: int,
+    center: bool = False,
+):
     flux = reduce(images, "n 1 h w -> n", "sum")
-    mask = flux > 0
+    mask1 = torch.logical_and(locs[:, 0] > 0, locs[:, 1] > 0)
+    mask = torch.logical_and(flux > 0, mask1)
+
     _images = images[mask]
     _locs = locs[mask]
 
-    images_jax = torch_to_jax(rearrange(_images, "n 1 h w -> n h w"))
     sgn = -1 if center else 1
-    offsets_torch = (_locs * tile_slen - tile_slen / 2) * sgn
-    offsets = torch_to_jax(offsets_torch)
-
-    shift_fnc = vmap(partial(_shift_source_jax, slen=slen))
-    shifted_images_jax = shift_fnc(images_jax, offsets)
-    shifted_images = jax_to_torch(shifted_images_jax)
+    images_flat = rearrange(_images, "n 1 h w -> n h w")
+    offsets = (_locs * tile_slen - tile_slen / 2) * sgn
+    shifted_images = shift_fnc(images_flat, offsets)
 
     final_images = torch.zeros(images.shape[0], 1, slen, slen, device=images.device)
     final_images[mask, 0] = shifted_images
