@@ -152,6 +152,7 @@ def _make_sample_figure(
         "suffix": suffix,
         "cachedir": CACHEDIR,
         "aperture": aperture,
+        "n_samples": 10,
     }
     detection = _load_models(fpaths, "detection", device)
     deblender = _load_models(fpaths, "deblend", device)
