@@ -4,9 +4,6 @@ from typing import Callable
 
 import torch
 from einops import pack, rearrange, reduce, unpack
-from jax import Array, jit, vmap
-from jax2torch import jax2torch
-from jax_galsim import Image, InterpolatedImage
 from torch import Tensor
 from torch.nn.functional import grid_sample
 
@@ -85,18 +82,6 @@ def shift_sources_bilinear(
     sampled_images = grid_sample(image_ptiles_flat, grid_locs, align_corners=True, mode="bilinear")
     assert sampled_images.shape[-1] == sampled_images.shape[-2] == slen
     return sampled_images
-
-
-def _shift_source_jax(image: Array, offset: Array, *, slen: int, pixel_scale: float = 0.2):
-    img = Image(image, scale=pixel_scale)
-    ii = InterpolatedImage(img, scale=pixel_scale)
-    fimg = ii.drawImage(nx=slen, ny=slen, scale=pixel_scale, offset=offset, method="no_pixel")
-    return fimg.array
-
-
-def get_shift_sources_fnc(slen: int, pixel_scale: float = 0.2):
-    fnc = lambda x, y: _shift_source_jax(x, y, slen=slen, pixel_scale=pixel_scale)
-    return jax2torch(vmap(jit(fnc)))
 
 
 def shift_sources(

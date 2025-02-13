@@ -6,8 +6,6 @@ from torch.nn.functional import grid_sample
 
 from bliss.grid import (
     get_mgrid,
-    get_shift_sources_fnc,
-    shift_sources,
     shift_sources_bilinear,
     swap_locs_columns,
 )
@@ -124,16 +122,4 @@ def test_shifting_and_trimming():
 
     # applying again centers them and keeps the same size.
     centered_ptiles = shift_sources_bilinear(shifted_ptiles, tile_locs, 4, 52, center=True)
-    assert centered_ptiles.shape == (10, 1, 52, 52)
-
-    # test with new jax function
-    _shift_fnc = get_shift_sources_fnc(slen=52, pixel_scale=0.2)
-    shifted_ptiles = shift_sources(
-        ptiles, tile_locs, shift_fnc=_shift_fnc, tile_slen=4, slen=52, center=False
-    )
-    assert shifted_ptiles.shape == (10, 1, 52, 52)
-
-    centered_ptiles = shift_sources(
-        shifted_ptiles, tile_locs, shift_fnc=_shift_fnc, tile_slen=4, slen=52, center=True
-    )
     assert centered_ptiles.shape == (10, 1, 52, 52)
