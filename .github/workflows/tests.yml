@@ -42,7 +42,7 @@ jobs:
           poetry install
           pip install --no-deps git+https://github.com/GalSim-developers/JAX-GalSim.git --no-build-isolation
 
-      - name: Run flake8
+      - name: Run ruff
         run: |
           poetry run ruff check --output-format=github bliss/
 
