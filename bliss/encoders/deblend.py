@@ -80,7 +80,6 @@ class GalaxyEncoder(pl.LightningModule):
             tile_catalog["galaxy_bools"],
             self.ptile_slen,
             self.tile_slen,
-            shift_fnc=self._shift_fnc,
             n_bands=self.n_bands,
         )
         recon_mean = reconstruct_image_from_ptiles(recon_ptiles, self.tile_slen)

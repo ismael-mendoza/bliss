@@ -1,6 +1,6 @@
 """Functions from producing images from tiled parameters of galaxies or stars."""
 
-from typing import Callable
+from typing import
 
 import torch
 from einops import rearrange
@@ -8,7 +8,7 @@ from torch import Tensor
 from torch.nn.functional import fold, unfold
 
 from bliss.encoders.autoencoder import CenteredGalaxyDecoder
-from bliss.grid import shift_sources
+from bliss.grid import shift_sources_bilinear
 
 
 def render_galaxy_ptiles(
@@ -19,7 +19,6 @@ def render_galaxy_ptiles(
     ptile_slen: int,
     tile_slen: int,
     *,
-    shift_fnc: Callable,
     n_bands: int = 1,
 ) -> Tensor:
     """Render padded tiles of galaxies from tiled tensors."""
@@ -38,10 +37,9 @@ def render_galaxy_ptiles(
     assert galaxy_decoder.slen % 2 == 1  # so centered in central pixel
 
     # render galaxies in correct location within padded tile and trim to be size `ptile_slen`
-    uncentered_galaxies = shift_sources(
+    uncentered_galaxies = shift_sources_bilinear(
         centered_galaxies,
         locs_flat,
-        shift_fnc=shift_fnc,
         tile_slen=tile_slen,
         slen=ptile_slen,
         center=False,

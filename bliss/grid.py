@@ -49,7 +49,7 @@ def swap_locs_columns(locs: Tensor) -> Tensor:
 
 
 def shift_sources_bilinear(
-    image_ptiles_flat: Tensor, tile_locs_flat: Tensor, tile_slen: int, ptile_slen: int, center=False
+    image_ptiles_flat: Tensor, tile_locs_flat: Tensor, tile_slen: int, slen: int, center=False
 ) -> Tensor:
     """Shift sources at given padded tiles to given locations.
 
@@ -70,20 +70,20 @@ def shift_sources_bilinear(
     """
     npt, _, _, size = image_ptiles_flat.shape
     assert tile_locs_flat.shape[0] == npt
-    assert size in {ptile_slen, ptile_slen + 1}
-    bp = validate_border_padding(tile_slen, ptile_slen)
+    assert size in {slen, slen + 1}
+    bp = validate_border_padding(tile_slen, slen)
 
-    grid = get_mgrid(ptile_slen, image_ptiles_flat.device)
-    ptile_locs = (tile_locs_flat * tile_slen + bp) / ptile_slen
+    grid = get_mgrid(slen, image_ptiles_flat.device)
+    ptile_locs = (tile_locs_flat * tile_slen + bp) / slen
     sgn = 1 if center else -1
     offsets_hw = sgn * (torch.tensor(1.0) - 2 * ptile_locs)
     offsets_xy = swap_locs_columns(offsets_hw)
-    grid_inflated = rearrange(grid, "h w xy -> 1 h w xy", xy=2, h=ptile_slen)
+    grid_inflated = rearrange(grid, "h w xy -> 1 h w xy", xy=2, h=slen)
     offsets_xy_inflated = rearrange(offsets_xy, "npt xy -> npt 1 1 xy", xy=2)
     grid_locs = grid_inflated - offsets_xy_inflated
 
     sampled_images = grid_sample(image_ptiles_flat, grid_locs, align_corners=True, mode="bilinear")
-    assert sampled_images.shape[-1] == sampled_images.shape[-2] == ptile_slen
+    assert sampled_images.shape[-1] == sampled_images.shape[-2] == slen
     return sampled_images
 
 
