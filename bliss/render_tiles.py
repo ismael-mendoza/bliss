@@ -1,7 +1,5 @@
 """Functions from producing images from tiled parameters of galaxies or stars."""
 
-from typing import
-
 import torch
 from einops import rearrange
 from torch import Tensor
