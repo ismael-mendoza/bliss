@@ -229,9 +229,9 @@ def get_deblended_reconstructions(
     slen: int,
     device: torch.device,
     batch_size: int = 100,
-    ptile_slen: int = 52,
+    ptile_slen: int = 53,
     bp: int = 24,
-    tile_slen: int = 4,
+    tile_slen: int = 5,
     no_bar: bool = True,
 ):
     """Return deblended galaxy reconstructions on prediction locations on a full size stamp."""
@@ -284,7 +284,7 @@ def get_residual_measurements(
     *,
     paddings: Tensor,
     sources: Tensor,
-    bp: int = 24,
+    bp: int = 25,
     r: float = 5.0,
     no_bar: bool = True,
 ) -> Tuple[Tensor, Tensor, Tensor]:

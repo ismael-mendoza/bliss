@@ -29,7 +29,7 @@ def generate_dataset(
     max_n_sources: int,
     galaxy_density: float = GALAXY_DENSITY,  # counts / sq. arcmin
     star_density: float = STAR_DENSITY,  # counts / sq. arcmin
-    slen: int = 40,
+    slen: int = 50,
     bp: int = 24,
     max_shift: float = 0.5,  # within tile, 0.5 -> maximum
     add_galaxies_in_padding: bool = True,
@@ -156,7 +156,7 @@ def sample_full_catalog(
     mean_sources: float,
     max_n_sources: int,
     galaxy_prob: float,
-    slen: int = 40,
+    slen: int = 50,
     max_shift: float = 0.5,
 ):
     params = sample_source_params(

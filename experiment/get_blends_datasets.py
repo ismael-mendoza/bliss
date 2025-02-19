@@ -34,7 +34,6 @@ assert LOG_FILE.exists()
 @click.option("--galaxy-density", default=GALAXY_DENSITY, type=float)
 @click.option("--star-density", default=STAR_DENSITY, type=float)
 def main(seed: int, n_samples: int, galaxy_density: float, star_density: float):
-
     L.seed_everything(seed)
 
     train_ds_file = DATASETS_DIR / f"train_ds_{seed}.npz"
@@ -68,8 +67,8 @@ def main(seed: int, n_samples: int, galaxy_density: float, star_density: float):
             max_n_sources=10,
             galaxy_density=galaxy_density,
             star_density=star_density,
-            slen=40,
-            bp=24,
+            slen=50,
+            bp=25,
             max_shift=0.5,
         )
         save_dataset_npz(ds, fpath)

@@ -10,13 +10,14 @@ from bliss.datasets.lsst import (
 
 
 def test_galaxy_blend_catalogs():
+    size = 24 * 2 + 5 * 10
     psf = get_default_lsst_psf()
     catsim_table = prepare_final_galaxy_catalog()
     all_star_mags = prepare_final_star_catalog()
     blends_ds = generate_dataset(100, catsim_table, all_star_mags, psf, 10)
 
-    tile_slen = 4
-    slen = 40
+    tile_slen = 5
+    slen = 55
     n_tiles = slen // tile_slen
 
     # check batches are not all the same
@@ -64,7 +65,7 @@ def test_galaxy_blend_catalogs():
     params = full_cat["galaxy_params"]
     gbools = full_cat["galaxy_bools"]
     sbools = full_cat["star_bools"]
-    assert images.shape == (100, 1, 88, 88)  # 40 + 24 * 2
+    assert images.shape == (100, 1, size, size)  # 40 + 24 * 2
     assert params.shape == (100, max_n_sources, 11)  # 10 is new galaxy params from catsim
     assert plocs.shape == (100, max_n_sources, 2)
     assert n_sources.shape == (100,)
