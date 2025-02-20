@@ -284,7 +284,7 @@ def get_residual_measurements(
     *,
     paddings: Tensor,
     sources: Tensor,
-    bp: int = 25,
+    bp: int = 24,
     r: float = 5.0,
     no_bar: bool = True,
 ) -> Tuple[Tensor, Tensor, Tensor]:
