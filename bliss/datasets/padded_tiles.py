@@ -173,7 +173,7 @@ def generate_padded_tiles(
     }
 
 
-def parse_dataset(dataset: dict[str, Tensor], tile_slen: int = 5):
+def parse_dataset(dataset: dict[str, Tensor]):
     """Parse dataset into a tuple of (images, TileCatalog)."""
     params = dataset.copy()  # make a copy to not change argument.
     ptiles = params.pop("images")
