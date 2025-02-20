@@ -10,7 +10,6 @@ from bliss.datasets.lsst import (
 
 
 def test_galaxy_blend_catalogs():
-    size = 24 * 2 + 5 * 10
     psf = get_default_lsst_psf()
     catsim_table = prepare_final_galaxy_catalog()
     all_star_mags = prepare_final_star_catalog()
@@ -18,7 +17,9 @@ def test_galaxy_blend_catalogs():
 
     tile_slen = 5
     slen = 50
+    bp = 24
     n_tiles = slen // tile_slen
+    size = bp * 2 + tile_slen * n_tiles
 
     # check batches are not all the same
     assert not torch.all(blends_ds["images"][0] == blends_ds["images"][1])
