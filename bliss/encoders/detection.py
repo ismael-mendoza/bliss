@@ -205,7 +205,7 @@ class DetectionEncoder(pl.LightningModule):
 
 
 def _compute_tiled_metrics(
-    truth_cat: TileCatalog, pred_cat: TileCatalog, tile_slen: int = 4, prefix: str = "val/tiled/"
+    truth_cat: TileCatalog, pred_cat: TileCatalog, tile_slen: int = 5, prefix: str = "val/tiled/"
 ):
     # compute simple 'tiled' metrics that do not use matching or FullCatalog
     # thus they are slightly incorrect, but OK for general diagnostics of model improving or not
