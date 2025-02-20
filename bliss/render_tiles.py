@@ -2,11 +2,13 @@
 
 import torch
 from einops import rearrange
+from galsim import InterpolatedImage
 from torch import Tensor
 from torch.nn.functional import fold, unfold
 
+from bliss.datasets.lsst import PIXEL_SCALE
 from bliss.encoders.autoencoder import CenteredGalaxyDecoder
-from bliss.grid import shift_sources_bilinear
+from bliss.grid import swap_locs_columns
 
 
 def render_galaxy_ptiles(
@@ -14,7 +16,6 @@ def render_galaxy_ptiles(
     locs: Tensor,
     galaxy_params: Tensor,
     galaxy_bools: Tensor,
-    ptile_slen: int,
     tile_slen: int,
     *,
     n_bands: int = 1,
@@ -33,16 +34,9 @@ def render_galaxy_ptiles(
     )
     assert centered_galaxies.shape[-1] == galaxy_decoder.slen
     assert galaxy_decoder.slen % 2 == 1  # so centered in central pixel
-
-    # render galaxies in correct location within padded tile and trim to be size `ptile_slen`
-    uncentered_galaxies = shift_sources_bilinear(
-        centered_galaxies,
-        locs_flat,
-        tile_slen=tile_slen,
-        slen=ptile_slen,
-        center=False,
+    uncentered_galaxies = _shift_sources_galsim(
+        centered_galaxies, locs_flat, galaxy_bools_flat, tile_slen=tile_slen, center=False
     )
-    assert uncentered_galaxies.shape[-1] == ptile_slen
 
     return rearrange(
         uncentered_galaxies, "(b nth ntw) c h w -> b nth ntw c h w", b=b, nth=nth, ntw=ntw
@@ -71,6 +65,34 @@ def _render_centered_galaxies_ptiles(
 
     # be extra careful
     return gal * rearrange(is_gal, "npt -> npt 1 1 1")
+
+
+def _shift_sources_galsim(
+    ptiles_flat: Tensor, locs: Tensor, galaxy_bools: Tensor, *, tile_slen: int, center: bool = False
+):
+    """Use interpolation to shift noiseless reconstruction ptiles that contain galaxies."""
+    assert locs.ndim == galaxy_bools.ndim == 2
+    assert ptiles_flat.shape[1] == 1
+    npt = ptiles_flat.shape[0]
+    slen = ptiles_flat.shape[-1]
+    new_ptiles = torch.zeros_like(ptiles_flat)
+    locs_trans = swap_locs_columns(locs)
+    sgn = -1 if center else 1
+
+    ptiles_flat_np = ptiles_flat.numpy()
+    for ii in range(npt):
+        if galaxy_bools[ii].bool().item():
+            image = ptiles_flat_np[ii, 0]
+            xy = locs_trans[ii]
+            offset = (xy * tile_slen - tile_slen / 2) * sgn
+
+            iimg = InterpolatedImage(image, scale=PIXEL_SCALE)
+            fimg = iimg.drawImage(
+                nx=slen, ny=slen, scale=PIXEL_SCALE, offset=offset, method="no_pixel"
+            )
+            new_ptiles[ii, 0] = torch.from_numpy(fimg)
+
+    return new_ptiles
 
 
 def reconstruct_image_from_ptiles(image_ptiles: Tensor, tile_slen: int) -> Tensor:
