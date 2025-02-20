@@ -4,7 +4,6 @@ import torch
 from torch import Tensor
 from torch.utils.data import Dataset
 
-from bliss.catalog import FullCatalog
 from bliss.datasets.io import load_dataset_npz
 
 
@@ -12,8 +11,6 @@ class SavedGalsimBlends(Dataset):
     def __init__(
         self,
         dataset_file: str,
-        slen: int = 50,
-        tile_slen: int = 5,
         keep_padding: bool = False,
     ) -> None:
         super().__init__()
@@ -25,7 +22,6 @@ class SavedGalsimBlends(Dataset):
         # don't need for training
         ds.pop("centered_sources")
         ds.pop("uncentered_sources")
-        ds.pop("noiseless")
 
         # avoid large memory usage if we don't need padding.
         if not keep_padding:
@@ -35,9 +31,7 @@ class SavedGalsimBlends(Dataset):
             self.paddings = ds.pop("paddings")
         self.keep_padding = keep_padding
 
-        full_catalog = FullCatalog(slen, slen, ds)
-        tile_catalogs = full_catalog.to_tile_params(tile_slen, ignore_extra_sources=True)
-        self.tile_params = tile_catalogs.to_dict()
+        self.tile_params = {**ds}
 
     def __len__(self) -> int:
         return self.epoch_size
