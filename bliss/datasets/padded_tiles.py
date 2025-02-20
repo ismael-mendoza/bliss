@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from astropy.table import Table
 from einops import pack, rearrange
+from torch import Tensor
 from tqdm import tqdm
 
 from bliss.datasets.lsst import (
@@ -67,7 +68,7 @@ def generate_padded_tiles(
     all_star_mags: np.ndarray,
     psf: galsim.GSObject,
     slen: int = 5,
-    bp: int = 25,
+    bp: int = 24,
     max_shift: float = 0.5,
     p_source_in: float | None = None,
     galaxy_prob: float | None = None,
@@ -164,11 +165,17 @@ def generate_padded_tiles(
         "paddings": paddings,
         "uncentered_sources": uncentered_sources,
         "centered_sources": centered_sources,
-        "tile_params": {
-            "n_sources": n_sources,
-            "locs": locs,
-            "galaxy_params": galaxy_params,
-            "galaxy_bools": galaxy_bools,
-            "star_fluxes": star_fluxes,
-        },
+        "n_sources": n_sources,
+        "locs": locs,
+        "galaxy_params": galaxy_params,
+        "galaxy_bools": galaxy_bools,
+        "star_fluxes": star_fluxes,
     }
+
+
+def parse_dataset(dataset: dict[str, Tensor], tile_slen: int = 5):
+    """Parse dataset into a tuple of (images, TileCatalog)."""
+    params = dataset.copy()  # make a copy to not change argument.
+    ptiles = params.pop("images")
+    paddings = params.pop("paddings")
+    return ptiles, params, paddings
