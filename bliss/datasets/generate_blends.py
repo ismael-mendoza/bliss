@@ -107,7 +107,7 @@ def generate_dataset(
     }
 
 
-def parse_dataset(dataset: dict[str, Tensor], tile_slen: int = 4):
+def parse_dataset(dataset: dict[str, Tensor], tile_slen: int = 5):
     """Parse dataset into a tuple of (images, TileCatalog)."""
     params = dataset.copy()  # make a copy to not change argument.
     images = params.pop("images")
@@ -211,3 +211,12 @@ def sample_source_params(
         "star_fluxes": star_fluxes * star_bools,
         "fluxes": params[:, -1, None] * galaxy_bools + star_fluxes * star_bools,
     }
+
+
+def get_full_catalog_from_dataset(ds: dict, slen: int):
+    out = {}
+    _params = (*FullCatalog.allowed_params, "plocs", "n_sources")
+    for k in _params:
+        if k in ds:
+            out[k] = ds[k]
+    return FullCatalog(slen, slen, out)
