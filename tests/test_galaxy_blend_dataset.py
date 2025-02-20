@@ -17,7 +17,7 @@ def test_galaxy_blend_catalogs():
     blends_ds = generate_dataset(100, catsim_table, all_star_mags, psf, 10)
 
     tile_slen = 5
-    slen = 55
+    slen = 50
     n_tiles = slen // tile_slen
 
     # check batches are not all the same
