@@ -61,7 +61,7 @@ def generate_padded_tiles(
     for _ in tqdm(range(n_samples)):
         if p_source_in is None:
             mean_sources_in = density * (slen * PIXEL_SCALE / 60) ** 2
-            n_sources = sample_poisson_n_sources(mean_sources_in, 1)
+            n_sources = sample_poisson_n_sources(mean_sources_in, max_n_sources=1)
         else:
             n_sources = int(torch.distributions.Bernoulli(p_source_in).sample([1]).item())
 
@@ -97,7 +97,7 @@ def generate_padded_tiles(
             centered_noiseless = torch.zeros((1, size, size)).float()
 
         padding = render_padded_image(
-            catsim_table, all_star_mags, mean_sources_out, galaxy_prob, psf, slen, bp
+            catsim_table, all_star_mags, mean_sources_out, galaxy_prob, psf, slen=slen, bp=bp
         )
         noiseless = uncentered_noiseless + padding
         final_image = add_noise(noiseless)
