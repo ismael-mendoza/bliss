@@ -1,14 +1,12 @@
 """Functions from producing images from tiled parameters of galaxies or stars."""
 
 import torch
-from einops import rearrange
+from einops import pack, rearrange, unpack
 from galsim import InterpolatedImage
 from torch import Tensor
 from torch.nn.functional import fold, unfold
 
-from bliss.datasets.lsst import PIXEL_SCALE
 from bliss.encoders.autoencoder import CenteredGalaxyDecoder
-from bliss.grid import swap_locs_columns
 
 
 def render_galaxy_ptiles(
@@ -68,7 +66,13 @@ def _render_centered_galaxies_ptiles(
 
 
 def _shift_sources_galsim(
-    ptiles_flat: Tensor, locs: Tensor, galaxy_bools: Tensor, *, tile_slen: int, center: bool = False
+    ptiles_flat: Tensor,
+    locs: Tensor,
+    galaxy_bools: Tensor,
+    *,
+    tile_slen: int,
+    center: bool = False,
+    scale: float = 0.2,
 ):
     """Use interpolation to shift noiseless reconstruction ptiles that contain galaxies."""
     assert locs.ndim == galaxy_bools.ndim == 2
@@ -86,10 +90,8 @@ def _shift_sources_galsim(
             xy = locs_trans[ii]
             offset = (xy * tile_slen - tile_slen / 2) * sgn
 
-            iimg = InterpolatedImage(image, scale=PIXEL_SCALE)
-            fimg = iimg.drawImage(
-                nx=slen, ny=slen, scale=PIXEL_SCALE, offset=offset, method="no_pixel"
-            )
+            iimg = InterpolatedImage(image, scale=scale)
+            fimg = iimg.drawImage(nx=slen, ny=slen, scale=scale, offset=offset, method="no_pixel")
             new_ptiles[ii, 0] = torch.from_numpy(fimg)
 
     return new_ptiles
@@ -156,3 +158,25 @@ def get_n_padded_tiles_hw(
     nh = ((height - ptile_slen) // tile_slen) + 1
     nw = ((width - ptile_slen) // tile_slen) + 1
     return nh, nw
+
+
+def validate_border_padding(tile_slen: int, ptile_slen: int, bp: int | None = None) -> int:
+    # Border Padding
+    # Images are first rendered on *padded* tiles (aka ptiles).
+    # The padded tile consists of the tile and neighboring tiles
+    # The width of the padding is given by ptile_slen.
+    # border_padding is the amount of padding we leave in the final image. Useful for
+    # avoiding sources getting too close to the edges.
+    if bp is not None:
+        assert bp == (ptile_slen - tile_slen) / 2
+    else:
+        bp = (ptile_slen - tile_slen) / 2
+    assert float(bp).is_integer(), "amount of border padding must be an integer"
+    return int(bp)
+
+
+def swap_locs_columns(locs: Tensor) -> Tensor:
+    """Swap the columns of locs to invert 'x' and 'y' with einops!"""
+    assert locs.ndim == 2 and locs.shape[1] == 2
+    x, y = unpack(locs, [[1], [1]], "b *")
+    return pack([y, x], "b *")[0]
