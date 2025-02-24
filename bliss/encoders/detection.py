@@ -92,19 +92,19 @@ class DetectionEncoder(pl.LightningModule):
         flat_tile_locs = locs_mean * rearrange(flat_tile_n_sources, "np -> np 1")
         return {"n_sources": flat_tile_n_sources, "locs": flat_tile_locs}
 
-    def get_loss(self, ptiles_flat: Tensor, n_sources_float: Tensor, locs_flat: Tensor):
+    def get_loss(self, ptiles_flat: Tensor, n_sources_flat: Tensor, locs_flat: Tensor):
         # encode
         out: tuple[Tensor, Tensor, Tensor] = self(ptiles_flat)
         n_source_probs, locs_mean, locs_sd = out
 
         # loss from counts
-        counter_loss = BCELoss(reduction="none")(n_source_probs, n_sources_float.float())
+        counter_loss = BCELoss(reduction="none")(n_source_probs, n_sources_flat.float())
 
         # loss from centroid locations
         locs_log_prob = -reduce(  # negative log-probability is the loss!
             Normal(locs_mean, locs_sd).log_prob(locs_flat), "np xy -> np", "sum", xy=2
         )
-        locs_loss = locs_log_prob * n_sources_float.float()  # loc loss only on "on" sources.
+        locs_loss = locs_log_prob * n_sources_flat.float()  # loc loss only on "on" sources.
         loss_vec = locs_loss * (locs_loss.detach() < 1e6).float() + counter_loss
 
         # per the paper, we take the mean over batches and sum over tiles
