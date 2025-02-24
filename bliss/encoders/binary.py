@@ -5,9 +5,9 @@ from torch import Tensor
 from torch.nn import BCELoss
 from torch.optim import Adam
 
-from bliss.datasets.padded_tiles import parse_dataset
+from bliss.datasets.padded_tiles import parse_ptiles_dataset
 from bliss.encoders.layers import EncoderCNN, make_enc_final
-from bliss.grid import validate_border_padding
+from bliss.render_tiles import validate_border_padding
 
 
 class BinaryEncoder(pl.LightningModule):
@@ -82,7 +82,7 @@ class BinaryEncoder(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         """Pytorch lightning method."""
-        ptiles, params, _ = parse_dataset(batch, tile_slen=self.tile_slen)
+        ptiles, params, _ = parse_ptiles_dataset(batch, tile_slen=self.tile_slen)
         galaxy_bools = params["galaxy_bools"]
         loss, acc = self.get_loss(ptiles, galaxy_bools)
         self.log("train/loss", loss, batch_size=len(ptiles))
@@ -91,7 +91,7 @@ class BinaryEncoder(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         """Pytorch lightning method."""
-        ptiles, params, _ = parse_dataset(batch, tile_slen=self.tile_slen)
+        ptiles, params, _ = parse_ptiles_dataset(batch, tile_slen=self.tile_slen)
         galaxy_bools = params["galaxy_bools"]
         loss, acc = self.get_loss(ptiles, galaxy_bools)
         self.log("val/loss", loss, batch_size=len(ptiles))
