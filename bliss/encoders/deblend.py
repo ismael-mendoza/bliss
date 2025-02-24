@@ -49,14 +49,14 @@ class GalaxyEncoder(pl.LightningModule):
 
         self.register_buffer("background_sqrt", BACKGROUND.sqrt())
 
-    def forward(self, ptiles: Tensor) -> Tensor:
+    def forward(self, ptiles: Tensor, tile_locs: Tensor) -> Tensor:
         """Runs galaxy encoder on input image ptiles."""
-        cropped_ptiles = self._crop_ptiles(ptiles)
+        cropped_ptiles = self._crop_ptiles(ptiles, tile_locs)
         return self._enc(cropped_ptiles)
 
-    def get_loss(self, ptiles: Tensor, centered_ptiles: Tensor):
+    def get_loss(self, ptiles: Tensor, centered_ptiles: Tensor, tile_locs: Tensor):
         """For each padded tile, encode cropped tile but evaluate loss on centered image."""
-        galaxy_params_flat: Tensor = self(ptiles)
+        galaxy_params_flat: Tensor = self(ptiles, tile_locs)
         recon_mean = self._dec.forward(galaxy_params_flat)
         assert not torch.any(torch.logical_or(torch.isnan(recon_mean), torch.isinf(recon_mean)))
 
@@ -67,8 +67,9 @@ class GalaxyEncoder(pl.LightningModule):
         """Pytorch lightning training step."""
         ptiles = batch["images"]
         centered_ptiles = batch["centered"]
+        tile_locs = batch["tile_locs"]
 
-        loss, loss_avg, recon = self.get_loss(ptiles, centered_ptiles)
+        loss, loss_avg, recon = self.get_loss(ptiles, centered_ptiles, tile_locs=tile_locs)
 
         res = (ptiles - recon) / self.background_sqrt
         mean_max_residual = reduce(res.abs(), "b c h w -> b", "max").mean()
@@ -89,7 +90,9 @@ class GalaxyEncoder(pl.LightningModule):
         """Pytorch lightning validation step."""
         ptiles = batch["images"]
         centered_ptiles = batch["centered"]
-        loss, loss_avg, recon = self.get_loss(ptiles, centered_ptiles)
+        tile_locs = batch["tile_locs"]
+
+        loss, loss_avg, recon = self.get_loss(ptiles, centered_ptiles, tile_locs=tile_locs)
 
         res = (ptiles - recon) / self.background_sqrt
         mean_max_residual = reduce(res.abs(), "b c h w -> b", "max").mean()
