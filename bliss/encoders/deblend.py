@@ -109,6 +109,7 @@ class GalaxyEncoder(pl.LightningModule):
         return Adam(self._enc.parameters(), self.lr)
 
     def _crop_ptiles(self, ptiles: Tensor, locs: Tensor):
+        assert locs.ndim == 2
         assert not torch.any(locs >= 1.0)
         _, _, h, w = ptiles.shape
 
