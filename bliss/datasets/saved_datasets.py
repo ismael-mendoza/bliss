@@ -11,7 +11,7 @@ class SavedGalsimBlends(Dataset):
     def __init__(
         self,
         dataset_file: str,
-        keep_padding: bool = False,
+        is_deblender: bool = False,
     ) -> None:
         super().__init__()
         ds: dict[str, Tensor] = load_dataset_npz(dataset_file)
@@ -19,17 +19,20 @@ class SavedGalsimBlends(Dataset):
         self.images = ds.pop("images")
         self.epoch_size = len(self.images)
 
-        # don't need for training
-        ds.pop("centered_sources")
-        ds.pop("uncentered_sources")
-
-        # avoid large memory usage if we don't need padding.
-        if not keep_padding:
+        if not is_deblender:
+            ds.pop("uncentered_sources")
             ds.pop("paddings")
-            self.paddings = torch.tensor([0]).float()
+            ds.pop("centered_sources")
+            self.centered_sources = torch.tensor([0]).float()
         else:
-            self.paddings = ds.pop("paddings")
-        self.keep_padding = keep_padding
+            noise = self.images - ds.pop("uncentered_sources") - ds.pop("paddings")
+            centered = ds.pop("centered") + noise
+            self.centered = centered
+            ds.pop("n_sources")
+
+        ds.pop("galaxy_params")
+        ds.pop("star_fluxes")
+        ds.pop("star_bools")
 
         self.tile_params = {**ds}
 
@@ -40,7 +43,7 @@ class SavedGalsimBlends(Dataset):
         tile_params_ii = {p: q[index] for p, q in self.tile_params.items()}
         return {
             "images": self.images[index],
-            "paddings": self.paddings[index] if self.keep_padding else self.paddings,
+            "centered": self.centered[index],
             **tile_params_ii,
         }
 
