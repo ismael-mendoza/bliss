@@ -87,7 +87,7 @@ def main(seed: int, n_train: int, n_val: int, galaxy_density: float, star_densit
         table1,
         STAR_MAGS,
         psf=PSF,
-        max_shift=0.0,
+        max_shift=0.5,
         p_source_in=1.0,
     )
     ds2 = generate_padded_tiles(
@@ -95,19 +95,19 @@ def main(seed: int, n_train: int, n_val: int, galaxy_density: float, star_densit
         table2,
         STAR_MAGS,
         psf=PSF,
-        max_shift=0.0,
+        max_shift=0.5,
         p_source_in=1.0,
     )
     save_dataset_npz(ds1, train_ds_binary_file)
     save_dataset_npz(ds2, val_ds_binary_file)
 
-    # binary
+    # deblend
     ds1 = generate_padded_tiles(
         n_train,
         table1,
         STAR_MAGS,
         psf=PSF,
-        max_shift=0.0,
+        max_shift=0.5,
         p_source_in=1.0,
         galaxy_prob=1.0,
     )
@@ -116,7 +116,7 @@ def main(seed: int, n_train: int, n_val: int, galaxy_density: float, star_densit
         table2,
         STAR_MAGS,
         psf=PSF,
-        max_shift=0.0,
+        max_shift=0.5,
         p_source_in=1.0,
         galaxy_prob=1.0,
     )
