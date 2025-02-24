@@ -94,7 +94,7 @@ class DetectionEncoder(pl.LightningModule):
 
     def get_loss(self, ptiles_flat: Tensor, n_sources_float: Tensor, locs_flat: Tensor):
         # encode
-        out: tuple[Tensor, Tensor, Tensor] = self.encode_tiled(ptiles_flat)
+        out: tuple[Tensor, Tensor, Tensor] = self(ptiles_flat)
         n_source_probs, locs_mean, locs_sd = out
 
         # loss from counts
