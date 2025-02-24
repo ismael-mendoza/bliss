@@ -39,16 +39,16 @@ def main(seed: int, n_train: int, n_val: int, galaxy_density: float, star_densit
     L.seed_everything(seed)
 
     # galaxies, stars, uncentered, possibly empty tiles
-    train_ds_detection_file = DATASETS_DIR / f"train_ds_detection{seed}.npz"
-    val_ds_detection_file = DATASETS_DIR / f"val_ds_detection{seed}.npz"
+    train_ds_detection_file = DATASETS_DIR / f"train_ds_detection_{seed}.npz"
+    val_ds_detection_file = DATASETS_DIR / f"val_ds_detection_{seed}.npz"
 
     # galaxies, stars, centered, no empty tiles
-    train_ds_binary_file = DATASETS_DIR / f"train_ds_binary{seed}.npz"
-    val_ds_binary_file = DATASETS_DIR / f"val_ds_binary{seed}.npz"
+    train_ds_binary_file = DATASETS_DIR / f"train_ds_binary_{seed}.npz"
+    val_ds_binary_file = DATASETS_DIR / f"val_ds_binary_{seed}.npz"
 
     # galxies, centered, no empty tiles
-    train_ds_deblend_file = DATASETS_DIR / f"train_ds_deblend{seed}.npz"
-    val_ds_deblend_file = DATASETS_DIR / f"val_ds_deblend{seed}.npz"
+    train_ds_deblend_file = DATASETS_DIR / f"train_ds_deblend_{seed}.npz"
+    val_ds_deblend_file = DATASETS_DIR / f"val_ds_deblend_{seed}.npz"
 
     assert not train_ds_detection_file.exists(), "files exist"
     assert not val_ds_detection_file.exists(), "files exist"
