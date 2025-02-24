@@ -8,10 +8,8 @@ from torch.distributions import Normal
 from torch.optim import Adam
 
 from bliss.datasets.lsst import BACKGROUND
-from bliss.datasets.padded_tiles import parse_dataset
 from bliss.encoders.autoencoder import CenteredGalaxyEncoder, OneCenteredGalaxyAE
-from bliss.grid import validate_border_padding
-from bliss.render_tiles import get_images_in_tiles
+from bliss.render_tiles import get_images_in_tiles, validate_border_padding
 
 
 class GalaxyEncoder(pl.LightningModule):
@@ -32,13 +30,14 @@ class GalaxyEncoder(pl.LightningModule):
         self.tile_slen = tile_slen
         self.ptile_slen = ptile_slen
         self.bp = validate_border_padding(tile_slen, ptile_slen)
+        self.cropped_slen = 2 * self.bp + 1  # cropped
 
         self.lr = lr
 
         # encoder (to be trained)
         self._latent_dim = latent_dim
         self._hidden = hidden
-        self._enc = CenteredGalaxyEncoder(ptile_slen, latent_dim, n_bands, hidden)
+        self._enc = CenteredGalaxyEncoder(self.cropped_slen, latent_dim, n_bands, hidden)
 
         # decoder
         ae = OneCenteredGalaxyAE(ptile_slen, latent_dim, hidden, n_bands)
@@ -50,25 +49,26 @@ class GalaxyEncoder(pl.LightningModule):
 
         self.register_buffer("background_sqrt", BACKGROUND.sqrt())
 
-    def forward(self, ptiles_flat: Tensor) -> Tensor:
+    def forward(self, ptiles: Tensor) -> Tensor:
         """Runs galaxy encoder on input image ptiles."""
-        return self._enc(ptiles_flat)
+        cropped_ptiles = self._crop_ptiles(ptiles)
+        return self._enc(cropped_ptiles)
 
-    def get_loss(self, ptiles_flat: Tensor, paddings: Tensor):
-        galaxy_params_flat: Tensor = self(ptiles_flat)
+    def get_loss(self, ptiles: Tensor, centered_ptiles: Tensor):
+        """For each padded tile, encode cropped tile but evaluate loss on centered image."""
+        galaxy_params_flat: Tensor = self(ptiles)
         recon_mean = self._dec.forward(galaxy_params_flat)
-        recon_mean += paddings  # target only galaxies within tiles
-
-        assert recon_mean.ndim == 4 and recon_mean.shape[-1] == ptiles_flat.shape[-1]
         assert not torch.any(torch.logical_or(torch.isnan(recon_mean), torch.isinf(recon_mean)))
 
-        recon_losses: Tensor = -Normal(recon_mean, self.background_sqrt).log_prob(ptiles_flat)
+        recon_losses: Tensor = -Normal(recon_mean, self.background_sqrt).log_prob(centered_ptiles)
         return recon_losses.sum(), recon_losses.mean(), recon_mean
 
     def training_step(self, batch, batch_idx):
         """Pytorch lightning training step."""
-        ptiles, _, paddings = parse_dataset(batch, self.tile_slen)
-        loss, loss_avg, recon = self.get_loss(ptiles, paddings)
+        ptiles = batch["images"]
+        centered_ptiles = batch["centered"]
+
+        loss, loss_avg, recon = self.get_loss(ptiles, centered_ptiles)
 
         res = (ptiles - recon) / self.background_sqrt
         mean_max_residual = reduce(res.abs(), "b c h w -> b", "max").mean()
@@ -87,8 +87,9 @@ class GalaxyEncoder(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         """Pytorch lightning validation step."""
-        ptiles, _, paddings = parse_dataset(batch, self.tile_slen)
-        loss, loss_avg, recon = self.get_loss(ptiles, paddings)
+        ptiles = batch["images"]
+        centered_ptiles = batch["centered"]
+        loss, loss_avg, recon = self.get_loss(ptiles, centered_ptiles)
 
         res = (ptiles - recon) / self.background_sqrt
         mean_max_residual = reduce(res.abs(), "b c h w -> b", "max").mean()
@@ -103,6 +104,30 @@ class GalaxyEncoder(pl.LightningModule):
     def configure_optimizers(self):
         """Set up optimizers."""
         return Adam(self._enc.parameters(), self.lr)
+
+    def _crop_ptiles(self, ptiles: Tensor, locs: Tensor):
+        assert not torch.any(locs >= 1.0)
+        _, _, h, w = ptiles.shape
+
+        # find pixel where source is located
+        y = locs[:, 0] * self.tile_slen + self.bp
+        x = locs[:, 1] * self.tile_slen + self.bp
+        r = (y // 1).long()
+        c = (x // 1).long()
+
+        # grids
+        xx = torch.arange(ptiles.shape[-1], device=ptiles.device)
+        gy, gx = torch.meshgrid(xx, xx, indexing="ij")
+        gyy = rearrange(gy, "h w -> 1 1 h w").expand(len(ptiles), 1, h, w)
+        gxx = rearrange(gx, "h w -> 1 1 h w").expand(len(ptiles), 1, h, w)
+
+        cond1 = torch.abs(gyy - rearrange(r, "n -> n 1 1 1")) <= self.bp
+        cond2 = torch.abs(gxx - rearrange(c, "n -> n 1 1 1")) <= self.bp
+        cond = torch.logical_and(cond1, cond2)
+
+        return rearrange(
+            ptiles[cond], "(b h w) -> b 1 h w", h=self.cropped_slen, w=self.cropped_slen
+        )
 
     def variational_mode(self, images: Tensor, tile_locs: Tensor):
         _, nth, ntw, _ = tile_locs.shape
