@@ -68,6 +68,7 @@ class BinaryEncoder(pl.LightningModule):
         galaxy_probs_flat: Tensor = self(ptiles_flat)
 
         # accuracy
+        # assume every image has a source
         with torch.no_grad():
             hits = galaxy_probs_flat.ge(0.5).eq(galaxy_bools_flat.bool())
             acc = hits.sum() / len(ptiles_flat)
