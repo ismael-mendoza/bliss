@@ -67,7 +67,7 @@ class GalaxyEncoder(pl.LightningModule):
         """Pytorch lightning training step."""
         ptiles = batch["images"]
         centered_ptiles = batch["centered"]
-        tile_locs = batch["tile_locs"]
+        tile_locs = batch["locs"]
 
         loss, loss_avg, recon = self.get_loss(ptiles, centered_ptiles, tile_locs=tile_locs)
 
@@ -90,7 +90,7 @@ class GalaxyEncoder(pl.LightningModule):
         """Pytorch lightning validation step."""
         ptiles = batch["images"]
         centered_ptiles = batch["centered"]
-        tile_locs = batch["tile_locs"]
+        tile_locs = batch["locs"]
 
         loss, loss_avg, recon = self.get_loss(ptiles, centered_ptiles, tile_locs=tile_locs)
 
