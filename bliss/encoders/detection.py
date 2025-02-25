@@ -228,6 +228,7 @@ def _compute_tiled_metrics(
     tile_slen: int = 5,
     prefix: str = "val/tiled/",
 ):
+    assert n_sources1.ndim == 1 and n_sources2.ndim == 1
     assert locs1.ndim == 2 and locs2.ndim == 2 and locs1.shape[-1] == 2 and locs2.shape[-1] == 2
     # compute simple 'tiled' metrics that do not use matching or FullCatalog
     # thus they are slightly incorrect, but OK for general diagnostics of model improving or not
