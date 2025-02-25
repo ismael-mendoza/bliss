@@ -171,11 +171,3 @@ def render_padded_image(
             image += star
 
     return image
-
-
-def parse_ptiles_dataset(dataset: dict[str, Tensor]):
-    """Parse dataset into a tuple of (images, TileCatalog)."""
-    params = dataset.copy()  # make a copy to not change argument.
-    ptiles = params.pop("images")
-    paddings = params.pop("paddings")
-    return ptiles, params, paddings
