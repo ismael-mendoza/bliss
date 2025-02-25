@@ -13,11 +13,11 @@ from bliss.catalog import FullCatalog, TileCatalog
 from bliss.datasets.io import load_dataset_npz
 from bliss.encoders.binary import BinaryEncoder
 from bliss.plotting import BlissFigure
+from bliss.render_tiles import get_n_padded_tiles_hw
 from bliss.reporting import get_residual_measurements
 
 
 def _get_metrics_per_bin(tbools, ebools, snrs, snr_bins):
-
     tp_per_bin = []
     nt_per_bin = []
     p_per_bin = []
@@ -91,10 +91,10 @@ class BinaryFigures(BlissFigure):
         return ("binary_scatter", "binary_curves")
 
     def compute_data(self, ds_path: str, binary: BinaryEncoder):
-
         # metadata
         bp = binary.bp
         tile_slen = binary.tile_slen
+        ptile_slen = binary.ptile_slen
 
         # read dataset
         dataset = load_dataset_npz(ds_path)
@@ -102,7 +102,8 @@ class BinaryFigures(BlissFigure):
         paddings = dataset["paddings"]
         uncentered_sources = dataset["uncentered_sources"]
         star_bools = dataset["star_bools"]
-        slen = images.shape[-1] - 2 * bp
+        size = images.shape[-1]
+        slen = size - 2 * bp
 
         # paddings include stars for convenience, but we don't want to remove them in this case
         # we want to include snr of stars
@@ -147,16 +148,16 @@ class BinaryFigures(BlissFigure):
         batch_size = 100
         n_images = images.shape[0]
         n_batches = math.ceil(n_images / batch_size)
+        nth, ntw = get_n_padded_tiles_hw(size, size, ptile_slen, tile_slen)
 
         tile_galaxy_probs = []
 
         for ii in tqdm(range(n_batches)):
             start, end = ii * batch_size, (ii + 1) * batch_size
             bimages = images[start:end].to(binary.device)
-            btile_locs = truth_tile_cat.locs[start:end].to(binary.device)
-            tile_gprob_flat = binary.forward(bimages, btile_locs).to("cpu")
+            tile_gprob_flat = binary.encode(bimages).to("cpu")
             tile_gprob = rearrange(
-                tile_gprob_flat, "(n nth ntw) -> n nth ntw 1", n=batch_size, nth=10, ntw=10
+                tile_gprob_flat, "(n nth ntw) -> n nth ntw 1", n=batch_size, nth=nth, ntw=ntw
             )
             tile_galaxy_probs.append(tile_gprob)
         tile_galaxy_probs = torch.concatenate(tile_galaxy_probs, axis=0)
@@ -235,7 +236,6 @@ class BinaryFigures(BlissFigure):
         return fig
 
     def _get_binary_curves(self, data: dict):
-
         snr = data["snr"]
 
         tgbools = data["tgbools"]

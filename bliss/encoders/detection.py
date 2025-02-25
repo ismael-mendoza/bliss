@@ -8,7 +8,7 @@ from torch.optim import Adam
 
 from bliss.catalog import TileCatalog
 from bliss.encoders.layers import EncoderCNN, make_enc_final
-from bliss.render_tiles import get_images_in_tiles, get_n_padded_tiles_hw, validate_border_padding
+from bliss.render_tiles import get_images_in_tiles, validate_border_padding
 
 
 class DetectionEncoder(pl.LightningModule):
@@ -158,6 +158,10 @@ class DetectionEncoder(pl.LightningModule):
     def configure_optimizers(self):
         return Adam(self.parameters(), lr=1e-4)
 
+    def encode(self, images: Tensor) -> dict[str, Tensor]:
+        flat_ptiles, _, _ = self._get_flat_ptiles(images)
+        return self.encode_tiled(flat_ptiles)
+
     def variational_mode(self, images: Tensor) -> TileCatalog:
         """Compute the variational mode."""
         flat_ptiles, nth, ntw = self._get_flat_ptiles(images)
@@ -213,9 +217,8 @@ class DetectionEncoder(pl.LightningModule):
         return tcats
 
     def _get_flat_ptiles(self, images: Tensor):
-        _, _, h, w = images.shape
-        nth, ntw = get_n_padded_tiles_hw(h, w, self.ptile_slen, self.tile_slen)
         ptiles = get_images_in_tiles(images, self.tile_slen, self.ptile_slen)
+        _, nth, ntw, _, _, _ = ptiles.shape
         flat_ptiles = rearrange(ptiles, "b nth ntw c h w -> (b nth ntw) c h w")
         return flat_ptiles, nth, ntw
 
