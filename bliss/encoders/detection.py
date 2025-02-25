@@ -228,6 +228,7 @@ def _compute_tiled_metrics(
     tile_slen: int = 5,
     prefix: str = "val/tiled/",
 ):
+    assert locs1.ndim == 2 and locs2.ndim == 2 and locs1.shape[-1] == 2 and locs2.shape[-1] == 2
     # compute simple 'tiled' metrics that do not use matching or FullCatalog
     # thus they are slightly incorrect, but OK for general diagnostics of model improving or not
 
@@ -246,10 +247,8 @@ def _compute_tiled_metrics(
 
     # average residual distance for true matches
     match_mask = torch.logical_and(torch.eq(n_sources1, n_sources2), torch.eq(n_sources1, 1))
-    locs1_flat = rearrange(locs1, "b nth ntw xy -> (b nth ntw) xy", xy=2)
-    locs2_flat = rearrange(locs2, "b nth ntw xy -> (b nth ntw) xy", xy=2)
-    plocs1 = locs1_flat[match_mask] * tile_slen
-    plocs2 = locs2_flat[match_mask] * tile_slen
+    plocs1 = locs1[match_mask] * tile_slen
+    plocs2 = locs2[match_mask] * tile_slen
     avg_dist = reduce((plocs1 - plocs2).pow(2), "np xy -> np", "sum").sqrt().mean()
 
     # prefix
