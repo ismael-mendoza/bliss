@@ -43,7 +43,6 @@ class BlendDetectionFigures(BlissFigure):
         return ("blends_detection",)
 
     def compute_data(self, ds_path: str, detection: DetectionEncoder):
-
         # metadata
         bp = detection.bp
         tile_slen = detection.tile_slen
@@ -85,7 +84,7 @@ class BlendDetectionFigures(BlissFigure):
         tiled_params_list = []
         for i in tqdm(range(n_batches)):
             image_batch = images[i * batch_size : (i + 1) * batch_size].to(detection.device)
-            n_source_probs, locs_mean, locs_sd_raw = detection.forward(image_batch)
+            n_source_probs, locs_mean, locs_sd_raw = detection.encode(image_batch)
             tiled_params = {
                 "n_source_probs": n_source_probs.cpu(),
                 "locs_mean": locs_mean.cpu(),
@@ -101,7 +100,6 @@ class BlendDetectionFigures(BlissFigure):
         pred_cats = {}
 
         for thres in thresholds:
-
             n_source_probs = tiled_params["n_source_probs"]
             n_sources = n_source_probs.ge(thres).long()
             tiled_is_on = rearrange(n_source_probs.ge(thres).float(), "n -> n 1")

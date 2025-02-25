@@ -64,7 +64,7 @@ def main(
         validate_every_n_epoch=validate_every_n_epoch,
         val_check_interval=None,
         log_every_n_steps=log_every_n_steps,
-        keep_padding=True,
+        is_deblender=True,
         log_info_dict=info,
     )
 
