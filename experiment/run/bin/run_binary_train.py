@@ -13,7 +13,7 @@ NUM_WORKERS = 0
 @click.option("--ds-seed", required=True, type=int)
 @click.option("--train-file", required=True, type=str)
 @click.option("--val-file", required=True, type=str)
-@click.option("-b", "--batch-size", default=32)
+@click.option("-b", "--batch-size", default=128)
 @click.option("-e", "--n-epochs", default=30)  # already overkill probably
 @click.option("--validate-every-n-epoch", default=1, type=int)
 @click.option("--log-every-n-steps", default=50, type=int)

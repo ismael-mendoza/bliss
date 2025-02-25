@@ -10,7 +10,7 @@ from bliss.training_functions import run_encoder_training
 @click.option("--ds-seed", required=True, type=int, help="Random seed used for dataset")
 @click.option("--train-file", required=True, type=str)
 @click.option("--val-file", required=True, type=str)
-@click.option("-b", "--batch-size", default=32)
+@click.option("-b", "--batch-size", default=1024)
 @click.option("-e", "--n-epochs", default=50)
 @click.option("--validate-every-n-epoch", default=1, type=int)
 @click.option("--log-every-n-steps", default=50, type=int)
