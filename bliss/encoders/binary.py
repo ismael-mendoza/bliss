@@ -5,7 +5,6 @@ from torch import Tensor
 from torch.nn import BCELoss
 from torch.optim import Adam
 
-from bliss.datasets.padded_tiles import parse_ptiles_dataset
 from bliss.encoders.layers import EncoderCNN, make_enc_final
 from bliss.render_tiles import validate_border_padding
 
@@ -47,7 +46,7 @@ class BinaryEncoder(pl.LightningModule):
         self.ptile_slen = ptile_slen
         self.bp = validate_border_padding(tile_slen, ptile_slen)
 
-        dim_enc_conv_out = ((self.ptile_slenn + 1) // 2 + 1) // 2
+        dim_enc_conv_out = ((self.ptile_slen + 1) // 2 + 1) // 2
         self._enc_conv = EncoderCNN(n_bands, channel, spatial_dropout)
         self._enc_final = make_enc_final(channel * 4 * dim_enc_conv_out**2, hidden, 1, dropout)
 
@@ -66,15 +65,16 @@ class BinaryEncoder(pl.LightningModule):
         """Return loss, accuracy, binary probabilities, and MAP classifications for given batch."""
 
         galaxy_probs_flat: Tensor = self(ptiles_flat)
+        _galaxy_bools_flat = rearrange(galaxy_bools_flat, "n 1 -> n")
 
         # accuracy
         # assume every image has a source
         with torch.no_grad():
-            hits = galaxy_probs_flat.ge(0.5).eq(galaxy_bools_flat.bool())
+            hits = galaxy_probs_flat.ge(0.5).eq(_galaxy_bools_flat.bool())
             acc = hits.sum() / len(ptiles_flat)
 
         # we need to calculate cross entropy loss, only for "on" sources
-        loss_vec = BCELoss(reduction="none")(galaxy_probs_flat, galaxy_bools_flat.float())
+        loss_vec = BCELoss(reduction="none")(galaxy_probs_flat, _galaxy_bools_flat.float())
 
         # as per paper, we sum over tiles and take mean over batches
         loss = reduce(loss_vec, "b -> ", "mean")
@@ -83,8 +83,8 @@ class BinaryEncoder(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         """Pytorch lightning method."""
-        ptiles, params, _ = parse_ptiles_dataset(batch, tile_slen=self.tile_slen)
-        galaxy_bools = params["galaxy_bools"]
+        ptiles = batch["images"]
+        galaxy_bools = batch["galaxy_bools"]
         loss, acc = self.get_loss(ptiles, galaxy_bools)
         self.log("train/loss", loss, batch_size=len(ptiles))
         self.log("train/acc", acc, batch_size=len(ptiles))
@@ -92,8 +92,8 @@ class BinaryEncoder(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         """Pytorch lightning method."""
-        ptiles, params, _ = parse_ptiles_dataset(batch, tile_slen=self.tile_slen)
-        galaxy_bools = params["galaxy_bools"]
+        ptiles = batch["images"]
+        galaxy_bools = batch["galaxy_bools"]
         loss, acc = self.get_loss(ptiles, galaxy_bools)
         self.log("val/loss", loss, batch_size=len(ptiles))
         self.log("val/acc", acc, batch_size=len(ptiles))

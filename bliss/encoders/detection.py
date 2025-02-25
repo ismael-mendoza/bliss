@@ -7,7 +7,6 @@ from torch.nn import BCELoss
 from torch.optim import Adam
 
 from bliss.catalog import TileCatalog
-from bliss.datasets.padded_tiles import parse_dataset
 from bliss.encoders.layers import EncoderCNN, make_enc_final
 from bliss.render_tiles import get_images_in_tiles, get_n_padded_tiles_hw, validate_border_padding
 
@@ -119,8 +118,8 @@ class DetectionEncoder(pl.LightningModule):
     # pytorch lightning
     def training_step(self, batch, batch_idx):
         """Training step (pytorch lightning)."""
-        ptiles, tile_params, _ = parse_dataset(batch, self.tile_slen)
-        out = self.get_loss(ptiles, tile_params["n_sources"], tile_params["locs"])
+        ptiles = batch["images"]
+        out = self.get_loss(ptiles, batch["n_sources"], batch["locs"])
 
         # logging
         batch_size = ptiles.shape[0]
@@ -132,16 +131,16 @@ class DetectionEncoder(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         """Validation step (pytorch lightning)."""
-        ptiles, tile_params, _ = parse_dataset(batch, self.tile_slen)
+        ptiles = batch["images"]
         batch_size = ptiles.shape[0]
-        out = self.get_loss(ptiles, tile_params["n_sources"], tile_params["locs"])
+        out = self.get_loss(ptiles, batch["n_sources"], batch["locs"])
         pred_params = self.variational_mode_tiled(ptiles)
 
         # compute tiled metrics
         tiled_metrics = _compute_tiled_metrics(
-            tile_params["n_sources"],
+            batch["n_sources"],
             pred_params["n_sources"],
-            tile_params["locs"],
+            batch["locs"],
             pred_params["locs"],
             tile_slen=self.tile_slen,
         )
