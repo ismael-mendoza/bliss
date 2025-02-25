@@ -75,7 +75,7 @@ def run_encoder_training(
     val_check_interval: float,
     log_every_n_steps: int,
     log_info_dict: dict,
-    keep_padding=False,
+    is_deblender=False,
     extra_callbacks: list | None = None,  # list of additional callbacks to include
 ):
     assert model_name in {"detection", "binary", "deblender"}
@@ -87,8 +87,8 @@ def run_encoder_training(
     if not Path(train_file).exists() or not Path(val_file).exists():
         raise IOError("Training datasets do not exists")
 
-    train_ds = SavedGalsimBlends(train_file, keep_padding=keep_padding)
-    val_ds = SavedGalsimBlends(val_file, keep_padding=keep_padding)
+    train_ds = SavedGalsimBlends(train_file, is_deblender=is_deblender)
+    val_ds = SavedGalsimBlends(val_file, is_deblender=is_deblender)
     train_dl, val_dl, trainer, vnum = setup_training_objects(
         train_ds=train_ds,
         val_ds=val_ds,
