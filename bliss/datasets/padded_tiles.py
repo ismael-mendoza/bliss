@@ -5,7 +5,6 @@ import numpy as np
 import torch
 from astropy.table import Table
 from einops import pack, rearrange
-from torch import Tensor
 from tqdm import tqdm
 
 from bliss.datasets.lsst import (
