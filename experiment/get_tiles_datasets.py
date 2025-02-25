@@ -31,12 +31,28 @@ assert LOG_FILE.exists()
 
 @click.command()
 @click.option("-s", "--seed", required=True, type=int)
+@click.option("--indices-fname", required=True, type=str)
 @click.option("--n-train", default=50000, type=int)
 @click.option("--n-val", default=10000, type=int)
 @click.option("--galaxy-density", default=GALAXY_DENSITY, type=float)
 @click.option("--star-density", default=STAR_DENSITY, type=float)
-def main(seed: int, n_train: int, n_val: int, galaxy_density: float, star_density: float):
+def main(
+    seed: int,
+    indices_fname: str,
+    n_train: int,
+    n_val: int,
+    galaxy_density: float,
+    star_density: float,
+):
     L.seed_everything(seed)
+
+    # disjointed tables with different galaxies
+    assert indices_fname.endswith(".npz")
+    indices_fpath = DATASETS_DIR / indices_fname
+    assert indices_fpath.exists()
+    indices_dict = np.load(indices_fpath)
+    train_indices = indices_dict["train"]
+    val_indices = indices_dict["val"]
 
     # galaxies, stars, uncentered, possibly empty tiles
     train_ds_detection_file = DATASETS_DIR / f"train_ds_detection_{seed}.npz"
@@ -50,26 +66,20 @@ def main(seed: int, n_train: int, n_val: int, galaxy_density: float, star_densit
     train_ds_deblend_file = DATASETS_DIR / f"train_ds_deblend_{seed}.npz"
     val_ds_deblend_file = DATASETS_DIR / f"val_ds_deblend_{seed}.npz"
 
-    assert not train_ds_detection_file.exists(), "files exist"
-    assert not val_ds_detection_file.exists(), "files exist"
-
-    # disjointed tables with different galaxies
-    indices_fpath = DATASETS_DIR / f"indices_{seed}.npz"
-    assert indices_fpath.exists()
-    indices_dict = np.load(indices_fpath)
-    train_indices = indices_dict["train"]
-    val_indices = indices_dict["val"]
-
     table1 = CATSIM_CAT[train_indices]
     table2 = CATSIM_CAT[val_indices]
 
     # detection
+    assert not train_ds_detection_file.exists(), "files exist"
+    assert not val_ds_detection_file.exists(), "files exist"
+
     ds1 = generate_padded_tiles(
         n_train,
         table1,
         STAR_MAGS,
         psf=PSF,
         max_shift=0.5,
+        p_source_in=0.5,
     )
     ds2 = generate_padded_tiles(
         n_val,
@@ -77,11 +87,15 @@ def main(seed: int, n_train: int, n_val: int, galaxy_density: float, star_densit
         STAR_MAGS,
         psf=PSF,
         max_shift=0.5,
+        p_source_in=0.5,
     )
     save_dataset_npz(ds1, train_ds_detection_file)
     save_dataset_npz(ds2, val_ds_detection_file)
 
     # binary
+    assert not train_ds_binary_file.exists(), "files exist"
+    assert not val_ds_binary_file.exists(), "files exist"
+
     ds1 = generate_padded_tiles(
         n_train,
         table1,
@@ -102,6 +116,9 @@ def main(seed: int, n_train: int, n_val: int, galaxy_density: float, star_densit
     save_dataset_npz(ds2, val_ds_binary_file)
 
     # deblend
+    assert not train_ds_deblend_file.exists(), "files exist"
+    assert not val_ds_deblend_file.exists(), "files exist"
+
     ds1 = generate_padded_tiles(
         n_train,
         table1,
