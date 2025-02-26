@@ -2,9 +2,9 @@
 
 import datetime
 
-import click
 import numpy as np
 import pytorch_lightning as L
+import typer
 
 from bliss import DATASETS_DIR, HOME_DIR
 from bliss.datasets.generate_blends import generate_dataset
@@ -28,12 +28,12 @@ PSF = get_default_lsst_psf()
 assert LOG_FILE.exists()
 
 
-@click.command()
-@click.option("-s", "--seed", required=True, type=int)
-@click.option("-n", "--n-samples", default=10000, type=int)  # equally divided total blends
-@click.option("--galaxy-density", default=GALAXY_DENSITY, type=float)
-@click.option("--star-density", default=STAR_DENSITY, type=float)
-def main(seed: int, n_samples: int, galaxy_density: float, star_density: float):
+def main(
+    seed: int = typer.Option(),
+    n_samples: int = 10000,
+    galaxy_density: float = GALAXY_DENSITY,
+    star_density: float = STAR_DENSITY,
+):
     L.seed_everything(seed)
     test_ds_file = DATASETS_DIR / f"test_ds_{seed}.npz"
     assert not test_ds_file.exists(), "files exist"
@@ -68,4 +68,4 @@ def main(seed: int, n_samples: int, galaxy_density: float, star_density: float):
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)

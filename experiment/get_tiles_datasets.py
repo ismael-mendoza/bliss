@@ -3,9 +3,9 @@
 
 import datetime
 
-import click
 import numpy as np
 import pytorch_lightning as L
+import typer
 
 from bliss import DATASETS_DIR, HOME_DIR
 from bliss.datasets.io import save_dataset_npz
@@ -29,20 +29,13 @@ PSF = get_default_lsst_psf()
 assert LOG_FILE.exists()
 
 
-@click.command()
-@click.option("-s", "--seed", required=True, type=int)
-@click.option("--indices-fname", required=True, type=str)
-@click.option("--n-train", default=50000, type=int)
-@click.option("--n-val", default=10000, type=int)
-@click.option("--galaxy-density", default=GALAXY_DENSITY, type=float)
-@click.option("--star-density", default=STAR_DENSITY, type=float)
 def main(
-    seed: int,
-    indices_fname: str,
-    n_train: int,
-    n_val: int,
-    galaxy_density: float,
-    star_density: float,
+    seed: int = typer.Option(),
+    indices_fname: str = typer.Option(),
+    n_train: int = 50000,
+    n_val: int = 10000,
+    galaxy_density: float = GALAXY_DENSITY,
+    star_density: float = STAR_DENSITY,
 ):
     L.seed_everything(seed)
 
@@ -150,4 +143,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)
