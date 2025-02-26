@@ -72,7 +72,7 @@ class BlendDetectionFigures(BlissFigure):
 
         # add true snr to truth catalog using sep
         meas_truth = get_residual_measurements(
-            truth, images, new_paddings, uncentered_sources, bp=bp, r=self.aperture
+            truth, images, paddings=new_paddings, sources=uncentered_sources, bp=bp, r=self.aperture
         )
         truth["snr"] = meas_truth["snr"].clip(0)
 
@@ -82,7 +82,7 @@ class BlendDetectionFigures(BlissFigure):
         n_images = images.shape[0]
         n_batches = n_images // batch_size
         tiled_params_list = []
-        for i in tqdm(range(n_batches)):
+        for i in tqdm(range(n_batches), desc="Encoding images..."):
             image_batch = images[i * batch_size : (i + 1) * batch_size].to(detection.device)
             n_source_probs, locs_mean, locs_sd_raw = detection.encode(image_batch)
             tiled_params = {
@@ -99,6 +99,7 @@ class BlendDetectionFigures(BlissFigure):
         thresholds = [0.1, 0.25, 0.5, 0.75, 0.9]
         pred_cats = {}
 
+        print("INFO:Getting tile catalogs for different thresholds")
         for thres in thresholds:
             n_source_probs = tiled_params["n_source_probs"]
             n_sources = n_source_probs.ge(thres).long()
@@ -122,6 +123,7 @@ class BlendDetectionFigures(BlissFigure):
             pred_cats[thres] = tile_cat.to_full_params()
 
         # obtain snr for the predicted catalogs (to calculate precision)
+        print("INFO:Residual measurement for each catalog")
         for _, cat in pred_cats.items():
             _dummy_images = torch.zeros(
                 images.shape[0], cat.max_n_sources, 1, images.shape[-2], images.shape[-1]
@@ -129,8 +131,8 @@ class BlendDetectionFigures(BlissFigure):
             _meas = get_residual_measurements(
                 cat,
                 images,
-                torch.zeros_like(images),
-                _dummy_images,
+                paddings=torch.zeros_like(images),
+                sources=_dummy_images,
                 bp=bp,
                 r=self.aperture,
             )
@@ -140,6 +142,7 @@ class BlendDetectionFigures(BlissFigure):
         max_n_sources = 0
         all_sep_params = []
 
+        print("INFO:SEP measurements...")
         for ii in range(images.shape[0]):
             im = images[ii, 0].numpy()
             bkg = sep.Background(im)
@@ -174,11 +177,12 @@ class BlendDetectionFigures(BlissFigure):
         sep_cat = FullCatalog(slen, slen, {"n_sources": n_sources, "plocs": plocs})
 
         # get snr for SEP catalog
+        print("INFO:SEP residual measurements...")
         _meas_sep = get_residual_measurements(
             sep_cat,
             images,
-            torch.zeros_like(images),
-            torch.zeros_like(uncentered_sources),
+            paddings=torch.zeros_like(images),
+            sources=torch.zeros_like(uncentered_sources),
             bp=bp,
             r=self.aperture,
         )
@@ -189,6 +193,7 @@ class BlendDetectionFigures(BlissFigure):
         snr_bins2 = 10 ** torch.arange(0.2, 3.2, 0.2)
         snr_bins = torch.column_stack((snr_bins1, snr_bins2))
 
+        print("INFO:Compute precision and recall...")
         # compute precision, recall, f1 for each threshold
         # and each snr bin
         thresh_out = {tsh: {} for tsh in pred_cats}
