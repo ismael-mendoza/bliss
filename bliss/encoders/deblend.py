@@ -35,8 +35,6 @@ class GalaxyEncoder(pl.LightningModule):
         self.lr = lr
 
         # encoder (to be trained)
-        self._latent_dim = latent_dim
-        self._hidden = hidden
         self._enc = CenteredGalaxyEncoder(self.cropped_slen, latent_dim, n_bands, hidden)
 
         # decoder
@@ -71,7 +69,7 @@ class GalaxyEncoder(pl.LightningModule):
 
         loss, loss_avg, recon = self.get_loss(ptiles, centered_ptiles, tile_locs=tile_locs)
 
-        res = (ptiles - recon) / self.background_sqrt
+        res = (centered_ptiles - recon) / self.background_sqrt
         mean_max_residual = reduce(res.abs(), "b c h w -> b", "max").mean()
 
         self.log("train/loss", loss, batch_size=len(ptiles), on_step=False, on_epoch=True)
@@ -94,7 +92,7 @@ class GalaxyEncoder(pl.LightningModule):
 
         loss, loss_avg, recon = self.get_loss(ptiles, centered_ptiles, tile_locs=tile_locs)
 
-        res = (ptiles - recon) / self.background_sqrt
+        res = (centered_ptiles - recon) / self.background_sqrt
         mean_max_residual = reduce(res.abs(), "b c h w -> b", "max").mean()
 
         self.log("val/loss", loss, batch_size=len(ptiles))
