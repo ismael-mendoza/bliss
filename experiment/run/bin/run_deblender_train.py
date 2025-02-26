@@ -17,7 +17,7 @@ def main(
     ae_model_path: str = typer.Option(),
     train_file: str = typer.Option(),
     val_file: str = typer.Option(),
-    batch_size: int = 512,
+    batch_size: int = 128,
     lr: float = 1e-4,
     n_epochs: int = 10_000,
     validate_every_n_epoch: int = 10,
@@ -59,4 +59,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)
