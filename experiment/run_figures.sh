@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 
-# ./get_figures.py "toy" "test1" --detection-fpath models/detection_42_42.pt --ae-fpath models/autoencoder_42_42.pt --deblend-fpath models/deblender_42_42.pt
+export CUDA_VISIBLE_DEVICES="4"
+
+./get_figures.py "detection" "test2" --test-file-blends data/datasets/test_ds_23.npz --detection-fpath models/detection_23_22.pt --seed 23
+
+# ./get_figures.py "toy" "test2" --detection-fpath models/detection_42_42.pt --ae-fpath models/autoencoder_42_42.pt --deblend-fpath models/deblender_42_42.pt
 
 # ./get_figures.py "deblend" "test1" --ae-fpath models/autoencoder_42_42.pt --deblend-fpath models/deblender_42_42.pt --test-file-blends data/datasets/test_ds_42.npz
 
-./get_figures.py "samples" "test1" --ae-fpath models/autoencoder_42_42.pt --deblend-fpath models/deblender_42_42.pt --test-file-blends data/datasets/test_ds_23.npz --detection-fpath models/detection_42_42.pt --overwrite
+# ./get_figures.py "samples" "test1" --ae-fpath models/autoencoder_42_42.pt --deblend-fpath models/deblender_42_42.pt --test-file-blends data/datasets/test_ds_23.npz --detection-fpath models/detection_42_42.pt --overwrite
