@@ -6,7 +6,6 @@ from torch import Tensor
 from torch.nn.functional import fold, unfold
 
 from bliss.encoders.autoencoder import CenteredGalaxyDecoder
-from bliss.grid import shift_sources_bilinear
 
 
 def render_galaxy_ptiles(
@@ -134,3 +133,18 @@ def get_n_padded_tiles_hw(
     nh = ((height - ptile_slen) // tile_slen) + 1
     nw = ((width - ptile_slen) // tile_slen) + 1
     return nh, nw
+
+
+def validate_border_padding(tile_slen: int, ptile_slen: int, bp: int | None = None) -> int:
+    # Border Padding
+    # Images are first rendered on *padded* tiles (aka ptiles).
+    # The padded tile consists of the tile and neighboring tiles
+    # The width of the padding is given by ptile_slen.
+    # border_padding is the amount of padding we leave in the final image. Useful for
+    # avoiding sources getting too close to the edges.
+    if bp is not None:
+        assert bp == (ptile_slen - tile_slen) / 2
+    else:
+        bp = (ptile_slen - tile_slen) / 2
+    assert float(bp).is_integer(), "amount of border padding must be an integer"
+    return int(bp)
