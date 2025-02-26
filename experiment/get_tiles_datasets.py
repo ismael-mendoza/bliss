@@ -67,20 +67,18 @@ def main(
     assert not val_ds_detection_file.exists(), "files exist"
 
     ds1 = generate_padded_tiles(
-        n_train,
+        n_train * 5,
         table1,
         STAR_MAGS,
         psf=PSF,
         max_shift=0.5,
-        p_source_in=0.5,
     )
     ds2 = generate_padded_tiles(
-        n_val,
+        n_val * 5,
         table2,
         STAR_MAGS,
         psf=PSF,
         max_shift=0.5,
-        p_source_in=0.5,
     )
     save_dataset_npz(ds1, train_ds_detection_file)
     save_dataset_npz(ds2, val_ds_detection_file)
