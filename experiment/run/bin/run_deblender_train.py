@@ -17,7 +17,7 @@ NUM_WORKERS = 0
 @click.option("--ae-model-path", required=True, type=str)
 @click.option("--train-file", required=True, type=str)
 @click.option("--val-file", required=True, type=str)
-@click.option("-b", "--batch-size", default=128)
+@click.option("-b", "--batch-size", default=512)
 @click.option("--lr", default=1e-4, type=float)
 @click.option("-e", "--n-epochs", type=int, default=10_000)
 @click.option("--validate-every-n-epoch", default=10, type=int)
