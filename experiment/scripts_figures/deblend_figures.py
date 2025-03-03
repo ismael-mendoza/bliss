@@ -91,7 +91,6 @@ class DeblendingFigures(BlissFigure):
         )
 
     def compute_data(self, ds_path: str, deblend: GalaxyEncoder):
-
         # metadata
         bp = deblend.bp
         tile_slen = deblend.tile_slen
@@ -421,7 +420,6 @@ class DeblendingFigures(BlissFigure):
         return fig
 
     def _get_deblending_size_bins(self, data):
-
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10), sharey=True)
         _data = _get_masked_data(data)
 
@@ -485,7 +483,6 @@ class DeblendingFigures(BlissFigure):
         return fig
 
     def _get_deblending_ellips_bins(self, data):
-
         fig, axes = plt.subplots(2, 2, figsize=(20, 20))
         ax1, ax2, ax3, ax4 = axes.flatten()
 
