@@ -3,8 +3,9 @@
 import datetime
 from pathlib import Path
 
-import click
 import pytorch_lightning as L
+import typer
+from torch import Value
 
 from bliss import HOME_DIR
 from bliss.datasets.saved_datasets import SavedIndividualGalaxies
@@ -47,36 +48,19 @@ def _log_info(seed, info: dict):
         print(log_msg_long, file=f2)
 
 
-@click.command()
-@click.option("-s", "--seed", required=True, type=int)
-@click.option("--ds-seed", required=True, type=int, help="Random seed used for dataset")
-@click.option("--train-file", required=True, type=str)
-@click.option("--val-file", required=True, type=str)
-@click.option("-b", "--batch-size", default=128)
-@click.option("-e", "--n-epochs", default=10_000)
-@click.option("--validate-every-n-epoch", default=10, type=int)
-@click.option("--lr", default=1e-5, type=float)
-@click.option("--version", default="", type=str)
 def main(
-    seed: int,
-    ds_seed: int,
-    train_file: str,
-    val_file: str,
-    batch_size: int,
-    n_epochs: int,
-    validate_every_n_epoch: int,
-    lr: float,
-    version: str,
+    seed: int = typer.Option(),
+    ds_seed: int = typer.Option(),
+    train_file: str = typer.Option(),
+    val_file: str = typer.Option(),
+    batch_size: int = 128,
+    n_epochs: int = 10_000,
+    validate_every_n_epoch: int = 10,
+    lr: float = 1e-5,
+    version: str = "",
 ):
     # setup version
-    if not version:
-        version = None
-    else:
-        try:
-            version = int(version)
-        except ValueError:
-            raise ValueError("Version must be a number if passed in.")
-
+    version = int(version) if version else None
     L.seed_everything(seed)
 
     assert not (MODELS_DIR / f"autoencoder_{ds_seed}_{seed}.pt").exists(), "model exists."
@@ -119,4 +103,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)
