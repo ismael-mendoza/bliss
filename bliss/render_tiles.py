@@ -2,7 +2,7 @@
 
 import torch
 from einops import pack, rearrange, unpack
-from galsim import InterpolatedImage
+from galsim import Image, InterpolatedImage
 from torch import Tensor
 from torch.nn.functional import fold, unfold
 
@@ -32,13 +32,19 @@ def render_galaxy_ptiles(
     )
     assert centered_galaxies.shape[-1] == galaxy_decoder.slen
     assert galaxy_decoder.slen % 2 == 1  # so centered in central pixel
+
+    # galsim only runs in CPU
     uncentered_galaxies = _shift_sources_galsim(
-        centered_galaxies, locs_flat, galaxy_bools_flat, tile_slen=tile_slen, center=False
+        centered_galaxies.to("cpu"),
+        locs_flat.to("cpu"),
+        galaxy_bools_flat.to("cpu"),
+        tile_slen=tile_slen,
+        center=False,
     )
 
     return rearrange(
         uncentered_galaxies, "(b nth ntw) c h w -> b nth ntw c h w", b=b, nth=nth, ntw=ntw
-    )
+    ).to(locs.device)
 
 
 def _render_centered_galaxies_ptiles(
@@ -86,13 +92,13 @@ def _shift_sources_galsim(
     ptiles_flat_np = ptiles_flat.numpy()
     for ii in range(npt):
         if galaxy_bools[ii].bool().item():
-            image = ptiles_flat_np[ii, 0]
+            image = Image(ptiles_flat_np[ii, 0], scale=scale)
             xy = locs_trans[ii]
             offset = (xy * tile_slen - tile_slen / 2) * sgn
 
             iimg = InterpolatedImage(image, scale=scale)
             fimg = iimg.drawImage(nx=slen, ny=slen, scale=scale, offset=offset, method="no_pixel")
-            new_ptiles[ii, 0] = torch.from_numpy(fimg)
+            new_ptiles[ii, 0] = torch.from_numpy(fimg.array)
 
     return new_ptiles
 
