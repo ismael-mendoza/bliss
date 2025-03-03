@@ -200,7 +200,7 @@ class BinaryFigures(BlissFigure):
         # first we make two scatter plot figures
         # useful for sanity checking
 
-        fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+        fig, ax = plt.subplots(1, 1, figsize=(12, 10))
 
         snr = data["snr"]
         probs = data["probs"]
@@ -229,9 +229,10 @@ class BinaryFigures(BlissFigure):
             color="b",
             label=r"\rm Star",
         )
+        ax.set_xscale("log")
+        # ax.set_xticks([1e-2, 1e-1, 1, 10, 100, 1000, 10000, 100_000])
         ax.legend(markerscale=6, fontsize=28)
         ax.set_ylabel(r"\rm Galaxy Classification Probability")
-        ax.set_xscale("log")
 
         return fig
 
