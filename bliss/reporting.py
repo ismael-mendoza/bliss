@@ -265,7 +265,6 @@ def get_deblended_reconstructions(
                 locs=blocs,
                 galaxy_params=bgparams,
                 galaxy_bools=bgbools,
-                ptile_slen=ptile_slen,
                 tile_slen=tile_slen,
             )
 
