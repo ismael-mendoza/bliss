@@ -47,64 +47,12 @@ def main(
     train_indices = indices_dict["train"]
     val_indices = indices_dict["val"]
 
-    # galaxies, stars, uncentered, possibly empty tiles
-    train_ds_detection_file = DATASETS_DIR / f"train_ds_detection_{seed}.npz"
-    val_ds_detection_file = DATASETS_DIR / f"val_ds_detection_{seed}.npz"
-
-    # galaxies, stars, centered, no empty tiles
-    train_ds_binary_file = DATASETS_DIR / f"train_ds_binary_{seed}.npz"
-    val_ds_binary_file = DATASETS_DIR / f"val_ds_binary_{seed}.npz"
-
     # galxies, centered, no empty tiles
     train_ds_deblend_file = DATASETS_DIR / f"train_ds_deblend_{seed}.npz"
     val_ds_deblend_file = DATASETS_DIR / f"val_ds_deblend_{seed}.npz"
 
     table1 = CATSIM_CAT[train_indices]
     table2 = CATSIM_CAT[val_indices]
-
-    # detection
-    assert not train_ds_detection_file.exists(), "files exist"
-    assert not val_ds_detection_file.exists(), "files exist"
-
-    ds1 = generate_padded_tiles(
-        n_train * 5,
-        table1,
-        STAR_MAGS,
-        psf=PSF,
-        max_shift=0.5,
-    )
-    ds2 = generate_padded_tiles(
-        n_val * 5,
-        table2,
-        STAR_MAGS,
-        psf=PSF,
-        max_shift=0.5,
-    )
-    save_dataset_npz(ds1, train_ds_detection_file)
-    save_dataset_npz(ds2, val_ds_detection_file)
-
-    # binary
-    assert not train_ds_binary_file.exists(), "files exist"
-    assert not val_ds_binary_file.exists(), "files exist"
-
-    ds1 = generate_padded_tiles(
-        n_train,
-        table1,
-        STAR_MAGS,
-        psf=PSF,
-        max_shift=0.5,
-        p_source_in=1.0,
-    )
-    ds2 = generate_padded_tiles(
-        n_val,
-        table2,
-        STAR_MAGS,
-        psf=PSF,
-        max_shift=0.5,
-        p_source_in=1.0,
-    )
-    save_dataset_npz(ds1, train_ds_binary_file)
-    save_dataset_npz(ds2, val_ds_binary_file)
 
     # deblend
     assert not train_ds_deblend_file.exists(), "files exist"
