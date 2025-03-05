@@ -187,7 +187,7 @@ def crop_ptiles(ptiles: Tensor, locs: Tensor, *, bp: int, tile_slen: int):
 
 
 def get_n_padded_tiles_hw(
-    height: int, width: int, ptile_slen: int, tile_slen: int
+    height: int, width: int, *, tile_slen: int, ptile_slen: int
 ) -> tuple[int, int]:
     nh = ((height - ptile_slen) // tile_slen) + 1
     nw = ((width - ptile_slen) // tile_slen) + 1
