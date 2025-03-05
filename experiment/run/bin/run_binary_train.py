@@ -14,7 +14,7 @@ def main(
     ds_seed: int = typer.Option(),
     train_file: str = typer.Option(),
     val_file: str = typer.Option(),
-    batch_size: int = 128,
+    batch_size: int = 32,
     n_epochs: int = 30,
     validate_every_n_epoch: int = 1,
     log_every_n_steps: int = 50,
