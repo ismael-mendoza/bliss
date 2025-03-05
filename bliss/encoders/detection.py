@@ -8,7 +8,7 @@ from torch.optim import Adam
 
 from bliss.catalog import TileCatalog
 from bliss.encoders.layers import EncoderCNN, make_enc_final
-from bliss.render_tiles import get_images_in_tiles, validate_border_padding
+from bliss.render_tiles import get_images_in_tiles, get_n_padded_tiles_hw, validate_border_padding
 
 
 class DetectionEncoder(pl.LightningModule):
@@ -65,11 +65,12 @@ class DetectionEncoder(pl.LightningModule):
             dropout,
         )
 
-    def forward(self, flat_ptiles: Tensor):
+    def forward(self, images: Tensor):
+        ptiles = get_images_in_tiles(images, self.tile_slen, self.ptile_slen)
+        flat_ptiles = rearrange(ptiles, "n nth ntw c h w -> (n nth ntw) c h w")
         return self.encode_tiled(flat_ptiles)
 
     def encode_tiled(self, flat_ptiles: Tensor):
-        flat_ptiles = rearrange(flat_ptiles, "n c h w -> n c h w")
         # encode
         enc_conv_output = self._enc_conv(flat_ptiles)
         enc_final_output = self._enc_final(enc_conv_output)
@@ -85,87 +86,11 @@ class DetectionEncoder(pl.LightningModule):
         locs_sd = _locs_sd_func(locs_logvar_raw)
         return n_source_probs, locs_mean, locs_sd
 
-    def variational_mode_tiled(self, flat_image_ptiles: Tensor) -> dict[str, Tensor]:
-        n_source_probs, locs_mean, _ = self.encode_tiled(flat_image_ptiles)
-        flat_tile_n_sources = n_source_probs.ge(0.5).long()
-        flat_tile_locs = locs_mean * rearrange(flat_tile_n_sources, "np -> np 1")
-        return {"n_sources": flat_tile_n_sources, "locs": flat_tile_locs}
-
-    def get_loss(self, ptiles_flat: Tensor, n_sources_flat: Tensor, locs_flat: Tensor):
-        # encode
-        out: tuple[Tensor, Tensor, Tensor] = self(ptiles_flat)
-        n_source_probs, locs_mean, locs_sd = out
-
-        # loss from counts
-        counter_loss = BCELoss(reduction="none")(n_source_probs, n_sources_flat.float())
-
-        # loss from centroid locations
-        locs_log_prob = -reduce(  # negative log-probability is the loss!
-            Normal(locs_mean, locs_sd).log_prob(locs_flat), "np xy -> np", "sum", xy=2
-        )
-        locs_loss = locs_log_prob * n_sources_flat.float()  # loc loss only on "on" sources.
-        loss_vec = locs_loss * (locs_loss.detach() < 1e6).float() + counter_loss
-
-        # per the paper, we take the mean over batches and sum over tiles
-        loss = reduce(loss_vec, "b -> ", "mean")
-
-        return {
-            "loss": loss,
-            "counter_loss": counter_loss.detach().mean(),
-            "locs_loss": locs_loss.detach().mean(),
-        }
-
-    # pytorch lightning
-    def training_step(self, batch, batch_idx):
-        """Training step (pytorch lightning)."""
-        ptiles = batch["images"]
-        out = self.get_loss(ptiles, batch["n_sources"], batch["locs"])
-
-        # logging
-        batch_size = ptiles.shape[0]
-        self.log("train/loss", out["loss"], batch_size=batch_size)
-        self.log("train/counter_loss", out["counter_loss"], batch_size=batch_size)
-        self.log("train/locs_loss", out["locs_loss"], batch_size=batch_size)
-
-        return out["loss"]
-
-    def validation_step(self, batch, batch_idx):
-        """Validation step (pytorch lightning)."""
-        ptiles = batch["images"]
-        batch_size = ptiles.shape[0]
-        out = self.get_loss(ptiles, batch["n_sources"], batch["locs"])
-        pred_params = self.variational_mode_tiled(ptiles)
-
-        # compute tiled metrics
-        tiled_metrics = _compute_tiled_metrics(
-            batch["n_sources"],
-            pred_params["n_sources"],
-            batch["locs"],
-            pred_params["locs"],
-            tile_slen=self.tile_slen,
-        )
-
-        # logging
-        self.log("val/loss", out["loss"], batch_size=batch_size)
-        self.log("val/counter_loss", out["counter_loss"], batch_size=batch_size)
-        self.log("val/locs_loss", out["locs_loss"], batch_size=batch_size)
-        self.log_dict(
-            tiled_metrics, batch_size=batch_size, on_step=True, on_epoch=True, reduce_fx="mean"
-        )
-
-        return out["loss"]
-
-    def configure_optimizers(self):
-        return Adam(self.parameters(), lr=1e-4)
-
-    def encode(self, images: Tensor) -> dict[str, Tensor]:
-        flat_ptiles, _, _ = self._get_flat_ptiles(images)
-        return self.encode_tiled(flat_ptiles)
-
     def variational_mode(self, images: Tensor) -> TileCatalog:
         """Compute the variational mode."""
-        flat_ptiles, nth, ntw = self._get_flat_ptiles(images)
-        n_source_probs, locs_mean, _ = self.encode_tiled(flat_ptiles)
+        _, _, h, w = images.shape
+        nth, ntw = get_n_padded_tiles_hw(h, w, tile_slen=self.tile_slen, ptile_slen=self.ptile_slen)
+        n_source_probs, locs_mean, _ = self.forward(images)
         flat_tile_n_sources = n_source_probs.ge(0.5).long()
         flat_tile_locs = locs_mean * rearrange(flat_tile_n_sources, "np -> np 1")
 
@@ -173,7 +98,13 @@ class DetectionEncoder(pl.LightningModule):
             self.tile_slen, nth, ntw, {"n_sources": flat_tile_n_sources, "locs": flat_tile_locs}
         )
 
-    def sample(self, images: Tensor, n_samples: int = 1) -> list[TileCatalog]:
+    def variational_model_tiled(self, flat_ptiles: Tensor) -> dict[str, Tensor]:
+        n_source_probs, locs_mean, _ = self.encode_tiled(flat_ptiles)
+        flat_tile_n_sources = n_source_probs.ge(0.5).long()
+        flat_tile_locs = locs_mean * rearrange(flat_tile_n_sources, "np -> np 1")
+        return {"n_sources": flat_tile_n_sources, "locs": flat_tile_locs}
+
+    def sample(self, images: Tensor, n_samples: int = 1) -> dict[str, Tensor]:
         """Sample from the encoded variational distribution.
 
         Args:
@@ -187,8 +118,7 @@ class DetectionEncoder(pl.LightningModule):
             A dictionary of tensors with shape `n_samples * n_ptiles * ...`.
             Consists of "n_sources" and "locs".
         """
-        flat_ptiles, nth, ntw = self._get_flat_ptiles(images)
-        n_source_probs, locs_mean, locs_sd = self.encode_tiled(flat_ptiles)
+        n_source_probs, locs_mean, locs_sd = self.forward(images)
 
         # sample counts per tile
         tile_n_sources = Bernoulli(n_source_probs).sample((n_samples,))
@@ -201,26 +131,82 @@ class DetectionEncoder(pl.LightningModule):
 
         assert tile_n_sources.shape[0] == tile_locs.shape[0] == n_samples
 
-        tcats = []
-        for ii in range(n_samples):
-            n_sources = tile_n_sources[ii]
-            locs = tile_locs[ii]
-            tcats.append(
-                TileCatalog.from_flat_dict(
-                    self.tile_slen,
-                    nth,
-                    ntw,
-                    {"n_sources": n_sources, "locs": locs},
-                )
-            )
+        return {"n_sources": tile_n_sources, "locs": tile_locs}
 
-        return tcats
+    def get_loss(self, images: Tensor, n_sources: Tensor, locs: Tensor):
+        assert images.device == n_sources.device == locs.device
+        b, nth, ntw, _ = locs.shape
 
-    def _get_flat_ptiles(self, images: Tensor):
-        ptiles = get_images_in_tiles(images, self.tile_slen, self.ptile_slen)
-        _, nth, ntw, _, _, _ = ptiles.shape
-        flat_ptiles = rearrange(ptiles, "b nth ntw c h w -> (b nth ntw) c h w")
-        return flat_ptiles, nth, ntw
+        # encode
+        out: tuple[Tensor, Tensor, Tensor] = self(images)
+        n_source_probs, locs_mean, locs_sd = out
+
+        # loss from detection count encoding
+        flat_n_sources = rearrange(n_sources, "b nth ntw -> (b nth ntw)")
+        counter_loss = BCELoss(reduction="none")(n_source_probs, flat_n_sources.float())
+
+        # now for locations
+        flat_locs = rearrange(locs, "b nth ntw xy -> (b nth ntw) xy", xy=2)
+        locs_log_prob = -reduce(  # negative log-probability is the loss!
+            Normal(locs_mean, locs_sd).log_prob(flat_locs), "np xy -> np", "sum", xy=2
+        )
+        locs_loss = locs_log_prob * flat_n_sources.float()  # loc loss only on "on" sources.
+
+        loss_vec = locs_loss * (locs_loss.detach() < 1e6).float() + counter_loss
+
+        # per the paper, we take the mean over batches and sum over tiles
+        loss_per_tile = rearrange(loss_vec, "(b nth ntw) -> b nth ntw", b=b, nth=nth, ntw=ntw)
+        loss_per_batch = reduce(loss_per_tile, "b nth ntw -> b", "sum")
+        loss = reduce(loss_per_batch, "b -> ", "mean")
+
+        return {
+            "loss": loss,
+            "counter_loss": counter_loss.detach().mean(),
+            "locs_loss": locs_loss.detach().mean(),
+        }
+
+    # pytorch lightning
+    def training_step(self, batch, batch_idx):
+        """Training step (pytorch lightning)."""
+        images = batch["images"]
+        tile_n_sources = batch["n_sources"]
+        tile_locs = batch["locs"]
+        out = self.get_loss(images, tile_n_sources, tile_locs)
+
+        # logging
+        batch_size = len(images)
+        self.log("train/loss", out["loss"], batch_size=batch_size)
+        self.log("train/counter_loss", out["counter_loss"], batch_size=batch_size)
+        self.log("train/locs_loss", out["locs_loss"], batch_size=batch_size)
+
+        return out["loss"]
+
+    def validation_step(self, batch, batch_idx):
+        """Validation step (pytorch lightning)."""
+        images = batch["images"]
+        tile_n_sources = batch["n_sources"]
+        tile_locs = batch["locs"]
+        out = self.get_loss(images, tile_n_sources, tile_locs)
+        pred_cat = self.variational_mode(images)
+
+        # compute tiled metrics
+        tiled_metrics = _compute_tiled_metrics(
+            tile_n_sources, pred_cat.n_sources, tile_locs, pred_cat.locs, tile_slen=self.tile_slen
+        )
+
+        # logging
+        batch_size = len(images)
+        self.log("val/loss", out["loss"], batch_size=batch_size)
+        self.log("val/counter_loss", out["counter_loss"], batch_size=batch_size)
+        self.log("val/locs_loss", out["locs_loss"], batch_size=batch_size)
+        self.log_dict(
+            tiled_metrics, batch_size=batch_size, on_step=True, on_epoch=True, reduce_fx="mean"
+        )
+
+        return out["loss"]
+
+    def configure_optimizers(self):
+        return Adam(self.parameters(), lr=1e-4)
 
 
 def _compute_tiled_metrics(
@@ -228,6 +214,7 @@ def _compute_tiled_metrics(
     n_sources2: Tensor,
     locs1: Tensor,
     locs2: Tensor,
+    *,
     tile_slen: int = 5,
     prefix: str = "val/tiled/",
 ):
