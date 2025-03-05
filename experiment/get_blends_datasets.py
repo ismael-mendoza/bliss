@@ -35,33 +35,46 @@ def main(
     star_density: float = STAR_DENSITY,
 ):
     L.seed_everything(seed)
+
+    train_ds_file = DATASETS_DIR / f"train_ds_{seed}.npz"
+    val_ds_file = DATASETS_DIR / f"val_ds_{seed}.npz"
     test_ds_file = DATASETS_DIR / f"test_ds_{seed}.npz"
+
+    assert not train_ds_file.exists(), "files exist"
+    assert not val_ds_file.exists(), "files exist"
     assert not test_ds_file.exists(), "files exist"
 
     # disjointed tables with different galaxies
     indices_fpath = DATASETS_DIR / f"indices_{seed}.npz"
     assert indices_fpath.exists()
     indices_dict = np.load(indices_fpath)
+    train_indices = indices_dict["train"]
+    val_indices = indices_dict["val"]
     test_indices = indices_dict["test"]
 
-    table = CATSIM_CAT[test_indices]
+    table1 = CATSIM_CAT[train_indices]
+    table2 = CATSIM_CAT[val_indices]
+    table3 = CATSIM_CAT[test_indices]
 
-    ds = generate_dataset(
-        n_samples,
-        table,
-        STAR_MAGS,
-        psf=PSF,
-        max_n_sources=10,
-        galaxy_density=galaxy_density,
-        star_density=star_density,
-        max_shift=0.5,
-    )
-    save_dataset_npz(ds, test_ds_file)
+    files = (train_ds_file, val_ds_file, test_ds_file)
+    tables = (table1, table2, table3)
+    for fpath, t in zip(files, tables, strict=True):
+        ds = generate_dataset(
+            n_samples,
+            t,
+            STAR_MAGS,
+            psf=PSF,
+            max_n_sources=10,
+            galaxy_density=galaxy_density,
+            star_density=star_density,
+            max_shift=0.5,
+        )
+        save_dataset_npz(ds, fpath)
 
     # logging
     with open(LOG_FILE, "a", encoding="utf-8") as f:
         now = datetime.datetime.now()
-        log_msg = f"""\nBlend test data generation with seed {seed} at {now}.
+        log_msg = f"""\nBlend data generation with seed {seed} at {now}.
         Galaxy density {galaxy_density}, star_density {star_density}, and n_samples {n_samples}.
         """
         print(log_msg, file=f)
