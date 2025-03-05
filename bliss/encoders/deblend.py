@@ -9,7 +9,7 @@ from torch.optim import Adam
 
 from bliss.datasets.lsst import BACKGROUND
 from bliss.encoders.autoencoder import CenteredGalaxyEncoder, OneCenteredGalaxyAE
-from bliss.render_tiles import get_images_in_tiles, validate_border_padding
+from bliss.render_tiles import crop_ptiles, get_images_in_tiles, validate_border_padding
 
 
 class GalaxyEncoder(pl.LightningModule):
@@ -49,7 +49,7 @@ class GalaxyEncoder(pl.LightningModule):
 
     def forward(self, ptiles: Tensor, tile_locs: Tensor) -> Tensor:
         """Runs galaxy encoder on input image ptiles."""
-        cropped_ptiles = self._crop_ptiles(ptiles, tile_locs)
+        cropped_ptiles = crop_ptiles(ptiles, tile_locs, bp=self.bp, tile_slen=self.tile_slen)
         return self._enc(cropped_ptiles)
 
     def get_loss(self, ptiles: Tensor, centered_ptiles: Tensor, tile_locs: Tensor):
@@ -105,31 +105,6 @@ class GalaxyEncoder(pl.LightningModule):
     def configure_optimizers(self):
         """Set up optimizers."""
         return Adam(self._enc.parameters(), self.lr)
-
-    def _crop_ptiles(self, ptiles: Tensor, locs: Tensor):
-        assert locs.ndim == 2
-        assert not torch.any(locs >= 1.0)
-        _, _, h, w = ptiles.shape
-
-        # find pixel where source is located
-        y = locs[:, 0] * self.tile_slen + self.bp
-        x = locs[:, 1] * self.tile_slen + self.bp
-        r = (y // 1).long()
-        c = (x // 1).long()
-
-        # grids
-        xx = torch.arange(ptiles.shape[-1], device=ptiles.device)
-        gy, gx = torch.meshgrid(xx, xx, indexing="ij")
-        gyy = rearrange(gy, "h w -> 1 1 h w").expand(len(ptiles), 1, h, w)
-        gxx = rearrange(gx, "h w -> 1 1 h w").expand(len(ptiles), 1, h, w)
-
-        cond1 = torch.abs(gyy - rearrange(r, "n -> n 1 1 1")) <= self.bp
-        cond2 = torch.abs(gxx - rearrange(c, "n -> n 1 1 1")) <= self.bp
-        cond = torch.logical_and(cond1, cond2)
-
-        return rearrange(
-            ptiles[cond], "(b h w) -> b 1 h w", h=self.cropped_slen, w=self.cropped_slen
-        )
 
     def variational_mode(self, images: Tensor, tile_locs: Tensor):
         _, nth, ntw, _ = tile_locs.shape

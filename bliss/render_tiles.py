@@ -158,6 +158,34 @@ def get_images_in_tiles(images: Tensor, tile_slen: int, ptile_slen: int) -> Tens
     )
 
 
+def crop_ptiles(ptiles: Tensor, locs: Tensor, *, bp: int, tile_slen: int):
+    """Make a symmetric croping of images centered around pixel with `loc` with slen 2*bp + 1."""
+    assert locs.ndim == 2
+    assert not torch.any(locs >= 1.0)
+    n, _, h, w = ptiles.shape
+    assert h == w
+
+    # find pixel where source is located
+    y = locs[:, 0] * tile_slen + bp
+    x = locs[:, 1] * tile_slen + bp
+    r = (y // 1).long()
+    c = (x // 1).long()
+
+    # obtain grids
+    xx = torch.arange(h, device=ptiles.device)
+    gy, gx = torch.meshgrid(xx, xx, indexing="ij")
+    gyy = rearrange(gy, "h w -> 1 1 h w").expand(n, 1, h, w)
+    gxx = rearrange(gx, "h w -> 1 1 h w").expand(n, 1, h, w)
+
+    # crop
+    cond1 = torch.abs(gyy - rearrange(r, "n -> n 1 1 1")) <= bp
+    cond2 = torch.abs(gxx - rearrange(c, "n -> n 1 1 1")) <= bp
+    cond = torch.logical_and(cond1, cond2)
+    cropped_images = ptiles[cond]
+
+    return rearrange(cropped_images, "(b h w) -> b 1 h w", h=bp * 2 + 1, w=2 * bp + 1)
+
+
 def get_n_padded_tiles_hw(
     height: int, width: int, ptile_slen: int, tile_slen: int
 ) -> tuple[int, int]:
