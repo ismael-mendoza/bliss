@@ -135,6 +135,7 @@ class BlendDetectionFigures(BlissFigure):
                 sources=_dummy_images,
                 bp=bp,
                 r=self.aperture,
+                no_bar=False,
             )
             cat["snr"] = _meas["snr"].clip(0)
 
