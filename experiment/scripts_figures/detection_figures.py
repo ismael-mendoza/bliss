@@ -84,7 +84,7 @@ class BlendDetectionFigures(BlissFigure):
         tiled_params_list = []
         for i in tqdm(range(n_batches), desc="Encoding images..."):
             image_batch = images[i * batch_size : (i + 1) * batch_size].to(detection.device)
-            n_source_probs, locs_mean, locs_sd_raw = detection.encode(image_batch)
+            n_source_probs, locs_mean, locs_sd_raw = detection.forward(image_batch)
             tiled_params = {
                 "n_source_probs": n_source_probs.cpu(),
                 "locs_mean": locs_mean.cpu(),

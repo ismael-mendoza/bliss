@@ -155,7 +155,7 @@ class BinaryFigures(BlissFigure):
         for ii in tqdm(range(n_batches)):
             start, end = ii * batch_size, (ii + 1) * batch_size
             bimages = images[start:end].to(binary.device)
-            tile_gprob_flat = binary.encode(bimages).to("cpu")
+            tile_gprob_flat = binary.forward(bimages).to("cpu")
             tile_gprob = rearrange(
                 tile_gprob_flat, "(n nth ntw) -> n nth ntw 1", n=batch_size, nth=nth, ntw=ntw
             )
