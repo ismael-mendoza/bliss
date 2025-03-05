@@ -229,7 +229,6 @@ def get_deblended_reconstructions(
     slen: int,
     device: torch.device,
     batch_size: int = 100,
-    ptile_slen: int = 53,
     bp: int = 24,
     tile_slen: int = 5,
     no_bar: bool = True,
