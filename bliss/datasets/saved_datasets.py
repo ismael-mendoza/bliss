@@ -1,6 +1,5 @@
 """Datasets actually used to train models based on cached galaxy iamges."""
 
-import torch
 from torch import Tensor
 from torch.utils.data import Dataset
 
@@ -9,13 +8,7 @@ from bliss.datasets.io import load_dataset_npz
 
 
 class SavedGalsimBlends(Dataset):
-    def __init__(
-        self,
-        dataset_file: str,
-        *,
-        slen: int = 50,
-        tile_slen: int = 5,
-    ) -> None:
+    def __init__(self, dataset_file: str, *, slen: int = 50, tile_slen: int = 5) -> None:
         super().__init__()
         ds: dict[str, Tensor] = load_dataset_npz(dataset_file)
 
@@ -42,7 +35,6 @@ class SavedGalsimBlends(Dataset):
         tile_params_ii = {p: q[index] for p, q in self.tile_params.items()}
         return {
             "images": self.images[index],
-            "paddings": self.paddings[index] if self.keep_padding else self.paddings,
             **tile_params_ii,
         }
 
@@ -50,18 +42,12 @@ class SavedGalsimBlends(Dataset):
 class SavedPtiles(Dataset):
     """Currently only used for deblender encoder training."""
 
-    def __init__(
-        self,
-        dataset_file: str,
-        *,
-        is_deblender: bool = False,
-    ) -> None:
+    def __init__(self, dataset_file: str) -> None:
         super().__init__()
         ds: dict[str, Tensor] = load_dataset_npz(dataset_file)
 
         self.images = ds.pop("images")
         self.epoch_size = len(self.images)
-        self.is_deblender = is_deblender
 
         noise = self.images - ds.pop("uncentered_sources") - ds.pop("paddings")
         centered = ds.pop("centered_sources") + noise
@@ -80,7 +66,7 @@ class SavedPtiles(Dataset):
         tile_params_ii = {p: q[index] for p, q in self.tile_params.items()}
         return {
             "images": self.images[index],
-            "centered": self.centered[index] if self.is_deblender else self.centered,
+            "centered": self.centered[index],
             **tile_params_ii,
         }
 
