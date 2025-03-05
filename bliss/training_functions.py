@@ -7,7 +7,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader, Dataset
 
 from bliss import HOME_DIR
-from bliss.datasets.saved_datasets import SavedGalsimBlends
+from bliss.datasets.saved_datasets import SavedGalsimBlends, SavedPtiles
 
 NUM_WORKERS = 0
 
@@ -87,8 +87,13 @@ def run_encoder_training(
     if not Path(train_file).exists() or not Path(val_file).exists():
         raise IOError("Training datasets do not exists")
 
-    train_ds = SavedGalsimBlends(train_file, is_deblender=is_deblender)
-    val_ds = SavedGalsimBlends(val_file, is_deblender=is_deblender)
+    if is_deblender:
+        train_ds = SavedPtiles(train_file)
+        val_ds = SavedPtiles(val_file)
+    else:
+        train_ds = SavedGalsimBlends(train_file)
+        val_ds = SavedGalsimBlends(val_file)
+
     train_dl, val_dl, trainer, vnum = setup_training_objects(
         train_ds=train_ds,
         val_ds=val_ds,

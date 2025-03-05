@@ -148,7 +148,7 @@ class BinaryFigures(BlissFigure):
         batch_size = 100
         n_images = images.shape[0]
         n_batches = math.ceil(n_images / batch_size)
-        nth, ntw = get_n_padded_tiles_hw(size, size, ptile_slen, tile_slen)
+        nth, ntw = get_n_padded_tiles_hw(size, size, tile_slen=tile_slen, ptile_slen=ptile_slen)
 
         tile_galaxy_probs = []
 

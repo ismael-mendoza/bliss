@@ -145,7 +145,7 @@ def get_images_in_tiles(images: Tensor, tile_slen: int, ptile_slen: int) -> Tens
     """
     assert images.ndim == 4
     _, c, h, w = images.shape
-    nth, ntw = get_n_padded_tiles_hw(h, w, ptile_slen, tile_slen)
+    nth, ntw = get_n_padded_tiles_hw(h, w, tile_slen=tile_slen, ptile_slen=ptile_slen)
     tiles = unfold(images, kernel_size=ptile_slen, stride=tile_slen)
     return rearrange(
         tiles,
