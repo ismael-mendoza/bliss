@@ -58,9 +58,10 @@ def main(
 
     files = (train_ds_file, val_ds_file, test_ds_file)
     tables = (table1, table2, table3)
-    for fpath, t in zip(files, tables, strict=True):
+    _samples = (n_samples, int(n_samples * 0.5), int(n_samples * 1.5))
+    for fpath, t, ns in zip(files, tables, _samples, strict=True):
         ds = generate_dataset(
-            n_samples,
+            ns,
             t,
             STAR_MAGS,
             psf=PSF,
