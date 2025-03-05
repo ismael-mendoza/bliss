@@ -67,6 +67,7 @@ class BinaryEncoder(pl.LightningModule):
 
     def get_loss(self, images: Tensor, n_sources: Tensor, galaxy_bools: Tensor):
         """Return loss, accuracy, binary probabilities, and MAP classifications for given batch."""
+        b, nth, ntw = n_sources.shape
 
         n_sources_flat = rearrange(n_sources, "b nth ntw -> (b nth ntw)")
         galaxy_bools_flat = rearrange(galaxy_bools, "b nth ntw 1 -> (b nth ntw 1)")
