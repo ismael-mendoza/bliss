@@ -218,28 +218,30 @@ def _compute_tiled_metrics(
     tile_slen: int = 5,
     prefix: str = "val/tiled/",
 ):
-    assert n_sources1.ndim == 1 and n_sources2.ndim == 1
-    assert locs1.ndim == 2 and locs2.ndim == 2 and locs1.shape[-1] == 2 and locs2.shape[-1] == 2
     # compute simple 'tiled' metrics that do not use matching or FullCatalog
     # thus they are slightly incorrect, but OK for general diagnostics of model improving or not
+    n1 = n_sources1.flatten()
+    n2 = n_sources2.flatten()
+    l1 = rearrange(locs1, "n nth ntw xy -> (n nth ntw) xy")
+    l2 = rearrange(locs2, "n nth ntw xy -> (n nth ntw) xy")
 
     # recall
-    mask1 = n_sources1 > 0
-    n_match = torch.eq(n_sources1[mask1], n_sources2[mask1]).sum()
-    recall = n_match / n_sources1.sum()
+    mask1 = n1 > 0
+    n_match = torch.eq(n1[mask1], n2[mask1]).sum()
+    recall = n_match / n1.sum()
 
     # precision
-    mask2 = n_sources2 > 0
-    n_match = torch.eq(n_sources1[mask2], n_sources2[mask2]).sum()
-    precision = n_match / n_sources2.sum()
+    mask2 = n2 > 0
+    n_match = torch.eq(n1[mask2], n2[mask2]).sum()
+    precision = n_match / n2.sum()
 
     # f1
     f1 = 2 / (precision**-1 + recall**-1)
 
     # average residual distance for true matches
-    match_mask = torch.logical_and(torch.eq(n_sources1, n_sources2), torch.eq(n_sources1, 1))
-    plocs1 = locs1[match_mask] * tile_slen
-    plocs2 = locs2[match_mask] * tile_slen
+    match_mask = torch.logical_and(torch.eq(n1, n2), torch.eq(n1, 1))
+    plocs1 = l1[match_mask] * tile_slen
+    plocs2 = l2[match_mask] * tile_slen
     avg_dist = reduce((plocs1 - plocs2).pow(2), "np xy -> np", "sum").sqrt().mean()
 
     # prefix
