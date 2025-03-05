@@ -30,6 +30,7 @@ assert LOG_FILE.exists()
 
 def main(
     seed: int = typer.Option(),
+    indices_fname: str = typer.Option(),
     n_samples: int = 10000,
     galaxy_density: float = GALAXY_DENSITY,
     star_density: float = STAR_DENSITY,
@@ -45,7 +46,7 @@ def main(
     assert not test_ds_file.exists(), "files exist"
 
     # disjointed tables with different galaxies
-    indices_fpath = DATASETS_DIR / f"indices_{seed}.npz"
+    indices_fpath = DATASETS_DIR / indices_fname
     assert indices_fpath.exists()
     indices_dict = np.load(indices_fpath)
     train_indices = indices_dict["train"]
