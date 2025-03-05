@@ -50,64 +50,66 @@ class BinaryEncoder(pl.LightningModule):
         self._enc_conv = EncoderCNN(n_bands, channel, spatial_dropout)
         self._enc_final = make_enc_final(channel * 4 * dim_enc_conv_out**2, hidden, 1, dropout)
 
-    def forward(self, flat_ptiles: Tensor) -> Tensor:
-        return self.encode_tiled(flat_ptiles)
+    def forward(self, images: Tensor) -> Tensor:
+        """Runs the binary encoder on centered_ptiles."""
+
+        image_ptiles = get_images_in_tiles(images, self.tile_slen, self.ptile_slen)
+        image_ptiles_flat = rearrange(image_ptiles, "n nth ntw c h w -> (n nth ntw) c h w")
+        return self.encode_tiled(image_ptiles_flat)
 
     def encode_tiled(self, flat_ptiles: Tensor):
-        npt = len(flat_ptiles)
+        npt, _, _, _ = flat_ptiles.shape
         x = rearrange(flat_ptiles, "npt c h w -> npt c h w")
         h = self._enc_conv(x)
         h2 = self._enc_final(h)
         galaxy_probs = torch.sigmoid(h2).clamp(1e-4, 1 - 1e-4)
         return rearrange(galaxy_probs, "npt 1 -> npt", npt=npt)
 
-    def get_loss(self, flat_ptiles: Tensor, galaxy_bools_flat: Tensor):
+    def get_loss(self, images: Tensor, n_sources: Tensor, galaxy_bools: Tensor):
         """Return loss, accuracy, binary probabilities, and MAP classifications for given batch."""
 
-        galaxy_probs_flat: Tensor = self(flat_ptiles)
-        _galaxy_bools_flat = rearrange(galaxy_bools_flat, "n 1 -> n")
+        n_sources_flat = rearrange(n_sources, "b nth ntw -> (b nth ntw)")
+        galaxy_bools_flat = rearrange(galaxy_bools, "b nth ntw 1 -> (b nth ntw 1)")
+        galaxy_probs_flat: Tensor = self(images)
 
         # accuracy
-        # assume every image has a source
         with torch.no_grad():
-            hits = galaxy_probs_flat.ge(0.5).eq(_galaxy_bools_flat.bool())
-            acc = hits.sum() / len(flat_ptiles)
+            hits = galaxy_probs_flat.ge(0.5).eq(galaxy_bools_flat.bool())
+            hits_with_one_source = hits.logical_and(n_sources_flat.eq(1))
+            acc = hits_with_one_source.sum() / n_sources_flat.sum()
 
         # we need to calculate cross entropy loss, only for "on" sources
-        loss_vec = BCELoss(reduction="none")(galaxy_probs_flat, _galaxy_bools_flat.float())
+        raw_loss = BCELoss(reduction="none")(galaxy_probs_flat, galaxy_bools_flat.float())
+        loss_vec = raw_loss * n_sources_flat.float()
 
         # as per paper, we sum over tiles and take mean over batches
-        loss = reduce(loss_vec, "b -> ", "mean")
+        loss_per_tile = rearrange(loss_vec, "(b nth ntw) -> b nth ntw", b=b, nth=nth, ntw=ntw)
+        loss_per_batch = reduce(loss_per_tile, "b nth ntw -> b", "sum")
+        loss = reduce(loss_per_batch, "b -> ", "mean")
 
         return loss, acc
 
     def training_step(self, batch, batch_idx):
         """Pytorch lightning method."""
-        ptiles = batch["images"]
-        galaxy_bools = batch["galaxy_bools"]
-        loss, acc = self.get_loss(ptiles, galaxy_bools)
-        self.log("train/loss", loss, batch_size=len(ptiles))
-        self.log("train/acc", acc, batch_size=len(ptiles))
+        images = batch["images"]
+        tile_n_sources = batch["n_sources"]
+        tile_galaxy_bools = batch["galaxy_bools"]
+
+        loss, acc = self.get_loss(images, tile_n_sources, tile_galaxy_bools)
+        self.log("train/loss", loss, batch_size=len(images))
+        self.log("train/acc", acc, batch_size=len(images))
         return loss
 
     def validation_step(self, batch, batch_idx):
         """Pytorch lightning method."""
-        ptiles = batch["images"]
-        galaxy_bools = batch["galaxy_bools"]
-        loss, acc = self.get_loss(ptiles, galaxy_bools)
-        self.log("val/loss", loss, batch_size=len(ptiles))
-        self.log("val/acc", acc, batch_size=len(ptiles))
+        images = batch["images"]
+        tile_n_sources = batch["n_sources"]
+        tile_galaxy_bools = batch["galaxy_bools"]
+
+        loss, acc = self.get_loss(images, tile_n_sources, tile_galaxy_bools)
+        self.log("val/loss", loss, batch_size=len(images))
+        self.log("val/acc", acc, batch_size=len(images))
         return loss
 
     def configure_optimizers(self):
         return Adam(self.parameters(), lr=1e-4)
-
-    def encode(self, images: Tensor):
-        flat_ptiles, _, _ = self._get_flat_ptiles(images)
-        return self.encode_tiled(flat_ptiles)
-
-    def _get_flat_ptiles(self, images: Tensor):
-        ptiles = get_images_in_tiles(images, self.tile_slen, self.ptile_slen)
-        _, nth, ntw, _, _, _ = ptiles.shape
-        flat_ptiles = rearrange(ptiles, "b nth ntw c h w -> (b nth ntw) c h w")
-        return flat_ptiles, nth, ntw
