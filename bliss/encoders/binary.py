@@ -51,11 +51,12 @@ class BinaryEncoder(pl.LightningModule):
         self._enc_conv = EncoderCNN(n_bands, channel, spatial_dropout)
         self._enc_final = make_enc_final(channel * 4 * dim_enc_conv_out**2, hidden, 1, dropout)
 
-    def forward(self, images: Tensor, locs_flat: Tensor) -> Tensor:
+    def forward(self, images: Tensor, locs: Tensor) -> Tensor:
         """Runs the binary encoder on centered_ptiles."""
 
         ptiles = get_images_in_tiles(images, self.tile_slen, self.ptile_slen)
         ptiles_flat = rearrange(ptiles, "n nth ntw c h w -> (n nth ntw) c h w")
+        locs_flat = rearrange(locs, "b nth ntw xy -> (b nth ntw) xy", xy=2)
         cropped_ptiles = crop_ptiles(ptiles_flat, locs_flat, bp=self.bp, tile_slen=self.tile_slen)
         return self.encode_tiled(cropped_ptiles)
 
@@ -72,9 +73,8 @@ class BinaryEncoder(pl.LightningModule):
         b, nth, ntw = n_sources.shape
 
         n_sources_flat = rearrange(n_sources, "b nth ntw -> (b nth ntw)")
-        locs_flat = rearrange(locs, "b nth ntw xy -> (b nth ntw) xy", xy=2)
         galaxy_bools_flat = rearrange(galaxy_bools, "b nth ntw 1 -> (b nth ntw 1)")
-        galaxy_probs_flat: Tensor = self(images, locs_flat)
+        galaxy_probs_flat: Tensor = self(images, locs)
 
         # accuracy
         with torch.no_grad():
