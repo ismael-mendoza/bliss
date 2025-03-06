@@ -75,7 +75,7 @@ class SamplingFigure(BlissFigure):
         galaxy_uncentered = dataset["uncentered_sources"]
         n_sources = dataset["n_sources"]
         galaxy_bools = dataset["galaxy_bools"]
-        assert torch.all(n_sources.eq(galaxy_bools))
+        assert torch.all(n_sources.flatten() == galaxy_bools.sum(axis=1).flatten().long())
 
         # more metadata
         slen = images.shape[-1] - 2 * bp
