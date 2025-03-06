@@ -158,7 +158,7 @@ def get_images_in_tiles(images: Tensor, tile_slen: int, ptile_slen: int) -> Tens
     )
 
 
-def crop_ptiles(ptiles: Tensor, locs: Tensor, *, bp: int, tile_slen: int):
+def crop_ptiles(ptiles: Tensor, locs: Tensor, *, tile_slen: int, bp: int):
     """Make a symmetric croping of images centered around pixel with `loc` with slen 2*bp + 1."""
     assert locs.ndim == 2
     assert not torch.any(locs >= 1.0)
