@@ -222,8 +222,8 @@ def _compute_tiled_metrics(
     # thus they are slightly incorrect, but OK for general diagnostics of model improving or not
     n1 = n_sources1.flatten()
     n2 = n_sources2.flatten()
-    l1 = rearrange(locs1, "n nth ntw xy -> (n nth ntw) xy")
-    l2 = rearrange(locs2, "n nth ntw xy -> (n nth ntw) xy")
+    l1 = rearrange(locs1, "n nth ntw xy -> (n nth ntw) xy", xy=2)
+    l2 = rearrange(locs2, "n nth ntw xy -> (n nth ntw) xy", xy=2)
 
     # recall
     mask1 = n1 > 0
