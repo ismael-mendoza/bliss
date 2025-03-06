@@ -6,7 +6,7 @@ from torch.nn import BCELoss
 from torch.optim import Adam
 
 from bliss.encoders.layers import EncoderCNN, make_enc_final
-from bliss.render_tiles import get_images_in_tiles, validate_border_padding
+from bliss.render_tiles import crop_ptiles, get_images_in_tiles, validate_border_padding
 
 
 class BinaryEncoder(pl.LightningModule):
@@ -50,28 +50,30 @@ class BinaryEncoder(pl.LightningModule):
         self._enc_conv = EncoderCNN(n_bands, channel, spatial_dropout)
         self._enc_final = make_enc_final(channel * 4 * dim_enc_conv_out**2, hidden, 1, dropout)
 
-    def forward(self, images: Tensor) -> Tensor:
+    def forward(self, images: Tensor, locs_flat: Tensor) -> Tensor:
         """Runs the binary encoder on centered_ptiles."""
 
-        image_ptiles = get_images_in_tiles(images, self.tile_slen, self.ptile_slen)
-        image_ptiles_flat = rearrange(image_ptiles, "n nth ntw c h w -> (n nth ntw) c h w")
-        return self.encode_tiled(image_ptiles_flat)
+        ptiles = get_images_in_tiles(images, self.tile_slen, self.ptile_slen)
+        ptiles_flat = rearrange(ptiles, "n nth ntw c h w -> (n nth ntw) c h w")
+        cropped_ptiles = crop_ptiles(ptiles_flat, locs_flat, bp=self.bp, tile_slen=self.tile_slen)
+        return self.encode_tiled(cropped_ptiles)
 
-    def encode_tiled(self, flat_ptiles: Tensor):
-        npt, _, _, _ = flat_ptiles.shape
-        x = rearrange(flat_ptiles, "npt c h w -> npt c h w")
+    def encode_tiled(self, ptiles_flat: Tensor):
+        npt, _, _, _ = ptiles_flat.shape
+        x = rearrange(ptiles_flat, "npt c h w -> npt c h w")
         h = self._enc_conv(x)
         h2 = self._enc_final(h)
         galaxy_probs = torch.sigmoid(h2).clamp(1e-4, 1 - 1e-4)
         return rearrange(galaxy_probs, "npt 1 -> npt", npt=npt)
 
-    def get_loss(self, images: Tensor, n_sources: Tensor, galaxy_bools: Tensor):
+    def get_loss(self, images: Tensor, n_sources: Tensor, locs: Tensor, galaxy_bools: Tensor):
         """Return loss, accuracy, binary probabilities, and MAP classifications for given batch."""
         b, nth, ntw = n_sources.shape
 
         n_sources_flat = rearrange(n_sources, "b nth ntw -> (b nth ntw)")
+        locs_flat = rearrange(locs, "b nth ntw xy -> (b nth ntw) xy", xy=2)
         galaxy_bools_flat = rearrange(galaxy_bools, "b nth ntw 1 -> (b nth ntw 1)")
-        galaxy_probs_flat: Tensor = self(images)
+        galaxy_probs_flat: Tensor = self(images, locs_flat)
 
         # accuracy
         with torch.no_grad():
@@ -93,10 +95,11 @@ class BinaryEncoder(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         """Pytorch lightning method."""
         images = batch["images"]
+        tile_locs = batch["locs"]
         tile_n_sources = batch["n_sources"]
         tile_galaxy_bools = batch["galaxy_bools"]
 
-        loss, acc = self.get_loss(images, tile_n_sources, tile_galaxy_bools)
+        loss, acc = self.get_loss(images, tile_n_sources, tile_locs, tile_galaxy_bools)
         self.log("train/loss", loss, batch_size=len(images))
         self.log("train/acc", acc, batch_size=len(images))
         return loss
@@ -104,10 +107,11 @@ class BinaryEncoder(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         """Pytorch lightning method."""
         images = batch["images"]
+        tile_locs = batch["locs"]
         tile_n_sources = batch["n_sources"]
         tile_galaxy_bools = batch["galaxy_bools"]
 
-        loss, acc = self.get_loss(images, tile_n_sources, tile_galaxy_bools)
+        loss, acc = self.get_loss(images, tile_n_sources, tile_locs, tile_galaxy_bools)
         self.log("val/loss", loss, batch_size=len(images))
         self.log("val/acc", acc, batch_size=len(images))
         return loss
