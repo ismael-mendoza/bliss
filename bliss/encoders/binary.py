@@ -45,8 +45,9 @@ class BinaryEncoder(pl.LightningModule):
         self.tile_slen = tile_slen
         self.ptile_slen = ptile_slen
         self.bp = validate_border_padding(tile_slen, ptile_slen)
+        self.final_slen = 2 * self.bp + 1
 
-        dim_enc_conv_out = ((self.ptile_slen + 1) // 2 + 1) // 2
+        dim_enc_conv_out = ((self.final_slen + 1) // 2 + 1) // 2
         self._enc_conv = EncoderCNN(n_bands, channel, spatial_dropout)
         self._enc_final = make_enc_final(channel * 4 * dim_enc_conv_out**2, hidden, 1, dropout)
 

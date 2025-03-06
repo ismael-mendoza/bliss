@@ -44,8 +44,8 @@ def test_encoder_forward(home_dir, tmp_path):
 
     with torch.no_grad():
         for b in dl1:
-            binary_encoder.get_loss(b["images"], b["n_sources"], b["galaxy_bools"])
             detection_encoder.get_loss(b["images"], b["n_sources"], b["locs"])
+            binary_encoder.get_loss(b["images"], b["n_sources"], b["locs"], b["galaxy_bools"])
 
         for b in dl2:
             galaxy_encoder.get_loss(b["images"], b["centered"], b["locs"])
