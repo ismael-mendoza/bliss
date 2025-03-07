@@ -145,14 +145,13 @@ def _make_sample_figure(
     overwrite: bool,
     device: torch.device,
 ):
-    print("INFO: Creating figures for toy experiment.")
+    print("INFO: Creating figures for sampling experiment.")
     _init_kwargs = {
         "overwrite": overwrite,
         "figdir": "figures",
         "suffix": suffix,
         "cachedir": CACHEDIR,
         "aperture": aperture,
-        "n_samples": 10,
     }
     detection = _load_models(fpaths, "detection", device)
     deblender = _load_models(fpaths, "deblend", device)
