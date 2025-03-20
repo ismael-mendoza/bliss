@@ -133,3 +133,47 @@ AE path: ../models/autoencoder_42_42.pt
 
 Blend test data generation with seed 23 at 2025-02-26 14:32:37.955148.
         Galaxy density 160.0, star_density 15.5, and n_samples 10000.
+
+Training deblender with seed 22, ds_seed 23, version 49 at 2025-02-26 16:19:35.922451.
+AE path: ../models/autoencoder_42_42.pt
+Tile test data generation with seed 23 at 2025-02-26 16:33:30.900171.
+        Galaxy density 160.0, star_density 15.5, and n_samples 50000.
+
+
+Training detection with seed 22, ds_seed 23, version 35 at 2025-02-26 16:40:52.438100.
+
+ Saved checkpoint 'data/out/deblender/version_49/checkpoints/epoch=5469-val_loss=2767319.750.ckpt' as weights /home/imendoza/bliss/experiment/models/deblender_23_22.pt at 2025-03-03 16:23:30.100322
+
+ Saved checkpoint 'data/out/binary/version_10/checkpoints/epoch=2-val_loss=0.159.ckpt' as weights /home/imendoza/bliss/experiment/models/binary_23_22.pt at 2025-03-03 16:49:43.641346
+
+ Saved checkpoint 'data/out/detection/version_35/checkpoints/epoch=7-val_loss=0.034.ckpt' as weights /home/imendoza/bliss/experiment/models/detection_23_22.pt at 2025-03-03 17:14:42.713813
+
+Blend data generation with seed 23 at 2025-03-05 14:54:04.417434.
+        Galaxy density 160.0, star_density 15.5, and n_samples 10000.
+
+
+Training binary with seed 23, ds_seed 23, version 11 at 2025-03-05 14:59:00.157789.
+
+Training binary with seed 23, ds_seed 23, version 12 at 2025-03-05 15:02:25.853071.
+
+Training detection with seed 23, ds_seed 23, version 36 at 2025-03-05 15:06:04.111652.
+
+Blend data generation with seed 231 at 2025-03-05 15:07:36.325568.
+        Galaxy density 160.0, star_density 15.5, and n_samples 2000.
+
+
+Training detection with seed 23, ds_seed 23, version 37 at 2025-03-05 15:18:18.618553.
+
+Blend data generation with seed 25 at 2025-03-05 16:33:55.640934.
+        Galaxy density 160.0, star_density 0.0, and n_samples 6667.
+
+
+Training binary with seed 23, ds_seed 23, version 13 at 2025-03-06 11:06:25.321161.
+
+ Saved checkpoint 'data/out/binary/version_13/checkpoints/epoch=2-val_loss=0.737.ckpt' as weights /home/imendoza/bliss/experiment/models/binary_23_23.pt at 2025-03-06 12:08:56.358971
+
+Blend data generation with seed 251 at 2025-03-06 12:27:54.479352.
+        Galaxy density 160.0, star_density 0.0, and n_samples 1000.
+
+
+ Saved checkpoint 'data/out/detection/version_37/checkpoints/epoch=11-val_loss=2.221.ckpt' as weights /home/imendoza/bliss/experiment/models/detection_23_23.pt at 2025-03-06 12:30:28.358621

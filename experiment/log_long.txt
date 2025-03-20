@@ -289,3 +289,66 @@ Training deblender with seed 22, ds_seed 23, version 48 at 2025-02-26 14:21:11.0
     Using datasets: ../data/datasets/train_ds_deblend_23.npz, ../data/datasets/val_ds_deblend_23.npz
 
 AE path: ../models/autoencoder_42_42.pt
+
+
+Training deblender with seed 22, ds_seed 23, version 49 at 2025-02-26 16:19:35.922451.
+    validate_every_n_epoch 10,
+    val_check_interval None, batch_size 128, n_epochs 10000.
+    lr: 0.0001
+
+    Using datasets: ../data/datasets/train_ds_deblend_23.npz, ../data/datasets/val_ds_deblend_23.npz
+
+AE path: ../models/autoencoder_42_42.pt
+
+
+Training detection with seed 22, ds_seed 23, version 35 at 2025-02-26 16:40:52.438100.
+    validate_every_n_epoch 1,
+    val_check_interval 0.2, batch_size 1024, n_epochs 50.
+    lr: 0.0001
+
+    Using datasets: ../data/datasets/train_ds_detection_23.npz, ../data/datasets/val_ds_detection_23.npz
+
+
+
+Training binary with seed 23, ds_seed 23, version 11 at 2025-03-05 14:59:00.157789.
+    validate_every_n_epoch 1,
+    val_check_interval 0.2, batch_size 128, n_epochs 30.
+    lr: 0.0001
+
+    Using datasets: ../data/datasets/train_ds_23.npz, ../data/datasets/val_ds_23.npz
+
+
+
+Training binary with seed 23, ds_seed 23, version 12 at 2025-03-05 15:02:25.853071.
+    validate_every_n_epoch 1,
+    val_check_interval 0.2, batch_size 32, n_epochs 30.
+    lr: 0.0001
+
+    Using datasets: ../data/datasets/train_ds_23.npz, ../data/datasets/val_ds_23.npz
+
+
+
+Training detection with seed 23, ds_seed 23, version 36 at 2025-03-05 15:06:04.111652.
+    validate_every_n_epoch 1,
+    val_check_interval 0.2, batch_size 32, n_epochs 50.
+    lr: 0.0001
+
+    Using datasets: ../data/datasets/train_ds_23.npz, ../data/datasets/val_ds_23.npz
+
+
+
+Training detection with seed 23, ds_seed 23, version 37 at 2025-03-05 15:18:18.618553.
+    validate_every_n_epoch 1,
+    val_check_interval 0.2, batch_size 32, n_epochs 50.
+    lr: 0.0001
+
+    Using datasets: ../data/datasets/train_ds_23.npz, ../data/datasets/val_ds_23.npz
+
+
+
+Training binary with seed 23, ds_seed 23, version 13 at 2025-03-06 11:06:25.321161.
+    validate_every_n_epoch 1,
+    val_check_interval 0.2, batch_size 32, n_epochs 30.
+    lr: 0.0001
+
+    Using datasets: ../data/datasets/train_ds_23.npz, ../data/datasets/val_ds_23.npz
