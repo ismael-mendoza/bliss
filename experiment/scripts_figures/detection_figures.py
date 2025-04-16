@@ -1,7 +1,5 @@
 """Script to create detection encoder related figures."""
 
-import numpy as np
-import sep
 import torch
 from einops import rearrange, reduce
 from matplotlib import pyplot as plt
@@ -11,7 +9,7 @@ from bliss.catalog import FullCatalog, TileCatalog, collate
 from bliss.datasets.io import load_dataset_npz
 from bliss.encoders.detection import DetectionEncoder
 from bliss.plotting import BlissFigure
-from bliss.reporting import compute_tp_fp_per_bin, get_residual_measurements
+from bliss.reporting import compute_tp_fp_per_bin, get_residual_measurements, get_sep_catalog
 
 
 class BlendDetectionFigures(BlissFigure):
@@ -31,7 +29,7 @@ class BlendDetectionFigures(BlissFigure):
     @property
     def all_rcs(self) -> dict:
         return {
-            "blends_detection": {"fontsize": 32},
+            "blends_detection": {"fontsize": 40, "major_tick_size": 12, "minor_tick_size": 7},
         }
 
     @property
@@ -140,42 +138,8 @@ class BlendDetectionFigures(BlissFigure):
             cat["snr"] = _meas["snr"].clip(0)
 
         # now we obtain the full catalog using SEP for comparison
-        max_n_sources = 0
-        all_sep_params = []
-
         print("INFO:SEP measurements...")
-        for ii in range(images.shape[0]):
-            im = images[ii, 0].numpy()
-            bkg = sep.Background(im)
-            catalog = sep.extract(
-                im, err=bkg.globalrms, thresh=1.5, minarea=5, deblend_nthresh=32, deblend_cont=0.005
-            )
-
-            x1 = catalog["x"]
-            y1 = catalog["y"]
-
-            # need to ignore detected sources that are in the padding
-            in_padding = (x1 < 23.5) | (x1 > 63.5) | (y1 < 23.5) | (y1 > 63.5)
-
-            x = x1[np.logical_not(in_padding)]
-            y = y1[np.logical_not(in_padding)]
-
-            n = len(x)
-            max_n_sources = max(n, max_n_sources)
-
-            all_sep_params.append((n, x, y))
-
-        n_sources = torch.zeros((images.shape[0],)).long()
-        plocs = torch.zeros((images.shape[0], max_n_sources, 2))
-
-        for jj in range(images.shape[0]):
-            n, x, y = all_sep_params[jj]
-            n_sources[jj] = n
-
-            plocs[jj, :n, 0] = torch.from_numpy(y) - bp + 0.5
-            plocs[jj, :n, 1] = torch.from_numpy(x) - bp + 0.5
-
-        sep_cat = FullCatalog(slen, slen, {"n_sources": n_sources, "plocs": plocs})
+        sep_cat = get_sep_catalog(images, slen=slen, bp=bp)
 
         # get snr for SEP catalog
         print("INFO:SEP residual measurements...")
