@@ -20,7 +20,7 @@ from bliss.render_tiles import (
     reconstruct_image_from_ptiles,
     render_galaxy_ptiles,
 )
-from bliss.reporting import get_snr
+from bliss.reporting import get_sep_catalog, get_snr
 
 
 class ToySeparationFigure(BlissFigure):
@@ -145,6 +145,7 @@ class ToySeparationFigure(BlissFigure):
             images[ii] = image + noise
 
         # predictions from SEP on these images
+        sep_cat = get_sep_catalog(images, slen=slen, bp=bp)
 
         # predictions from encoders
         tile_est = detection.variational_mode(images.to(device)).cpu()
@@ -181,6 +182,10 @@ class ToySeparationFigure(BlissFigure):
                 "prob_n_source": torch.zeros(batch_size, 2, 1),
                 "plocs": torch.zeros(batch_size, 2, 2),
                 "plocs_sd": torch.zeros(batch_size, 2, 2),
+            },
+            "sep": {
+                "n_sources": sep_cat.n_sources,
+                "plocs": sep_cat.plocs,
             },
             "tile_est": tile_est.cpu().to_dict(),
         }
@@ -273,6 +278,7 @@ class ToySeparationFigure(BlissFigure):
         seps: np.ndarray = data["seps"]
         tplocs: np.ndarray = data["truth"]["plocs"]
         eplocs: np.ndarray = data["est"]["plocs"]
+        sep_plocs: np.ndarray = data["sep"]["plocs"]
 
         c1 = plt.rcParams["axes.prop_cycle"].by_key()["color"][1]  # true
         c2 = plt.rcParams["axes.prop_cycle"].by_key()["color"][3]  # predicted
@@ -289,6 +295,8 @@ class ToySeparationFigure(BlissFigure):
         y1 = tplocs[indices, :, 0] + bp - 0.5 - trim - 10
         x2 = eplocs[indices, :, 1] + bp - 0.5 - trim - 15
         y2 = eplocs[indices, :, 0] + bp - 0.5 - trim - 10
+        x3 = sep_plocs[indices, :, 1] + bp - 0.5 - trim - 15
+        y3 = sep_plocs[indices, :, 0] + bp - 0.5 - trim - 10
 
         pad = 6.0
         fig, axes = plt.subplots(nrows=n_examples, ncols=3, figsize=(11, 18))
@@ -317,6 +325,11 @@ class ToySeparationFigure(BlissFigure):
                 x2[i], y2[i], color="b", alpha=0.5, s=55, marker="+", label=r"\rm Predicted"
             )
             ax_recon.scatter(x2[i], y2[i], color="b", alpha=0.5, s=55, marker="+")
+
+            ax_true.scatter(
+                x3[i], y3[i], color="g", facecolors="none", s=55, marker="o", label=r"\rm SEP"
+            )
+            ax_recon.scatter(x3[i], y3[i], color="g", facecolors="none", s=55, marker="o")
 
             ax_true.text(x1[i, 0].item(), y1[i, 0].item() + 14, "1", color=c1, fontsize=15)
             ax_true.text(x1[i, 1].item(), y1[i, 1].item() + 14, "2", color=c2, fontsize=15)
