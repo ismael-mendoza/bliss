@@ -6,6 +6,7 @@ from copy import deepcopy
 from typing import Callable, DefaultDict, Dict, Tuple
 
 import galsim
+import numpy as np
 import sep
 import torch
 from einops import rearrange, reduce
@@ -378,3 +379,42 @@ def pred_in_batches(
             tiled_params_list.append(d_cpu)
 
     return collate(tiled_params_list, axis=axis)
+
+
+def get_sep_catalog(images: torch.Tensor, *, slen: float, bp: float) -> FullCatalog:
+    max_n_sources = 0
+    all_sep_params = []
+    for ii in range(images.shape[0]):
+        im = images[ii, 0].numpy()
+        bkg = sep.Background(im)
+        catalog = sep.extract(
+            im, err=bkg.globalrms, thresh=1.5, minarea=5, deblend_nthresh=32, deblend_cont=0.005
+        )
+
+        x1 = catalog["x"]
+        y1 = catalog["y"]
+
+        # need to ignore detected sources that are in the padding
+        in_padding = (
+            (x1 < bp - 0.5) | (x1 > bp + slen - 0.5) | (y1 < bp - 0.5) | (y1 > bp + slen - 0.5)
+        )
+
+        x = x1[np.logical_not(in_padding)]
+        y = y1[np.logical_not(in_padding)]
+
+        n = len(x)
+        max_n_sources = max(n, max_n_sources)
+
+        all_sep_params.append((n, x, y))
+
+    n_sources = torch.zeros((images.shape[0],)).long()
+    plocs = torch.zeros((images.shape[0], max_n_sources, 2))
+
+    for jj in range(images.shape[0]):
+        n, x, y = all_sep_params[jj]
+        n_sources[jj] = n
+
+        plocs[jj, :n, 0] = torch.from_numpy(y) - bp + 0.5
+        plocs[jj, :n, 1] = torch.from_numpy(x) - bp + 0.5
+
+    return FullCatalog(slen, slen, {"n_sources": n_sources, "plocs": plocs})
