@@ -198,7 +198,7 @@ def get_single_galaxy_ellipticities(images: Tensor, no_bar: bool = True) -> Tens
 
 
 def get_snr(noiseless: Tensor) -> Tensor:
-    """Compute SNR given noiseless, isolated iamges of galaxies and background."""
+    """Compute SNR given noiseless, isolated images of galaxies and background."""
     image_with_background = noiseless + BACKGROUND
     snr2 = reduce(noiseless**2 / image_with_background, "b c h w -> b", "sum")
     return torch.sqrt(snr2)
