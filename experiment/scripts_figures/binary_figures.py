@@ -78,8 +78,8 @@ class BinaryFigures(BlissFigure):
     @property
     def all_rcs(self) -> dict:
         return {
-            "binary_scatter": {"fontsize": 32},
-            "binary_curves": {"fontsize": 32},
+            "binary_scatter": {"fontsize": 34},
+            "binary_curves": {"fontsize": 36, "major_tick_size": 12, "minor_tick_size": 7},
         }
 
     @property
@@ -233,6 +233,7 @@ class BinaryFigures(BlissFigure):
         ax.set_xscale("log")
         # ax.set_xticks([1e-2, 1e-1, 1, 10, 100, 1000, 10000, 100_000])
         ax.legend(markerscale=6, fontsize=28)
+        ax.set_xlabel(r"\rm SNR")
         ax.set_ylabel(r"\rm Galaxy Classification Probability")
 
         return fig
