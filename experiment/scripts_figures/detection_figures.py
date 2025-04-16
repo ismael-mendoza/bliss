@@ -150,6 +150,7 @@ class BlendDetectionFigures(BlissFigure):
             sources=torch.zeros_like(uncentered_sources),
             bp=bp,
             r=self.aperture,
+            no_bar=False,
         )
         sep_cat["snr"] = _meas_sep["snr"].clip(0)
 
