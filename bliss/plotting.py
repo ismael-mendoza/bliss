@@ -24,6 +24,11 @@ CB_color_cycle = [
     "#dede00",
 ]
 
+c1 = "#1b9e77"
+c2 = "#7570b3"
+c3 = "#d95f02"
+CLR_CYCLE = [c1, c2, c3]
+
 
 def _to_numpy(d: dict):
     for k, v in d.items():

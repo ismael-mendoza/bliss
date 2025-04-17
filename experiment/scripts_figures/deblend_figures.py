@@ -12,7 +12,7 @@ from tqdm import tqdm
 from bliss.catalog import FullCatalog, TileCatalog
 from bliss.datasets.io import load_dataset_npz
 from bliss.encoders.deblend import GalaxyEncoder
-from bliss.plotting import BlissFigure
+from bliss.plotting import CLR_CYCLE, BlissFigure
 from bliss.reporting import (
     get_blendedness,
     get_deblended_reconstructions,
@@ -402,11 +402,14 @@ class DeblendingFigures(BlissFigure):
         meds1, qs11, qs12 = _calculate_statistics(res1[snr_mask], _snr_log, snr_bins)
         meds2, qs21, qs22 = _calculate_statistics(res2[snr_mask], _snr_log, snr_bins)
 
+        c1 = CLR_CYCLE[0]
+        c2 = CLR_CYCLE[1]
+
         ax = axes[0, 0]
-        ax.plot(10**snr_middle, meds1, marker="o", color="r", label=r"\rm No Deblending")
-        ax.fill_between(10**snr_middle, qs11, qs12, color="r", alpha=0.5)
-        ax.plot(10**snr_middle, meds2, marker="o", color="b", label=r"\rm Deblending")
-        ax.fill_between(10**snr_middle, qs21, qs22, color="b", alpha=0.5)
+        ax.plot(10**snr_middle, meds1, marker="o", color=c1, label=r"\rm No Deblending")
+        ax.fill_between(10**snr_middle, qs11, qs12, color=c1, alpha=0.5)
+        ax.plot(10**snr_middle, meds2, marker="o", color=c2, label=r"\rm Deblending")
+        ax.fill_between(10**snr_middle, qs21, qs22, color=c2, alpha=0.5)
         ax.set_xscale("log")
         ax.set_ylim(-0.15, 0.2)
         ax.set_ylabel(r"$ (f_{\rm pred} - f_{\rm true}) / f_{\rm true}$")
@@ -417,10 +420,10 @@ class DeblendingFigures(BlissFigure):
         meds2, qs21, qs22 = _calculate_statistics(res2[bld_mask], _bld, bld_bins)
 
         ax = axes[0, 1]
-        ax.plot(bld_middle, meds1, marker="o", color="r", label=r"\rm No Deblending")
-        ax.fill_between(bld_middle, qs11, qs12, color="r", alpha=0.5)
-        ax.plot(bld_middle, meds2, marker="o", color="b", label=r"\rm Deblending")
-        ax.fill_between(bld_middle, qs21, qs22, color="b", alpha=0.5)
+        ax.plot(bld_middle, meds1, marker="o", color=c1, label=r"\rm No Deblending")
+        ax.fill_between(bld_middle, qs11, qs12, color=c1, alpha=0.5)
+        ax.plot(bld_middle, meds2, marker="o", color=c2, label=r"\rm Deblending")
+        ax.fill_between(bld_middle, qs21, qs22, color=c2, alpha=0.5)
         ax.legend()
         ax.set_xscale("log")
         ax.set_ylim(-0.75, 2.2)
@@ -435,10 +438,10 @@ class DeblendingFigures(BlissFigure):
         meds2, qs21, qs22 = _calculate_statistics(res2[snr_mask], _snr_log, snr_bins)
 
         ax = axes[1, 0]
-        ax.plot(10**snr_middle, meds1, marker="o", color="r", label=r"\rm No Deblending")
-        ax.fill_between(10**snr_middle, qs11, qs12, color="r", alpha=0.5)
-        ax.plot(10**snr_middle, meds2, marker="o", color="b", label=r"\rm Deblending")
-        ax.fill_between(10**snr_middle, qs21, qs22, color="b", alpha=0.5)
+        ax.plot(10**snr_middle, meds1, marker="o", color=c1, label=r"\rm No Deblending")
+        ax.fill_between(10**snr_middle, qs11, qs12, color=c1, alpha=0.5)
+        ax.plot(10**snr_middle, meds2, marker="o", color=c2, label=r"\rm Deblending")
+        ax.fill_between(10**snr_middle, qs21, qs22, color=c2, alpha=0.5)
         ax.set_xscale("log")
         ax.set_ylabel(r"$ (\sigma_{\rm pred} - \sigma_{\rm true}) / \sigma_{\rm true}$")
         ax.axhline(0.0, linestyle="--", color="k")
@@ -448,10 +451,10 @@ class DeblendingFigures(BlissFigure):
         meds2, qs21, qs22 = _calculate_statistics(res2[bld_mask], _bld, bld_bins)
 
         ax = axes[1, 1]
-        ax.plot(bld_middle, meds1, marker="o", color="r", label=r"\rm No Deblending")
-        ax.fill_between(bld_middle, qs11, qs12, color="r", alpha=0.5)
-        ax.plot(bld_middle, meds2, marker="o", color="b", label=r"\rm Deblending")
-        ax.fill_between(bld_middle, qs21, qs22, color="b", alpha=0.5)
+        ax.plot(bld_middle, meds1, marker="o", color=c1, label=r"\rm No Deblending")
+        ax.fill_between(bld_middle, qs11, qs12, color=c1, alpha=0.5)
+        ax.plot(bld_middle, meds2, marker="o", color=c2, label=r"\rm Deblending")
+        ax.fill_between(bld_middle, qs21, qs22, color=c2, alpha=0.5)
         ax.set_xscale("log")
         ax.axhline(0.0, linestyle="--", color="k")
         ax.axes.xaxis.set_ticklabels([])
@@ -463,10 +466,10 @@ class DeblendingFigures(BlissFigure):
         meds2, qs21, qs22 = _calculate_statistics(res2[snr_mask], _snr_log, snr_bins)
 
         ax = axes[2, 0]
-        ax.plot(10**snr_middle, meds1, marker="o", color="r", label=r"\rm No Deblending")
-        ax.fill_between(10**snr_middle, qs11, qs12, color="r", alpha=0.5)
-        ax.plot(10**snr_middle, meds2, marker="o", color="b", label=r"\rm Deblending")
-        ax.fill_between(10**snr_middle, qs21, qs22, color="b", alpha=0.5)
+        ax.plot(10**snr_middle, meds1, marker="o", color=c1, label=r"\rm No Deblending")
+        ax.fill_between(10**snr_middle, qs11, qs12, color=c1, alpha=0.5)
+        ax.plot(10**snr_middle, meds2, marker="o", color=c2, label=r"\rm Deblending")
+        ax.fill_between(10**snr_middle, qs21, qs22, color=c2, alpha=0.5)
         ax.set_xscale("log")
         ax.set_ylabel(r"$e_{1,\rm{pred}} -  e_{1,\rm{true}}$")
         ax.axhline(0.0, linestyle="--", color="k")
@@ -476,10 +479,10 @@ class DeblendingFigures(BlissFigure):
         meds2, qs21, qs22 = _calculate_statistics(res2[bld_mask], _bld, bld_bins)
 
         ax = axes[2, 1]
-        ax.plot(bld_middle, meds1, marker="o", color="r", label=r"\rm No Deblending")
-        ax.fill_between(bld_middle, qs11, qs12, color="r", alpha=0.5)
-        ax.plot(bld_middle, meds2, marker="o", color="b", label=r"\rm Deblending")
-        ax.fill_between(bld_middle, qs21, qs22, color="b", alpha=0.5)
+        ax.plot(bld_middle, meds1, marker="o", color=c1, label=r"\rm No Deblending")
+        ax.fill_between(bld_middle, qs11, qs12, color=c1, alpha=0.5)
+        ax.plot(bld_middle, meds2, marker="o", color=c2, label=r"\rm Deblending")
+        ax.fill_between(bld_middle, qs21, qs22, color=c2, alpha=0.5)
         ax.set_xscale("log")
         ax.axhline(0.0, linestyle="--", color="k")
         ax.axes.xaxis.set_ticklabels([])
@@ -491,10 +494,10 @@ class DeblendingFigures(BlissFigure):
         meds2, qs21, qs22 = _calculate_statistics(res2[snr_mask], _snr_log, snr_bins)
 
         ax = axes[3, 0]
-        ax.plot(10**snr_middle, meds1, marker="o", color="r", label=r"\rm No Deblending")
-        ax.fill_between(10**snr_middle, qs11, qs12, color="r", alpha=0.5)
-        ax.plot(10**snr_middle, meds2, marker="o", color="b", label=r"\rm Deblending")
-        ax.fill_between(10**snr_middle, qs21, qs22, color="b", alpha=0.5)
+        ax.plot(10**snr_middle, meds1, marker="o", color=c1, label=r"\rm No Deblending")
+        ax.fill_between(10**snr_middle, qs11, qs12, color=c1, alpha=0.5)
+        ax.plot(10**snr_middle, meds2, marker="o", color=c2, label=r"\rm Deblending")
+        ax.fill_between(10**snr_middle, qs21, qs22, color=c2, alpha=0.5)
         ax.set_xscale("log")
         ax.set_xticks([3, 10, 100, 200])
         ax.set_xlabel(r"\rm SNR")
@@ -505,10 +508,10 @@ class DeblendingFigures(BlissFigure):
         meds2, qs21, qs22 = _calculate_statistics(res2[bld_mask], _bld, bld_bins)
 
         ax = axes[3, 1]
-        ax.plot(bld_middle, meds1, marker="o", color="r", label=r"\rm No Deblending")
-        ax.fill_between(bld_middle, qs11, qs12, color="r", alpha=0.5)
-        ax.plot(bld_middle, meds2, marker="o", color="b", label=r"\rm Deblending")
-        ax.fill_between(bld_middle, qs21, qs22, color="b", alpha=0.5)
+        ax.plot(bld_middle, meds1, marker="o", color=c1, label=r"\rm No Deblending")
+        ax.fill_between(bld_middle, qs11, qs12, color=c1, alpha=0.5)
+        ax.plot(bld_middle, meds2, marker="o", color=c2, label=r"\rm Deblending")
+        ax.fill_between(bld_middle, qs21, qs22, color=c2, alpha=0.5)
         ax.set_xscale("log")
         ax.set_xticks([1e-2, 1e-1, 1])
         ax.set_xlabel(r"\rm Blendedness")

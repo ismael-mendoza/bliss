@@ -12,7 +12,7 @@ from tqdm import tqdm
 from bliss.catalog import FullCatalog, TileCatalog
 from bliss.datasets.io import load_dataset_npz
 from bliss.encoders.binary import BinaryEncoder
-from bliss.plotting import BlissFigure
+from bliss.plotting import CLR_CYCLE, BlissFigure
 from bliss.render_tiles import get_n_padded_tiles_hw
 from bliss.reporting import get_residual_measurements
 
@@ -211,6 +211,9 @@ class BinaryFigures(BlissFigure):
         galaxy_mask = tgbools.astype(bool)
         star_mask = tsbools.astype(bool)
 
+        c1 = CLR_CYCLE[0]
+        c2 = CLR_CYCLE[1]
+
         # scatter plot of probabilities
         ax.scatter(
             snr[galaxy_mask],
@@ -218,7 +221,7 @@ class BinaryFigures(BlissFigure):
             marker="o",
             s=5,
             alpha=0.25,
-            color="r",
+            color=c1,
             label=r"\rm Galaxy",
         )
         ax.scatter(
@@ -227,7 +230,7 @@ class BinaryFigures(BlissFigure):
             marker="o",
             s=5,
             alpha=0.25,
-            color="b",
+            color=c2,
             label=r"\rm Star",
         )
         ax.set_xscale("log")
@@ -248,13 +251,17 @@ class BinaryFigures(BlissFigure):
 
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10))
 
+        c1 = CLR_CYCLE[0]
+        c2 = CLR_CYCLE[1]
+        c3 = CLR_CYCLE[2]
+
         # precision and recall for galaxies
         snr_bins, snr_middle = _get_equally_spaced_bins(egbools, snr, n_bins=10)
         prec, rec, f1 = _get_metrics_per_bin(tgbools, egbools, snr, snr_bins)
 
-        ax1.plot(snr_middle, prec, "-bo", label=r"\rm precision")
-        ax1.plot(snr_middle, rec, "-ro", label=r"\rm recall")
-        ax1.plot(snr_middle, f1, "-ko", label="$F_{1}$")
+        ax1.plot(snr_middle, prec, "-o", label=r"\rm precision", color=c1)
+        ax1.plot(snr_middle, rec, "-o", label=r"\rm recall", color=c2)
+        ax1.plot(snr_middle, f1, "-o", label="$F_{1}$", color=c3)
         ax1.set_xscale("log")
         ax1.set_title(r"\rm Galaxies")
         ax1.set_ylabel(r"\rm Metric", fontsize=36)
@@ -265,9 +272,9 @@ class BinaryFigures(BlissFigure):
         snr_bins, snr_middle = _get_equally_spaced_bins(esbools, snr, n_bins=10)
         prec, rec, f1 = _get_metrics_per_bin(tsbools, esbools, snr, snr_bins)
 
-        ax2.plot(snr_middle, prec, "-bo")
-        ax2.plot(snr_middle, rec, "-ro")
-        ax2.plot(snr_middle, f1, "-ko")
+        ax2.plot(snr_middle, prec, "-o", color=c1)
+        ax2.plot(snr_middle, rec, "-o", color=c2)
+        ax2.plot(snr_middle, f1, "-o", color=c3)
         ax2.set_xscale("log")
         ax2.set_title(r"\rm Stars")
 
