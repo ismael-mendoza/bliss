@@ -26,9 +26,7 @@ from bliss.reporting import get_sep_catalog, get_snr
 class ToySeparationFigure(BlissFigure):
     """Create figures related to assessingn probabilistic performance on toy blend."""
 
-    def __init__(
-        self, *, figdir, cachedir, suffix, overwrite=False, img_format="png", aperture=5.0
-    ):
+    def __init__(self, *, figdir, cachedir, suffix, overwrite=False, img_format="png"):
         super().__init__(
             figdir=figdir,
             cachedir=cachedir,
@@ -36,8 +34,6 @@ class ToySeparationFigure(BlissFigure):
             overwrite=overwrite,
             img_format=img_format,
         )
-
-        self.aperture = aperture
 
     @property
     def all_rcs(self):
@@ -123,6 +119,7 @@ class ToySeparationFigure(BlissFigure):
         # create full catalogs (need separately since `render_blend`` only accepts 1 batch)
         images = torch.zeros(batch_size, 1, size, size)
         noise = torch.randn_like(images[0]).reshape(1, 1, size, size) * np.sqrt(bg)
+        uncentered_true_sources = []
 
         for ii in range(batch_size):
             plocs_ii = true_plocs[ii].reshape(1, 2, 2)
@@ -136,13 +133,16 @@ class ToySeparationFigure(BlissFigure):
                 "star_log_fluxes": torch.zeros(1, n_sources, 1),
             }
             full_cat = FullCatalog(slen, slen, d)
-            image, _, cns = render_full_catalog(full_cat, psf, slen, bp)
+            image, true_uncentered, cns = render_full_catalog(full_cat, psf, slen, bp)
 
             if ii == 0:
                 snr1, snr2 = get_snr(cns)
                 print(f"SNR of sources are {snr1:.4g} and {snr2:.4g}")
 
             images[ii] = image + noise
+            uncentered_true_sources.append(true_uncentered)
+
+        uncentered_true_sources = torch.stack(uncentered_true_sources, axis=0)
 
         # predictions from SEP on these images
         sep_cat = get_sep_catalog(images, slen=slen, bp=bp)
@@ -173,6 +173,7 @@ class ToySeparationFigure(BlissFigure):
             "images": images,
             "recon": recon,
             "resid": residuals,
+            "uncentered_true_sources": uncentered_true_sources,
             "seps": seps,
             "truth": {
                 "flux": torch.tensor([flux1, flux2]).reshape(1, 2, 1).expand(batch_size, 2, 1),
