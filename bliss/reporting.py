@@ -20,6 +20,7 @@ from bliss.encoders.autoencoder import CenteredGalaxyDecoder
 from bliss.render_tiles import reconstruct_image_from_ptiles, render_galaxy_ptiles
 
 
+# example: HSC -> 3 pixels for matching (Yr3 Li et al. ~2021)
 def match_by_locs(true_locs, est_locs, slack=1.0):
     """Match true and estimated locations and returned indices to match.
 
@@ -325,7 +326,7 @@ def get_residual_measurements(
     bp: int = 24,
     r: float = 5.0,
     no_bar: bool = True,
-) -> Tuple[Tensor, Tensor, Tensor]:
+) -> dict[Tensor]:
     """Obtain aperture photometry fluxes for each source in the catalog."""
     n_batches = cat.n_sources.shape[0]
 
