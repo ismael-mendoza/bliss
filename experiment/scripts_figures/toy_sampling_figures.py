@@ -44,8 +44,8 @@ class ToySamplingFigure(BlissFigure):
     @property
     def all_rcs(self):
         return {
-            "residua_fluxes": {
-                "fontsize": 30,
+            "toy_residual_fluxes": {
+                "fontsize": 40,
             }
         }
 
@@ -55,7 +55,7 @@ class ToySamplingFigure(BlissFigure):
 
     @property
     def fignames(self) -> tuple[str, ...]:
-        return ("residual_fluxes",)
+        return ("toy_residual_fluxes",)
 
     def compute_data(
         self, detection: DetectionEncoder, deblender: GalaxyEncoder, *, toy_cache_fpath: str
@@ -149,9 +149,7 @@ class ToySamplingFigure(BlissFigure):
             for jj in range(true_plocs.shape[0]):
                 _tplocs = true_plocs[jj]
                 _eplocs = cats[ii].plocs[jj]
-                tm, em, dkeep, _ = match_by_locs(
-                    _tplocs, _eplocs, slack=2
-                )  # example: HSC -> 3 pixels for matching (Yr3 Li et al. ~2021)
+                tm, em, dkeep, _ = match_by_locs(_tplocs, _eplocs, slack=2)
                 for kk in range(len(tm)):
                     if dkeep[kk].item():
                         if tm[kk] == 0:
@@ -182,7 +180,7 @@ class ToySamplingFigure(BlissFigure):
         }
 
     def _get_residual_fluxes_figure(self, data: dict) -> Figure:
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 10))
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10))
 
         f1s = data["f1s"]
         f2s = data["f2s"]
@@ -210,9 +208,14 @@ class ToySamplingFigure(BlissFigure):
         ax2.set_xlabel(r"\rm Separation (pixels)")
         ax2.set_ylabel(r"\rm Residual fluxes")
 
+        ax1.axhline(y=0, color="k", linestyle="--")
+        ax2.axhline(y=0, color="k", linestyle="--")
+        ax1.set_ylim(-0.5, 1.05)
+        ax2.set_ylim(-0.5, 1.05)
+
         return fig
 
     def create_figure(self, fname: str, data: dict) -> Figure:
-        if fname == "residual_fluxes":
+        if fname == "toy_residual_fluxes":
             return self._get_residual_fluxes_figure(data)
         raise NotImplementedError("Figure {fname} not implemented.")
