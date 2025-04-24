@@ -74,6 +74,45 @@ def match_by_locs(true_locs, est_locs, slack=1.0):
     return row_indx, col_indx, dist_keep, avg_distance
 
 
+def match_by_score(
+    *,
+    locs1: Tensor,
+    locs2: Tensor,
+    fluxes1: Tensor,
+    fluxes2: Tensor,
+    slack=2.0,
+    background: float = BACKGROUND.item(),
+):
+    """Match objects baseed on centroids and flux."""
+    assert locs1.ndim == locs2.ndim == 2
+    assert locs1.shape[-1] == locs2.shape[-1] == 2
+    assert fluxes1.ndim == fluxes2.ndim == 1
+    assert torch.all(fluxes1 > 0)
+    assert isinstance(locs1, torch.Tensor) and isinstance(locs2, torch.Tensor)
+    assert isinstance(fluxes1, torch.Tensor) and isinstance(fluxes2, torch.Tensor)
+
+    locs_diff = rearrange(locs1, "i xy -> i 1 xy") - rearrange(locs2, "i xy -> 1 i xy")
+    flux_diff = rearrange(fluxes1, "i -> i 1") - rearrange(fluxes2, "i -> 1 i")
+
+    dist = reduce(locs_diff.pow(2), "i j xy -> i j", "sum").sqrt()
+    inv_score = 1 + flux_diff.abs() / (rearrange(fluxes1, "b -> b 1") + background)
+    err = torch.where(dist > slack, inv_score.max() * 100, inv_score)
+    row_indx, col_indx = sp_optim.linear_sum_assignment(err.detach().cpu())
+
+    # we match objects based on distance too.
+    # only match objects that satisfy threshold on l-infinity distance.
+    # do not match fake objects with locs = (0, 0) exactly
+    dist = (locs1[row_indx] - locs2[col_indx]).pow(2).sum(1).sqrt()
+    origin_dist = torch.min(locs1[row_indx].pow(2).sum(1), locs2[col_indx].pow(2).sum(1))
+    cond1 = (dist < slack).bool()
+    cond2 = (origin_dist > 0).bool()
+    dist_keep = torch.logical_and(cond1, cond2)
+    avg_distance = dist[cond2].mean()
+    if dist_keep.sum() > 0:
+        assert dist[dist_keep].max() <= slack
+    return row_indx, col_indx, dist_keep, avg_distance
+
+
 def compute_batch_tp_fp(truth: FullCatalog, est: FullCatalog) -> Tuple[Tensor, Tensor, Tensor]:
     """Separate purpose from `DetectionMetrics`, since here we don't aggregate over batches."""
     all_tp = torch.zeros(truth.batch_size)
