@@ -14,7 +14,7 @@ from bliss.datasets.lsst import (
 )
 from bliss.encoders.deblend import GalaxyEncoder
 from bliss.encoders.detection import DetectionEncoder
-from bliss.plotting import BlissFigure, plot_image
+from bliss.plotting import CLR_CYCLE, BlissFigure, plot_image
 from bliss.render_tiles import (
     get_images_in_tiles,
     reconstruct_image_from_ptiles,
@@ -241,8 +241,8 @@ class ToySeparationFigure(BlissFigure):
         seps_to_plot = self.separations_to_plot
         trim = 24  # zoom into relevant part of the image
 
-        c1 = plt.rcParams["axes.prop_cycle"].by_key()["color"][1]  # true
-        c2 = plt.rcParams["axes.prop_cycle"].by_key()["color"][3]  # predicted
+        c1 = CLR_CYCLE[0]
+        c2 = CLR_CYCLE[1]
 
         for ii, psep in enumerate(seps_to_plot):
             indx = list(seps).index(psep)
@@ -281,8 +281,8 @@ class ToySeparationFigure(BlissFigure):
         eplocs: np.ndarray = data["est"]["plocs"]
         sep_plocs: np.ndarray = data["sep"]["plocs"]
 
-        c1 = plt.rcParams["axes.prop_cycle"].by_key()["color"][1]  # true
-        c2 = plt.rcParams["axes.prop_cycle"].by_key()["color"][3]  # predicted
+        c1 = CLR_CYCLE[0]
+        c2 = CLR_CYCLE[1]
 
         images_all, recon_all, res_all = data["images"], data["recon"], data["resid"]
         trim = 15
@@ -332,8 +332,12 @@ class ToySeparationFigure(BlissFigure):
             )
             ax_recon.scatter(x3[i], y3[i], color="k", facecolors="none", s=55, marker="o")
 
-            ax_true.text(x1[i, 0].item(), y1[i, 0].item() + 14, "1", color=c1, fontsize=15)
-            ax_true.text(x1[i, 1].item(), y1[i, 1].item() + 14, "2", color=c2, fontsize=15)
+            ax_true.text(
+                x1[i, 0].item(), y1[i, 0].item() + 14, r"$\boldsymbol{1}$", color=c1, fontsize=15
+            )
+            ax_true.text(
+                x1[i, 1].item(), y1[i, 1].item() + 14, r"$\boldsymbol{2}$", color=c2, fontsize=15
+            )
 
             # standarize ranges of true and reconstruction
             image = images[i]
@@ -349,7 +353,7 @@ class ToySeparationFigure(BlissFigure):
             # plot images
             plot_image(fig, ax_true, image, vrange=(vmin, vmax))
             plot_image(fig, ax_recon, recon, vrange=(vmin, vmax))
-            plot_image(fig, ax_res, res, vrange=(-vres, vres), cmap="bwr")
+            plot_image(fig, ax_res, res, vrange=(-vres, vres), cmap="coolwarm")
 
             _ticks = []
             ax_true.set_xticks(_ticks)
@@ -371,8 +375,8 @@ class ToySeparationFigure(BlissFigure):
         seps = data["seps"]
         xticks = [sep for sep in seps if sep % 2 == 0]
 
-        c1 = plt.rcParams["axes.prop_cycle"].by_key()["color"][1]
-        c2 = plt.rcParams["axes.prop_cycle"].by_key()["color"][3]
+        c1 = CLR_CYCLE[0]
+        c2 = CLR_CYCLE[1]
 
         # probability of detection in each tile
         prob_n1 = data["est"]["prob_n_source"][:, 0]
@@ -397,8 +401,8 @@ class ToySeparationFigure(BlissFigure):
         seps = data["seps"]
         xticks = [sep for sep in seps if sep % 2 == 0]
 
-        c1 = plt.rcParams["axes.prop_cycle"].by_key()["color"][1]
-        c2 = plt.rcParams["axes.prop_cycle"].by_key()["color"][3]
+        c1 = CLR_CYCLE[0]
+        c2 = CLR_CYCLE[1]
 
         # distance residual
         tploc1 = data["truth"]["plocs"][:, 0]
