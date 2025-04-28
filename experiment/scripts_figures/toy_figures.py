@@ -328,9 +328,18 @@ class ToySeparationFigure(BlissFigure):
             ax_recon.scatter(x2[i], y2[i], color="b", alpha=0.5, s=55, marker="+")
 
             ax_true.scatter(
-                x3[i], y3[i], color="k", facecolors="none", s=55, marker="o", label=r"\rm SEP"
+                x3[i],
+                y3[i],
+                color="C1",
+                facecolors="none",
+                s=55,
+                marker="o",
+                label=r"\rm SEP",
+                linewidth=1.5,
             )
-            ax_recon.scatter(x3[i], y3[i], color="k", facecolors="none", s=55, marker="o")
+            ax_recon.scatter(
+                x3[i], y3[i], color="C1", facecolors="none", s=55, marker="o", linewidth=1.5
+            )
 
             ax_true.text(
                 x1[i, 0].item(), y1[i, 0].item() + 14, r"$\boldsymbol{1}$", color=c1, fontsize=15
