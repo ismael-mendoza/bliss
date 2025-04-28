@@ -147,16 +147,18 @@ def compute_tp_fp_per_bin(
     est: FullCatalog,
     param: str,
     bins: Tensor,
+    only_recall: bool = False,
 ) -> Dict[str, Tensor]:
     counts_per_bin: DefaultDict[str, Tensor] = defaultdict(
         lambda: torch.zeros(len(bins), truth.batch_size)
     )
     for ii, (b1, b2) in tqdm(enumerate(bins), desc="tp/fp per bin", total=len(bins)):
-        # precision
-        eparams = est.apply_param_bin(param, b1, b2)
-        tp, fp, _ = compute_batch_tp_fp(truth, eparams)
-        counts_per_bin["tp_precision"][ii] = tp
-        counts_per_bin["fp_precision"][ii] = fp
+        if not only_recall:
+            # precision
+            eparams = est.apply_param_bin(param, b1, b2)
+            tp, fp, _ = compute_batch_tp_fp(truth, eparams)
+            counts_per_bin["tp_precision"][ii] = tp
+            counts_per_bin["fp_precision"][ii] = fp
 
         # recall
         tparams = truth.apply_param_bin(param, b1, b2)
