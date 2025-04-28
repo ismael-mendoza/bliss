@@ -220,7 +220,7 @@ class BinaryFigures(BlissFigure):
             probs[galaxy_mask],
             marker="o",
             s=5,
-            alpha=0.25,
+            alpha=0.35,
             color=c1,
             label=r"\rm Galaxy",
         )
@@ -229,7 +229,7 @@ class BinaryFigures(BlissFigure):
             probs[star_mask],
             marker="o",
             s=5,
-            alpha=0.25,
+            alpha=0.35,
             color=c2,
             label=r"\rm Star",
         )
