@@ -139,7 +139,8 @@ class BlendDetectionFigures(BlissFigure):
         bld_mask = (bld > 1e-2) * (bld <= 1)
         _bld = bld[bld_mask]
         qs = torch.linspace(0, 1, 12)
-        bld_bins = torch.quantile(_bld, qs)
+        _bld_bins = torch.quantile(_bld, qs)
+        bld_bins = torch.column_stack((_bld_bins[:-1], _bld_bins[1:]))
 
         # compute recall for blendedness
         thresh_out = {tsh: {} for tsh in pred_cats}
