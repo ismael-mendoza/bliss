@@ -21,6 +21,7 @@ class TileCatalog(UserDict):
         "sigma",
         "snr",
         "blendedness",
+        "bld",
         "galaxy_fluxes",
         "galaxy_probs",
         "star_fluxes",
@@ -272,9 +273,7 @@ class FullCatalog(UserDict):
     def device(self):
         return self.plocs.device
 
-    def to_tile_params(
-        self, tile_slen: int, ignore_extra_sources=False
-    ) -> TileCatalog:
+    def to_tile_params(self, tile_slen: int, ignore_extra_sources=False) -> TileCatalog:
         """Returns the TileCatalog (with at most 1 source per tile) for this FullCatalog.
 
         Args:
@@ -318,9 +317,7 @@ class FullCatalog(UserDict):
                 assert n_sources_in_tile.dtype is torch.int64
                 if n_sources_in_tile > 0:
                     if not ignore_extra_sources:
-                        raise ValueError(
-                            "# of sources in at least one tile is larger than 1."
-                        )
+                        raise ValueError("# of sources in at least one tile is larger than 1.")
                     # pylint: disable-next=possibly-used-before-assignment
                     flux1 = rearrange(tile_fluxes[ii, coords[0], coords[1]], "->")
                     flux2 = rearrange(self["fluxes"][ii, idx], "1 ->")
