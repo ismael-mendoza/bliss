@@ -262,6 +262,7 @@ class BinaryFigures(BlissFigure):
         ax1.plot(snr_middle, prec, "-o", label=r"\rm precision", color=c1)
         ax1.plot(snr_middle, rec, "-o", label=r"\rm recall", color=c2)
         ax1.plot(snr_middle, f1, "-o", label="$F_{1}$", color=c3)
+        ax1.set_xlabel(r"\rm SNR")
         ax1.set_xscale("log")
         ax1.set_title(r"\rm Galaxies")
         ax1.set_ylabel(r"\rm Metric", fontsize=36)
@@ -275,6 +276,7 @@ class BinaryFigures(BlissFigure):
         ax2.plot(snr_middle, prec, "-o", color=c1)
         ax2.plot(snr_middle, rec, "-o", color=c2)
         ax2.plot(snr_middle, f1, "-o", color=c3)
+        ax2.set_xlabel(r"\rm SNR")
         ax2.set_xscale("log")
         ax2.set_title(r"\rm Stars")
 
