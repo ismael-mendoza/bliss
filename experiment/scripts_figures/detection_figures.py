@@ -301,7 +301,6 @@ class BlendDetectionFigures(BlissFigure):
         bld_middle = bld_bins.mean(axis=-1)
 
         # recall
-
         for tsh, out in ds["thresh_out"].items():
             color = plt.cm.coolwarm(tsh)
             ax.plot(bld_middle, out["recall"], c=color, label=f"${tsh:.2f}$")
@@ -309,8 +308,10 @@ class BlendDetectionFigures(BlissFigure):
         ax.set_xlabel(r"\rm Blendedness")
         ax.set_ylabel(r"\rm Recall")
         ax.set_ylim(0, 1.02)
-        ax.legend()
+        ax.set_xlim(1e-2, 1)
+        ax.set_xticks([1e-2, 1e-1, 1])
         ax.set_xscale("log")
+        ax.legend()
 
         plt.tight_layout()
         return fig
