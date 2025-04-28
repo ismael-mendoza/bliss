@@ -404,6 +404,7 @@ class DeblendingFigures(BlissFigure):
 
         c1 = CLR_CYCLE[0]
         c2 = CLR_CYCLE[1]
+        c_zero = "gray"
         _alpha = 0.35
 
         ax = axes[0, 0]
@@ -414,7 +415,7 @@ class DeblendingFigures(BlissFigure):
         ax.set_xscale("log")
         ax.set_ylim(-0.15, 0.2)
         ax.set_ylabel(r"$ (f_{\rm pred} - f_{\rm true}) / f_{\rm true}$")
-        ax.axhline(0.0, linestyle="--", color="k")
+        ax.axhline(0.0, linestyle="--", color=c_zero)
         ax.axes.xaxis.set_ticklabels([])
 
         meds1, qs11, qs12 = _calculate_statistics(res1[bld_mask], _bld, bld_bins)
@@ -428,7 +429,7 @@ class DeblendingFigures(BlissFigure):
         ax.legend()
         ax.set_xscale("log")
         ax.set_ylim(-0.75, 2.2)
-        ax.axhline(0.0, linestyle="--", color="k")
+        ax.axhline(0.0, linestyle="--", color=c_zero)
         ax.axes.xaxis.set_ticklabels([])
 
         # sizes
@@ -445,7 +446,7 @@ class DeblendingFigures(BlissFigure):
         ax.fill_between(10**snr_middle, qs21, qs22, color=c2, alpha=_alpha)
         ax.set_xscale("log")
         ax.set_ylabel(r"$ (\sigma_{\rm pred} - \sigma_{\rm true}) / \sigma_{\rm true}$")
-        ax.axhline(0.0, linestyle="--", color="k")
+        ax.axhline(0.0, linestyle="--", color=c_zero)
         ax.axes.xaxis.set_ticklabels([])
 
         meds1, qs11, qs12 = _calculate_statistics(res1[bld_mask], _bld, bld_bins)
@@ -457,7 +458,7 @@ class DeblendingFigures(BlissFigure):
         ax.plot(bld_middle, meds2, marker="o", color=c2, label=r"\rm Deblending")
         ax.fill_between(bld_middle, qs21, qs22, color=c2, alpha=_alpha)
         ax.set_xscale("log")
-        ax.axhline(0.0, linestyle="--", color="k")
+        ax.axhline(0.0, linestyle="--", color=c_zero)
         ax.axes.xaxis.set_ticklabels([])
 
         # ellipticities
@@ -473,7 +474,7 @@ class DeblendingFigures(BlissFigure):
         ax.fill_between(10**snr_middle, qs21, qs22, color=c2, alpha=_alpha)
         ax.set_xscale("log")
         ax.set_ylabel(r"$e_{1,\rm{pred}} -  e_{1,\rm{true}}$")
-        ax.axhline(0.0, linestyle="--", color="k")
+        ax.axhline(0.0, linestyle="--", color=c_zero)
         ax.axes.xaxis.set_ticklabels([])
 
         meds1, qs11, qs12 = _calculate_statistics(res1[bld_mask], _bld, bld_bins)
@@ -485,7 +486,7 @@ class DeblendingFigures(BlissFigure):
         ax.plot(bld_middle, meds2, marker="o", color=c2, label=r"\rm Deblending")
         ax.fill_between(bld_middle, qs21, qs22, color=c2, alpha=_alpha)
         ax.set_xscale("log")
-        ax.axhline(0.0, linestyle="--", color="k")
+        ax.axhline(0.0, linestyle="--", color=c_zero)
         ax.axes.xaxis.set_ticklabels([])
 
         res1 = bld_e2 - e2
@@ -503,7 +504,7 @@ class DeblendingFigures(BlissFigure):
         ax.set_xticks([3, 10, 100, 200])
         ax.set_xlabel(r"\rm SNR")
         ax.set_ylabel(r"$e_{2,\rm{pred}} -  e_{2,\rm{true}}$")
-        ax.axhline(0.0, linestyle="--", color="k")
+        ax.axhline(0.0, linestyle="--", color=c_zero)
 
         meds1, qs11, qs12 = _calculate_statistics(res1[bld_mask], _bld, bld_bins)
         meds2, qs21, qs22 = _calculate_statistics(res2[bld_mask], _bld, bld_bins)
@@ -516,7 +517,7 @@ class DeblendingFigures(BlissFigure):
         ax.set_xscale("log")
         ax.set_xticks([1e-2, 1e-1, 1])
         ax.set_xlabel(r"\rm Blendedness")
-        ax.axhline(0.0, linestyle="--", color="k")
+        ax.axhline(0.0, linestyle="--", color=c_zero)
         plt.tight_layout()
 
         return fig
