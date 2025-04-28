@@ -35,7 +35,11 @@ class BlendDetectionFigures(BlissFigure):
     def all_rcs(self) -> dict:
         return {
             "snr_detection": {"fontsize": 40, "major_tick_size": 12, "minor_tick_size": 7},
-            "bld_detection": {},
+            "bld_detection": {
+                "fontsize": 22,
+                "legend_fontsize": 16,
+                "tick_label_size": 16,
+            },
         }
 
     @property
@@ -291,16 +295,17 @@ class BlendDetectionFigures(BlissFigure):
         return fig
 
     def _get_blendedness_detection_figure(self, data):
-        fig, ax = plt.subplots(figsize=(7, 7))
+        fig, ax = plt.subplots(figsize=(6, 6))
         ds = data["blendedness"]
         bld_bins = ds["bld_bins"]
         bld_middle = bld_bins.mean(axis=-1)
 
         # recall
+
         for tsh, out in ds["thresh_out"].items():
             color = plt.cm.coolwarm(tsh)
             ax.plot(bld_middle, out["recall"], c=color, label=f"${tsh:.2f}$")
-        ax.plot(bld_middle, ds["sep"]["recall"], "--k", lw=3, label=r"\rm SEP")
+        ax.plot(bld_middle, ds["sep"]["recall"], "--k", lw=2, label=r"\rm SEP")
         ax.set_xlabel(r"\rm Blendedness")
         ax.set_ylabel(r"\rm Recall")
         ax.set_ylim(0, 1.02)
