@@ -34,7 +34,8 @@ class BlendDetectionFigures(BlissFigure):
     @property
     def all_rcs(self) -> dict:
         return {
-            "blends_detection": {"fontsize": 40, "major_tick_size": 12, "minor_tick_size": 7},
+            "snr_detection": {"fontsize": 40, "major_tick_size": 12, "minor_tick_size": 7},
+            "bld_detection": {},
         }
 
     @property
@@ -43,7 +44,7 @@ class BlendDetectionFigures(BlissFigure):
 
     @property
     def fignames(self) -> tuple[str, ...]:
-        return ("blends_detection",)
+        return ("snr_detection", "bld_detection")
 
     def compute_data(self, ds_path: str, detection: DetectionEncoder):
         # metadata
@@ -241,21 +242,22 @@ class BlendDetectionFigures(BlissFigure):
             "blendedness": bld_dict,
         }
 
-    def _get_detection_figure(self, data):
+    def _get_snr_detection_figure(self, data):
         # make a 3 column figure with precision, recall, f1 for all thresholds + sep
         # colors for thresholds hsould go from blue (low) to red (high) threshold
 
         fig, axs = plt.subplots(1, 3, figsize=(30, 10))
         axs = axs.flatten()
+        ds = data["snr"]
 
-        snr_middle = data["snr_bins"].mean(axis=-1)
+        snr_middle = ds["snr_bins"].mean(axis=-1)
 
         # precision
         ax = axs[0]
-        for tsh, out in data["thresh_out"].items():
+        for tsh, out in ds["thresh_out"].items():
             color = plt.cm.coolwarm(tsh)
             ax.plot(snr_middle, out["precision"], color=color)
-        ax.plot(snr_middle, data["sep"]["precision"], "--k", lw=3)
+        ax.plot(snr_middle, ds["sep"]["precision"], "--k", lw=3)
         ax.set_xlabel(r"\rm SNR")
         ax.set_ylabel(r"\rm Precision")
         ax.set_xscale("log")
@@ -263,10 +265,10 @@ class BlendDetectionFigures(BlissFigure):
 
         # recall
         ax = axs[1]
-        for tsh1, out1 in data["thresh_out"].items():
+        for tsh1, out1 in ds["thresh_out"].items():
             color = plt.cm.coolwarm(tsh1)
             ax.plot(snr_middle, out1["recall"], color=color)
-        ax.plot(snr_middle, data["sep"]["recall"], "--k", lw=3)
+        ax.plot(snr_middle, ds["sep"]["recall"], "--k", lw=3)
         ax.set_xlabel(r"\rm SNR")
         ax.set_ylabel(r"\rm Recall")
         ax.set_xscale("log")
@@ -274,10 +276,10 @@ class BlendDetectionFigures(BlissFigure):
 
         # f1
         ax = axs[2]
-        for tsh2, out2 in data["thresh_out"].items():
+        for tsh2, out2 in ds["thresh_out"].items():
             color = plt.cm.coolwarm(tsh2)
             ax.plot(snr_middle, out2["f1"], color=color, label=f"${tsh2:.2f}$")
-        ax.plot(snr_middle, data["sep"]["f1"], "--k", label=r"\rm SEP", lw=3)
+        ax.plot(snr_middle, ds["sep"]["f1"], "--k", label=r"\rm SEP", lw=3)
         ax.set_xlabel(r"\rm SNR")
         ax.set_ylabel(r"\rm $F_{1}$ Score")
         ax.set_xscale("log")
@@ -288,7 +290,29 @@ class BlendDetectionFigures(BlissFigure):
 
         return fig
 
+    def _get_blendedness_detection_figure(self, data):
+        fig, ax = plt.subplots(figsize=(7, 7))
+        ds = data["blendedness"]
+        bld_bins = ds["bld_bins"]
+        bld_middle = bld_bins.mean(axis=-1)
+
+        # recall
+        for tsh, out in ds["thresh_out"].items():
+            color = plt.cm.coolwarm(tsh)
+            ax.plot(bld_middle, out["recall"], c=color, label=f"${tsh:.2f}$")
+        ax.plot(bld_middle, ds["sep"]["recall"], "--k", lw=3, label=r"\rm SEP")
+        ax.set_xlabel(r"\rm Blendedness")
+        ax.set_ylabel(r"\rm Recall")
+        ax.set_ylim(0, 1.02)
+        ax.legend()
+        ax.set_xscale("log")
+
+        plt.tight_layout()
+        return fig
+
     def create_figure(self, fname, data):
-        if fname == "blends_detection":
-            return self._get_detection_figure(data)
+        if fname == "snr_detection":
+            return self._get_snr_detection_figure(data)
+        if fname == "bld_detection":
+            return self._get_blendedness_detection_figure(data)
         raise ValueError(f"Unknown figure name: {fname}")
