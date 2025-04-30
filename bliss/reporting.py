@@ -21,20 +21,16 @@ from bliss.render_tiles import reconstruct_image_from_ptiles, render_galaxy_ptil
 
 
 # example: HSC -> 3 pixels for matching (Yr3 Li et al. ~2021)
-def match_by_locs(true_locs, est_locs, slack=1.0):
+def match_by_locs(*, locs1: Tensor, locs2: Tensor, slack=2.0):
     """Match true and estimated locations and returned indices to match.
-
-    Permutes `est_locs` to find minimal error between `true_locs` and `est_locs`.
-    The matching is done with `scipy.optimize.linear_sum_assignment`, which implements
-    the Hungarian algorithm.
 
     Automatically discards matches where at least one location has coordinates **exactly** (0, 0).
 
     Args:
         slack: Threshold for matching objects a `slack` l-infinity distance away (in pixels).
-        true_locs: Tensor of shape `(n1 x 2)`, where `n1` is the true number of sources.
+        locs1: Tensor of shape `(n1 x 2)`, where `n1` is the true number of sources.
             The centroids should be in units of PIXELS.
-        est_locs: Tensor of shape `(n2 x 2)`, where `n2` is the predicted
+        locs2: Tensor of shape `(n2 x 2)`, where `n2` is the predicted
             number of sources. The centroids should be in units of PIXELS.
 
     Returns:
@@ -44,34 +40,26 @@ def match_by_locs(true_locs, est_locs, slack=1.0):
         - dist_keep: Matched objects to keep based on l1 distances.
         - avg_distance: Average l-infinity distance over matched objects.
     """
-    assert len(true_locs.shape) == len(est_locs.shape) == 2
-    assert true_locs.shape[-1] == est_locs.shape[-1] == 2
-    assert isinstance(true_locs, torch.Tensor) and isinstance(est_locs, torch.Tensor)
+    assert locs1.ndim == locs2.ndim == 2
+    assert locs1.shape[-1] == locs2.shape[-1] == 2
 
-    locs1 = true_locs.view(-1, 2)
-    locs2 = est_locs.view(-1, 2)
-
-    locs_abs_diff = (rearrange(locs1, "i j -> i 1 j") - rearrange(locs2, "i j -> 1 i j")).abs()
-    locs_err = reduce(locs_abs_diff, "i j k -> i j", "sum")
-    locs_err_l_infty = reduce(locs_abs_diff, "i j k -> i j", "max")
-
-    # Penalize all pairs which are greater than slack apart to favor valid matches.
-    locs_err = locs_err + (locs_err_l_infty > slack) * locs_err.max()
+    locs_diff = rearrange(locs1, "i xy -> i 1 xy") - rearrange(locs2, "i xy -> 1 i xy")
+    dist1 = reduce(locs_diff.pow(2), "i j xy -> i j", "sum").sqrt()
+    err = torch.where(dist1 > slack, dist1.max() * 100, dist1)
 
     # find minimal permutation and return matches
-    row_indx, col_indx = sp_optim.linear_sum_assignment(locs_err.detach().cpu())
+    row_indx, col_indx = sp_optim.linear_sum_assignment(err.detach().cpu())
 
-    # we match objects based on distance too.
-    # only match objects that satisfy threshold on l-infinity distance.
+    # drop matches with distance greater than slack
     # do not match fake objects with locs = (0, 0) exactly
-    dist = (locs1[row_indx] - locs2[col_indx]).abs().max(1)[0]
+    dist2 = (locs1[row_indx] - locs2[col_indx]).pow(2).sum(1).sqrt()
     origin_dist = torch.min(locs1[row_indx].pow(2).sum(1), locs2[col_indx].pow(2).sum(1))
-    cond1 = (dist < slack).bool()
+    cond1 = (dist2 < slack).bool()
     cond2 = (origin_dist > 0).bool()
     dist_keep = torch.logical_and(cond1, cond2)
-    avg_distance = dist[cond2].mean()  # average l-infinity distance over matched objects.
+    avg_distance = dist2[cond2].mean()  # average distance over matched objects.
     if dist_keep.sum() > 0:
-        assert dist[dist_keep].max() <= slack
+        assert dist2[dist_keep].max() <= slack
     return row_indx, col_indx, dist_keep, avg_distance
 
 
@@ -95,22 +83,22 @@ def match_by_score(
     locs_diff = rearrange(locs1, "i xy -> i 1 xy") - rearrange(locs2, "i xy -> 1 i xy")
     flux_diff = rearrange(fluxes1, "i -> i 1") - rearrange(fluxes2, "i -> 1 i")
 
-    dist = reduce(locs_diff.pow(2), "i j xy -> i j", "sum").sqrt()
+    dist1 = reduce(locs_diff.pow(2), "i j xy -> i j", "sum").sqrt()
     inv_score = 1 + flux_diff.abs() / (rearrange(fluxes1, "b -> b 1") + background)
-    err = torch.where(dist > slack, inv_score.max() * 100, inv_score)
+    err = torch.where(dist1 > slack, inv_score.max() * 100, inv_score)
     row_indx, col_indx = sp_optim.linear_sum_assignment(err.detach().cpu())
 
     # we match objects based on distance too.
     # only match objects that satisfy threshold on l-infinity distance.
     # do not match fake objects with locs = (0, 0) exactly
-    dist = (locs1[row_indx] - locs2[col_indx]).pow(2).sum(1).sqrt()
+    dist2 = (locs1[row_indx] - locs2[col_indx]).pow(2).sum(1).sqrt()
     origin_dist = torch.min(locs1[row_indx].pow(2).sum(1), locs2[col_indx].pow(2).sum(1))
-    cond1 = (dist < slack).bool()
+    cond1 = (dist2 < slack).bool()
     cond2 = (origin_dist > 0).bool()
     dist_keep = torch.logical_and(cond1, cond2)
-    avg_distance = dist[cond2].mean()
+    avg_distance = dist2[cond2].mean()
     if dist_keep.sum() > 0:
-        assert dist[dist_keep].max() <= slack
+        assert dist2[dist_keep].max() <= slack
     return row_indx, col_indx, dist_keep, avg_distance
 
 
