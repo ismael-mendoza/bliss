@@ -166,6 +166,7 @@ class ScoreFigure(BlissFigure):
         for ii in tqdm(range(len(images)), desc="Computing matches and grades"):
             locs1 = truth.plocs[ii]
             locs2 = map_cat.plocs[ii]
+            n_sources2 = map_cat.n_sources[ii].item()
             _fluxes1 = truth["fluxes"][ii][..., 0]
             _fluxes2 = map_cat["fluxes"][ii][..., 0]
             snr = truth["snr"][ii][..., 0]
@@ -184,11 +185,19 @@ class ScoreFigure(BlissFigure):
 
                 # collect data
                 grades.append(_grades)
-                n_misses.append(len(locs2) - dkeep.sum())
+                n_misses.append(n_sources2 - dkeep.sum())
                 fluxes1.append(f1)
                 fluxes2.append(f2)
                 snrs.append(_snr)
                 blds.append(_bld)
+
+            else:  # no matched objects
+                grades.append(torch.tensor([]))
+                n_misses.append(n_sources2)
+                fluxes1.append(torch.tensor([]))
+                fluxes2.append(torch.tensor([]))
+                snrs.append(torch.tensor([]))
+                blds.append(torch.tensor([]))
 
         # pad with zero to ensure all lists are the same length
         def pad_tensor_list(tensor_list, *, max_len: int):
