@@ -15,7 +15,7 @@ from torch import Tensor
 from tqdm import tqdm
 
 from bliss.catalog import FullCatalog, collate
-from bliss.datasets.lsst import BACKGROUND, PIXEL_SCALE
+from bliss.datasets.lsst import APERTURE_BACKGROUND, BACKGROUND, PIXEL_SCALE
 from bliss.encoders.autoencoder import CenteredGalaxyDecoder
 from bliss.render_tiles import reconstruct_image_from_ptiles, render_galaxy_ptiles
 
@@ -63,20 +63,20 @@ def match_by_locs(locs1: Tensor, locs2: Tensor, slack: float = 2.0):
     return row_indx, col_indx, dist_keep, avg_distance
 
 
-def match_by_score(
+def match_by_grade(
     *,
     locs1: Tensor,
     locs2: Tensor,
     fluxes1: Tensor,
     fluxes2: Tensor,
     slack: float = 2.0,
-    background: float = BACKGROUND.item(),
+    background: float = APERTURE_BACKGROUND,
 ):
     """Match objects baseed on centroids and flux."""
     assert locs1.ndim == locs2.ndim == 2
     assert locs1.shape[-1] == locs2.shape[-1] == 2
     assert fluxes1.ndim == fluxes2.ndim == 1
-    assert torch.all(fluxes1 > 0)
+    assert torch.all((fluxes1 >= 0) | (fluxes1.abs() < APERTURE_BACKGROUND))
     assert isinstance(locs1, torch.Tensor) and isinstance(locs2, torch.Tensor)
     assert isinstance(fluxes1, torch.Tensor) and isinstance(fluxes2, torch.Tensor)
 
@@ -84,8 +84,8 @@ def match_by_score(
     flux_diff = rearrange(fluxes1, "i -> i 1") - rearrange(fluxes2, "i -> 1 i")
 
     dist1 = reduce(locs_diff.pow(2), "i j xy -> i j", "sum").sqrt()
-    inv_score = 1 + flux_diff.abs() / (rearrange(fluxes1, "b -> b 1") + background)
-    err = torch.where(dist1 > slack, inv_score.max() * 100, inv_score)
+    inv_grade = 1 + flux_diff.abs() / (rearrange(fluxes1, "b -> b 1") + background)
+    err = torch.where(dist1 > slack, inv_grade.max() * 100, inv_grade)
     row_indx, col_indx = sp_optim.linear_sum_assignment(err.detach().cpu())
 
     # we match objects based on distance too.
@@ -306,7 +306,7 @@ def get_deblended_reconstructions(
         images_jj = torch.concatenate(images_jj, axis=0)
         recon_uncentered[:, jj, :, :, :] = images_jj
 
-    return recon_uncentered
+    return recon_uncentered.to("cpu").contiguous()
 
 
 def get_residual_measurements(
@@ -405,7 +405,7 @@ def pred_in_batches(
         for ii in tqdm(range(n_batches), desc=desc, disable=no_bar):
             start, end = ii * batch_size, (ii + 1) * batch_size
             image_batch = images[start:end].to(device)
-            args_batch = (x[start:end] for x in args)
+            args_batch = (x[start:end].to(device) for x in args)
             d = pred_fnc(image_batch, *args_batch)
             d_cpu = {k: v.cpu() for k, v in d.items()}
             tiled_params_list.append(d_cpu)
