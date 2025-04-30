@@ -12,7 +12,7 @@ from bliss.plotting import BlissFigure
 from bliss.reporting import (
     get_deblended_reconstructions,
     get_residual_measurements,
-    match_by_score,
+    match_by_grade,
 )
 
 
@@ -150,7 +150,7 @@ class ToySamplingFigure(BlissFigure):
                 _tplocs = true_plocs[jj]
                 _eplocs = cats[ii].plocs[jj]
                 _fluxes = all_fluxes[ii][jj][:, 0]
-                tm, em, dkeep, _ = match_by_score(
+                tm, em, dkeep, _ = match_by_grade(
                     locs1=_tplocs,
                     locs2=_eplocs,
                     fluxes1=true_fluxes[jj, :, 0],
