@@ -12,7 +12,7 @@ from bliss.plotting import BlissFigure
 from bliss.reporting import (
     get_deblended_reconstructions,
     get_residual_measurements,
-    match_by_locs,
+    match_by_score,
 )
 
 
@@ -149,13 +149,19 @@ class ToySamplingFigure(BlissFigure):
             for jj in range(true_plocs.shape[0]):
                 _tplocs = true_plocs[jj]
                 _eplocs = cats[ii].plocs[jj]
-                tm, em, dkeep, _ = match_by_locs(_tplocs, _eplocs, slack=2)
+                _fluxes = all_fluxes[ii][jj][:, 0]
+                tm, em, dkeep, _ = match_by_score(
+                    locs1=_tplocs,
+                    locs2=_eplocs,
+                    fluxes1=true_fluxes[jj, :, 0],
+                    fluxes2=_fluxes,
+                )
                 for kk in range(len(tm)):
                     if dkeep[kk].item():
                         if tm[kk] == 0:
-                            f1.append(all_fluxes[ii][jj][em[kk]].item())
+                            f1.append(_fluxes[em[kk]].item())
                         elif tm[kk] == 1:
-                            f2.append(all_fluxes[ii][jj][em[kk]].item())
+                            f2.append(_fluxes[em[kk]].item())
                         else:
                             raise ValueError
                     else:

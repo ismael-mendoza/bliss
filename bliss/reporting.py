@@ -21,7 +21,7 @@ from bliss.render_tiles import reconstruct_image_from_ptiles, render_galaxy_ptil
 
 
 # example: HSC -> 3 pixels for matching (Yr3 Li et al. ~2021)
-def match_by_locs(*, locs1: Tensor, locs2: Tensor, slack=2.0):
+def match_by_locs(locs1: Tensor, locs2: Tensor, slack: float = 2.0):
     """Match true and estimated locations and returned indices to match.
 
     Automatically discards matches where at least one location has coordinates **exactly** (0, 0).
@@ -69,7 +69,7 @@ def match_by_score(
     locs2: Tensor,
     fluxes1: Tensor,
     fluxes2: Tensor,
-    slack=2.0,
+    slack: float = 2.0,
     background: float = BACKGROUND.item(),
 ):
     """Match objects baseed on centroids and flux."""
@@ -102,7 +102,9 @@ def match_by_score(
     return row_indx, col_indx, dist_keep, avg_distance
 
 
-def compute_batch_tp_fp(truth: FullCatalog, est: FullCatalog) -> Tuple[Tensor, Tensor, Tensor]:
+def compute_batch_tp_fp(
+    truth: FullCatalog, est: FullCatalog, *, slack: float
+) -> Tuple[Tensor, Tensor, Tensor]:
     """Separate purpose from `DetectionMetrics`, since here we don't aggregate over batches."""
     all_tp = torch.zeros(truth.batch_size)
     all_fp = torch.zeros(truth.batch_size)
@@ -111,7 +113,7 @@ def compute_batch_tp_fp(truth: FullCatalog, est: FullCatalog) -> Tuple[Tensor, T
         ntrue, nest = truth.n_sources[b].int().item(), est.n_sources[b].int().item()
         tlocs, elocs = truth.plocs[b], est.plocs[b]
         if ntrue > 0 and nest > 0:
-            _, mest, dkeep, _ = match_by_locs(tlocs, elocs)
+            _, mest, dkeep, _ = match_by_locs(tlocs, elocs, slack=slack)
             tp = len(elocs[mest][dkeep])
             fp = nest - tp
         elif ntrue > 0:

@@ -194,7 +194,7 @@ class SamplingFigure(BlissFigure):
                 s[jj, :tns, :] = torch.nan
 
                 # example: HSC -> 3 pixels for matching (Yr3 Li et al. ~2021)
-                tm, em, dkeep, _ = match_by_locs(_tplocs, _eplocs, slack=3)
+                tm, em, dkeep, _ = match_by_locs(_tplocs, _eplocs)
 
                 for kk in range(len(tm)):
                     if dkeep[kk].item():
