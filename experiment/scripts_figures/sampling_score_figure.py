@@ -73,14 +73,15 @@ def get_score_dict(
         no_bar=no_bar,
     )
     cat["fluxes"] = meas_dict["flux"]
+    cat["snr"] = meas_dict["snr"].clip(0)
 
     # now we can match and compute score
     grades = []
-    n_misses = []
     fluxes1 = []
     fluxes2 = []
     snrs = []
     blds = []
+    n_misses = []
     for ii in tqdm(range(len(images)), desc="Computing matches and grades", disable=no_bar):
         locs1 = truth.plocs[ii]
         locs2 = cat.plocs[ii]
@@ -103,6 +104,7 @@ def get_score_dict(
 
             # collect data
             grades.append(_grades)
+
             n_misses.append(n_sources2 - dkeep.sum())
             fluxes1.append(f1)
             fluxes2.append(f2)
@@ -137,10 +139,12 @@ def get_score_dict(
 
     return {
         "n_misses": torch.tensor(n_misses),
+        "n_detections": cat.n_sources,
+        "pred_snrs": cat["snr"],
         "grades": grades,
         "fluxes1": fluxes1,
         "fluxes2": fluxes2,
-        "snrs": snrs,
+        "true_snrs": snrs,
         "blds": blds,
     }
 
