@@ -145,6 +145,11 @@ def get_score_dict(
     }
 
 
+def get_sep_score_dict():
+    """Use SEP for both detection and deblending (with segmentation)."""
+    pass
+
+
 class ScoreFigure(BlissFigure):
     """Create figures related to sampling centroids and fluxes on the full dataset."""
 
@@ -298,6 +303,22 @@ class ScoreFigure(BlissFigure):
                     no_bar=True,
                 )
             )
+
+        # pad with zero across all samples
+        for key in map_results:
+            if key not in ("n_misses",):
+                max_len = max(res[key].shape[1] for res in sample_results)
+                for res in sample_results:
+                    val = res[key]
+                    if val.shape[1] < max_len:
+                        _val = torch.cat(
+                            [val, torch.zeros(val.shape[0], max_len - val.shape[1])], dim=1
+                        )
+                        res[key] = _val
+                sample_results[key] = torch.stack([res[key] for res in sample_results])
+            else:
+                # n_misses is a 1D tensor, so we can just stack them
+                sample_results[key] = torch.stack([res[key] for res in sample_results])
 
         return {
             "map": map_results,
