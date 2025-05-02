@@ -146,14 +146,26 @@ def get_sample_results(
         out["det_prob"] = det_prob.reshape(5, 5).cpu()
         out["idx"] = ii
 
+        # locations
+        map_plocs = map_cat.plocs[0]
+        sample_plocs = []
+        for ss in range(n_samples):
+            _plocs = sample_cats[ss].plocs[0]
+            assert _plocs.shape[0] == sample_cats[ss].n_sources.item()  # only adding nonzero
+            sample_plocs.append(_plocs)
+        sample_plocs = torch.concatenate(sample_plocs, dim=0)
+
+        out["sample_plocs"] = sample_plocs
+        out["map_plocs"] = map_plocs
+
         outs.append(out)
 
     return outs
 
 
 def main(overwrite: bool = False):
-    n_samples = 1000  # for each image
-    n_images = 10
+    n_samples = 500  # for each image
+    n_images = 100
     device = torch.device("cuda:0")
     out_dir = Path("figures/pair_sim")
     deblend_fpath = "models/deblender_23_22.pt"
@@ -265,12 +277,12 @@ def main(overwrite: bool = False):
     with PdfPages(pdf_path) as pdf:
         for out in outs:
             fig, axes = plt.subplots(2, 3, figsize=(15, 10))
-            ax1, ax2, ax3, ax4, ax5, _ = axes.flatten()
+            ax1, ax2, ax3, ax4, ax5, ax6 = axes.flatten()
 
             # blendedness as global title
             idx = out["idx"]
             blendedness = bld[idx, 0].item()
-            fig.suptitle(f"Blendedness: {blendedness:.3f}", fontsize=16)
+            fig.suptitle(f"Blendedness: {blendedness:.4f}", fontsize=16)
 
             # Plot detection probability
             im = ax1.imshow(out["det_prob"], cmap="viridis", origin="lower")
@@ -342,6 +354,21 @@ def main(overwrite: bool = False):
             # also plot image
             ax5.imshow(ds["images"][out["idx"]].numpy().squeeze(), cmap="gray", origin="lower")
             ax5.set_title("Original Image")
+
+            # plot image with samples plocs and MAP plocs
+            sample_x = out["sample_plocs"][:, 1].numpy() + 24 - 0.5
+            sample_y = out["sample_plocs"][:, 0].numpy() + 24 - 0.5
+            ax6.imshow(ds["images"][out["idx"]].numpy().squeeze(), cmap="gray", origin="lower")
+            ax6.scatter(sample_x, sample_y, color="red", s=10, alpha=0.2, label="Sampled Plocs")
+            ax6.scatter(
+                out["map_plocs"][:, 1] + 24 - 0.5,
+                out["map_plocs"][:, 0] + 24 - 0.5,
+                color="blue",
+                s=10,
+                alpha=0.8,
+                label="MAP Plocs",
+            )
+            ax6.legend()
 
             # save the figure to the PDF as a new page
             pdf.savefig(fig)
