@@ -53,7 +53,7 @@ def get_sample_results(
         tile_cats = turn_samples_into_catalogs(samples, tile_slen=5, nth=5, ntw=5)
 
         # add galaxy params to each catalog
-        for jj in tqdm(range(n_samples), desc="Adding galaxy params to catalogs"):
+        for jj in tqdm(range(n_samples), desc="Adding galaxy params to catalogs", disable=True):
             galaxy_bools = rearrange(tile_cats[jj].n_sources, "n nth ntw-> n nth ntw 1")
             tile_cats[jj]["galaxy_bools"] = galaxy_bools.float()
             galaxy_params = deblender.variational_mode(
@@ -67,7 +67,7 @@ def get_sample_results(
             sample_cats.append(tile_cats[kk].to_full_params())
 
         reconstructions = []
-        for rr in tqdm(range(n_samples), desc="Reconstructing samples"):
+        for rr in tqdm(range(n_samples), desc="Reconstructing samples", disable=True):
             recon_uncentered = get_deblended_reconstructions(
                 sample_cats[rr],
                 deblender._dec,
@@ -77,7 +77,7 @@ def get_sample_results(
             reconstructions.append(recon_uncentered)
 
         residual_meas = []
-        for ll in tqdm(range(n_samples), desc="Calculating residual measurements"):
+        for ll in tqdm(range(n_samples), desc="Calculating residual measurements", disable=True):
             meas = get_residual_measurements(
                 sample_cats[ll],
                 image,
@@ -131,11 +131,10 @@ def get_sample_results(
             sources=map_reconstructions,
         )
 
-        map_idx = torch.argwhere(
-            torch.norm(map_cat.plocs[0] - torch.tensor([12.5, 12.5]).reshape(1, 2), dim=-1) < 2.5
-        ).flatten()
-        assert len(map_idx) == 1, "More than one source within central tile found."
-        map_flux = map_residual_meas["flux"][:, map_idx.item(), 0].item()
+        map_idx = torch.argmin(
+            torch.norm(map_cat.plocs[0] - torch.tensor([12.5, 12.5]).reshape(1, 2), dim=-1)
+        ).item()
+        map_flux = map_residual_meas["flux"][:, map_idx, 0].item()
 
         out["sample_fluxes"] = sample_fluxes
         out["map_flux"] = map_flux
@@ -165,7 +164,7 @@ def get_sample_results(
 
 def main(overwrite: bool = False):
     n_samples = 500  # for each image
-    n_images = 100
+    n_images = 5
     device = torch.device("cuda:0")
     out_dir = Path("figures/pair_sim")
     deblend_fpath = "models/deblender_23_22.pt"
@@ -178,7 +177,12 @@ def main(overwrite: bool = False):
     psf = get_default_lsst_psf()
     _high_mag_cat = cat[cat["i_ab"] < 25.3]
 
-    ds = generate_pair_dataset(n_images, _high_mag_cat, psf)
+    ds = generate_pair_dataset(
+        n_images,
+        _high_mag_cat,
+        psf,
+        out_square=15.0,
+    )
     truth = FullCatalog(
         25,
         25,
@@ -359,14 +363,29 @@ def main(overwrite: bool = False):
             sample_x = out["sample_plocs"][:, 1].numpy() + 24 - 0.5
             sample_y = out["sample_plocs"][:, 0].numpy() + 24 - 0.5
             ax6.imshow(ds["images"][out["idx"]].numpy().squeeze(), cmap="gray", origin="lower")
-            ax6.scatter(sample_x, sample_y, color="red", s=10, alpha=0.2, label="Sampled Plocs")
+            ax6.scatter(
+                sample_x, sample_y, color="red", s=20, alpha=0.2, label="Sampled Plocs", marker="x"
+            )
             ax6.scatter(
                 out["map_plocs"][:, 1] + 24 - 0.5,
                 out["map_plocs"][:, 0] + 24 - 0.5,
                 color="blue",
-                s=10,
-                alpha=0.8,
+                s=30,
+                alpha=1.0,
+                marker="+",
                 label="MAP Plocs",
+            )
+            # true plocs
+            true_plocs = truth.plocs[out["idx"]].numpy().squeeze()
+            ax6.scatter(
+                true_plocs[:, 1] + 24 - 0.5,
+                true_plocs[:, 0] + 24 - 0.5,
+                color="k",
+                s=30,
+                alpha=1.0,
+                marker="o",
+                facecolors="none",
+                label="True Plocs",
             )
             ax6.legend()
 
