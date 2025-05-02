@@ -21,6 +21,8 @@ def generate_pair_dataset(
     slen: int = 25,
     bp: int = 24,
     no_bar: bool = False,
+    tile_slen: int = 5,
+    out_square: float = 25.0,
 ) -> dict[str, Tensor]:
     """Simulation of a pair of galaxies where one is always at the center of image (and tile)."""
     size = slen + 2 * bp
@@ -47,7 +49,7 @@ def generate_pair_dataset(
 
         # render one other galaxy in the padding
         # always outside the central tile
-        offset = torch.tensor(uniform_out_of_square(5, 25)).float()
+        offset = torch.tensor(uniform_out_of_square(tile_slen, out_square)).float()
         galaxy2 = render_one_galaxy(params2, psf, size, offset=offset)
         galaxy2_centered = render_one_galaxy(params2, psf, size, offset=None)
         galaxy2 = rearrange(galaxy2, "1 h w -> 1 1 h w")
