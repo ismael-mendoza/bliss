@@ -106,6 +106,21 @@ def get_sample_results(
                 sample_fluxes.append(meas["flux"][0, _idx, 0].item())
         sample_fluxes = torch.tensor(sample_fluxes)
 
+        n_sources_samples = torch.tensor([cat.n_sources.item() for cat in sample_cats])
+
+        sample_plocs = []
+        for ss in range(n_samples):
+            _plocs = sample_cats[ss].plocs[0]
+            assert _plocs.shape[0] == sample_cats[ss].n_sources.item()  # only adding nonzero
+            sample_plocs.append(_plocs)
+        sample_plocs = torch.concatenate(sample_plocs, dim=0)
+
+        out["sample_plocs"] = sample_plocs
+        out["n_sources_samples"] = n_sources_samples
+        out["det_prob"] = det_prob.reshape(5, 5).cpu()
+        out["sample_fluxes"] = sample_fluxes
+        out["idx"] = ii
+
         # get map prediction too
         map_tile_cat = detection.variational_mode(image.to(device))
         map_tile_cat["galaxy_bools"] = rearrange(
@@ -131,33 +146,24 @@ def get_sample_results(
             sources=map_reconstructions,
         )
 
-        map_idx = torch.argmin(
-            torch.norm(map_cat.plocs[0] - torch.tensor([12.5, 12.5]).reshape(1, 2), dim=-1)
-        ).item()
-        map_flux = map_residual_meas["flux"][:, map_idx, 0].item()
+        # skip if no sources found
+        if map_cat.n_sources.item() == 0:
+            out["map_flux"] = torch.nan
+            out["n_sources_map"] = 0
+            out["map_plocs"] = torch.tensor([])
+            outs.append(out)
+            continue
 
-        out["sample_fluxes"] = sample_fluxes
-        out["map_flux"] = map_flux
+        else:
+            map_idx = torch.argmin(
+                torch.norm(map_cat.plocs[0] - torch.tensor([12.5, 12.5]).reshape(1, 2), dim=-1)
+            ).item()
 
-        n_sources_samples = torch.tensor([cat.n_sources.item() for cat in sample_cats])
-        out["n_sources_samples"] = n_sources_samples
-        out["n_sources_map"] = map_cat.n_sources.item()
-        out["det_prob"] = det_prob.reshape(5, 5).cpu()
-        out["idx"] = ii
+            out["n_sources_map"] = map_cat.n_sources.item()
+            out["map_flux"] = map_residual_meas["flux"][:, map_idx, 0].item()
+            out["map_plocs"] = map_cat.plocs[0]
 
-        # locations
-        map_plocs = map_cat.plocs[0]
-        sample_plocs = []
-        for ss in range(n_samples):
-            _plocs = sample_cats[ss].plocs[0]
-            assert _plocs.shape[0] == sample_cats[ss].n_sources.item()  # only adding nonzero
-            sample_plocs.append(_plocs)
-        sample_plocs = torch.concatenate(sample_plocs, dim=0)
-
-        out["sample_plocs"] = sample_plocs
-        out["map_plocs"] = map_plocs
-
-        outs.append(out)
+            outs.append(out)
 
     return outs
 
