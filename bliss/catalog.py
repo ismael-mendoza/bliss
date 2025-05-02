@@ -382,3 +382,46 @@ def collate(tensor_dicts: list[dict[str, Tensor]], axis=0) -> dict[str, Tensor]:
     for k in tensor_dicts[0]:
         out[k] = torch.cat([d[k] for d in tensor_dicts], dim=axis)
     return out
+
+
+def turn_samples_into_catalogs(
+    samples: dict[str, Tensor],
+    tile_slen: int,
+    nth: int,
+    ntw: int,
+    tol: float = 1e-4,
+) -> list[TileCatalog]:
+    """Convert samples from a model into a list of TileCatalogs.
+
+    Args:
+        samples: Dictionary containing the model outputs.
+        tile_slen: The side length of the tiles.
+        nth: Number of tiles in height.
+        ntw: Number of tiles in width.
+
+    Returns:
+        List of TileCatalogs corresponding to each sample in the batch.
+    """
+    assert "n_sources" in samples, "Samples must contain 'n_sources' key."
+    assert "locs" in samples, "Samples must contain 'locs' key."
+
+    assert samples["n_sources"].ndim == 2, "'n_sources' must be a 2D tensor."
+    assert samples["locs"].ndim == 3, "'locs' must be a 3D tensor."
+    n_samples = samples["n_sources"].shape[0]
+
+    # remove locs that fall outside tile
+    n_sources = samples["n_sources"]
+    locs = samples["locs"]
+    mask_xy = locs.ge(0.0001) * locs.le(1 - 0.0001)
+    mask = mask_xy[..., 0].bitwise_and(mask_xy[..., 1])
+    new_locs = locs * rearrange(mask, "n nt -> n nt 1")
+    new_n_sources = n_sources * mask
+    new_samples = {"n_sources": new_n_sources, "locs": new_locs}
+    assert new_locs.min() >= 0 and new_locs.max() <= 1, "Locations must be between 0 and 1."
+
+    tile_catalogs = []
+    for ii in range(n_samples):
+        _sample = {k: v[ii] for k, v in new_samples.items()}
+        catalog = TileCatalog.from_flat_dict(tile_slen, nth, ntw, _sample)
+        tile_catalogs.append(catalog)
+    return tile_catalogs
