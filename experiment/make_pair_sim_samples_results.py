@@ -409,7 +409,7 @@ def main(
             assert torch.all(out["sample_plocs"][:, 0] > 0)
             sample_x = out["sample_plocs"][:, 1].numpy() + 24 - 0.5
             sample_y = out["sample_plocs"][:, 0].numpy() + 24 - 0.5
-            ax6.imshow(images[idx].numpy(), cmap="gray", origin="lower")
+            ax6.imshow(images[idx].numpy().squeeze(), cmap="gray", origin="lower")
             ax6.scatter(
                 sample_x, sample_y, color="red", s=20, alpha=0.2, label="Sampled Plocs", marker="x"
             )
