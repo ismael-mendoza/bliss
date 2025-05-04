@@ -96,6 +96,8 @@ def get_sample_results(
             plocs = _plocs[0]
             central_plocs = torch.tensor([12.5, 12.5]).reshape(1, 2)
             dist_to_center = torch.norm(plocs - central_plocs, dim=-1)
+
+            # NOTE: match within 2 pixels of center
             indices = torch.argwhere(dist_to_center < 2).flatten()
             if len(indices) > 1:
                 raise ValueError("More than one source within central tile found.")
@@ -170,12 +172,19 @@ def get_sample_results(
     return outs
 
 
-def main(seed: int = 42, n_images: int = 200, n_samples: int = 500, overwrite: bool = False):
+def main(
+    seed: int = 42,
+    n_images: int = 200,
+    n_samples: int = 500,
+    tag: str = "",
+    overwrite: bool = False,
+):
+    tag_txt = f"_{tag}" if (tag and not tag.startswith("_")) else tag
     device = torch.device("cuda:0")
     out_dir = Path("figures/pair_sim")
     deblend_fpath = "models/deblender_23_22.pt"
     ae_fpath = "models/autoencoder_42_42.pt"
-    results_path = out_dir / "pair_sim_results.pt"
+    results_path = out_dir / f"pair_sim_results{tag_txt}.pt"
 
     if not results_path.exists() or overwrite:
         pl.seed_everything(seed)
@@ -274,7 +283,7 @@ def main(seed: int = 42, n_images: int = 200, n_samples: int = 500, overwrite: b
         label="SNR of galaxy 2",
     )
     ax.set_xlabel("log10(SNR)")
-    fig.savefig(out_dir / "snr_histogram.png")
+    fig.savefig(out_dir / f"snr_histogram{tag_txt}.png")
     plt.close(fig)
 
     assert bld.shape == (n_images, 2)
@@ -298,12 +307,12 @@ def main(seed: int = 42, n_images: int = 200, n_samples: int = 500, overwrite: b
     )
     ax.set_xlabel("Blendedness")
 
-    fig.savefig(out_dir / "blendedness_histogram.png")
+    fig.savefig(out_dir / f"blendedness_histogram{tag}.png")
     plt.close(fig)
 
     # now we make figures across all images using the output
     # we will make a big PDF, one page per image containing 4 plots
-    pdf_path = out_dir / "pair_sim_results.pdf"
+    pdf_path = out_dir / f"pair_sim_results{tag_txt}.pdf"
     with PdfPages(pdf_path) as pdf:
         for out in tqdm(outs, desc="Generating figures"):
             fig, axes = plt.subplots(2, 3, figsize=(15, 10))
@@ -351,6 +360,8 @@ def main(seed: int = 42, n_images: int = 200, n_samples: int = 500, overwrite: b
             fluxes = out["sample_fluxes"]
             map_flux = out["map_flux"]
             _tflux = true_flux[idx, 0, 0].item()
+            _n_matched_samples = torch.sum(~torch.isnan(fluxes)).item()
+            ax3.set_title("# matched samples: " + str(_n_matched_samples))
             ax3.hist(
                 fluxes.numpy(),
                 bins=31,
@@ -394,9 +405,11 @@ def main(seed: int = 42, n_images: int = 200, n_samples: int = 500, overwrite: b
             ax5.set_title("Original Image")
 
             # plot image with samples plocs and MAP plocs
+            assert torch.all(out["sample_plocs"][:, 1] > 0)
+            assert torch.all(out["sample_plocs"][:, 0] > 0)
             sample_x = out["sample_plocs"][:, 1].numpy() + 24 - 0.5
             sample_y = out["sample_plocs"][:, 0].numpy() + 24 - 0.5
-            ax6.imshow(images[idx].numpy().squeeze(), cmap="gray", origin="lower")
+            ax6.imshow(images[idx].numpy(), cmap="gray", origin="lower")
             ax6.scatter(
                 sample_x, sample_y, color="red", s=20, alpha=0.2, label="Sampled Plocs", marker="x"
             )
