@@ -25,11 +25,11 @@ from bliss.reporting import (
 
 def get_sample_results(
     *,
-    sorted_indices,
+    sorted_indices: np.ndarray,
     n_samples: int,
+    images: torch.Tensor,
     detection: DetectionEncoder,
     deblender: GalaxyEncoder,
-    images: torch.Tensor,
     device: torch.device,
 ) -> list[dict]:
     outs = []
@@ -111,7 +111,8 @@ def get_sample_results(
         sample_plocs = []
         for ss in range(n_samples):
             _plocs = sample_cats[ss].plocs[0]
-            assert _plocs.shape[0] == sample_cats[ss].n_sources.item()  # only adding nonzero
+            _n_sources = sample_cats[ss].n_sources.item()
+            assert _plocs.shape[0] == _n_sources  # only adding nonzero
             sample_plocs.append(_plocs)
         sample_plocs = torch.concatenate(sample_plocs, dim=0)
 
@@ -146,7 +147,7 @@ def get_sample_results(
             sources=map_reconstructions,
         )
 
-        # skip if no sources found
+        # skip if no sources found to avoid crashes
         if map_cat.n_sources.item() == 0:
             out["map_flux"] = torch.nan
             out["n_sources_map"] = 0
@@ -155,6 +156,7 @@ def get_sample_results(
             continue
 
         else:
+            # get clost sampled location index
             map_idx = torch.argmin(
                 torch.norm(map_cat.plocs[0] - torch.tensor([12.5, 12.5]).reshape(1, 2), dim=-1)
             ).item()
@@ -168,49 +170,104 @@ def get_sample_results(
     return outs
 
 
-def main(n_images: int = 100, n_samples: int = 500, overwrite: bool = False):
+def main(seed: int = 42, n_images: int = 100, n_samples: int = 500, overwrite: bool = False):
     device = torch.device("cuda:0")
     out_dir = Path("figures/pair_sim")
     deblend_fpath = "models/deblender_23_22.pt"
     ae_fpath = "models/autoencoder_42_42.pt"
     results_path = out_dir / "pair_sim_results.pt"
 
-    pl.seed_everything(42)
+    if not results_path.exists() or overwrite:
+        pl.seed_everything(seed)
 
-    cat = prepare_final_galaxy_catalog()
-    psf = get_default_lsst_psf()
-    _high_mag_cat = cat[cat["i_ab"] < 25.3]
+        cat = prepare_final_galaxy_catalog()
+        psf = get_default_lsst_psf()
+        _high_mag_cat = cat[cat["i_ab"] < 25.3]
 
-    ds = generate_pair_dataset(
-        n_images,
-        _high_mag_cat,
-        psf,
-        out_square=15.0,
-    )
-    truth = FullCatalog(
-        25,
-        25,
-        {"n_sources": ds["n_sources"], "plocs": ds["plocs"], "galaxy_bools": ds["galaxy_bools"]},
-    )
+        ds = generate_pair_dataset(
+            n_images,
+            _high_mag_cat,
+            psf,
+            out_square=15.0,
+        )
+        truth = FullCatalog(
+            25,
+            25,
+            {
+                "n_sources": ds["n_sources"],
+                "plocs": ds["plocs"],
+                "galaxy_bools": ds["galaxy_bools"],
+            },
+        )
 
-    true_meas = get_residual_measurements(
-        truth,
-        ds["images"],
-        paddings=torch.zeros_like(ds["images"]),
-        sources=ds["uncentered_sources"],
-    )
+        im1 = ds["uncentered_sources"]
+        im2 = ds["uncentered_sources"].sum(dim=1)
+        bld = get_blendedness(im1, im2)
 
+        true_meas = get_residual_measurements(
+            truth,
+            ds["images"],
+            paddings=torch.zeros_like(ds["images"]),
+            sources=ds["uncentered_sources"],
+        )
+        true_snr = true_meas["snr"]
+
+        # lets get models
+        detection = DetectionEncoder().to(device).eval()
+        _ = detection.load_state_dict(
+            torch.load("models/detection_23_23.pt", map_location=device, weights_only=True)
+        )
+        detection = detection.requires_grad_(False).eval().to(device)
+
+        deblender = GalaxyEncoder(ae_fpath)
+        deblender.load_state_dict(torch.load(deblend_fpath, map_location=device, weights_only=True))
+        deblender = deblender.requires_grad_(False).to(device).eval()
+
+        # iterate over images in increasing order of blendedness of first source
+        sorted_indices = np.argsort(bld[:, 0].ravel())
+        outs = get_sample_results(
+            sorted_indices=sorted_indices,
+            n_samples=n_samples,
+            images=ds["images"],
+            detection=detection,
+            deblender=deblender,
+            device=device,
+        )
+        # save results
+        torch.save(
+            {
+                "outs": outs,
+                "bld": bld,
+                "true_snr": true_snr,
+                "true_flux": true_meas["flux"],
+                "true_plocs": truth.plocs,
+                "images": ds["images"].cpu(),
+            },
+            results_path,
+        )
+
+    print(f"Results already exist at {results_path}. Loading...")
+    results = torch.load(results_path, weights_only=False)
+    outs = results["outs"]
+    bld = results["bld"]
+    true_snr = results["true_snr"]
+    true_plocs = results["true_plocs"]
+    true_flux = results["true_flux"]
+    images = results["images"]
+    print("Results loaded successfully.")
+
+    # easy figures
     # snr figure
     fig, ax = plt.subplots(figsize=(8, 6))
     _, bins, _ = ax.hist(
-        true_meas["snr"][:, 0, 0].ravel().log10(),
+        true_snr[:, 0, 0].ravel().log10(),
         bins=51,
         color="C0",
         histtype="step",
         label="SNR of galaxy 1",
     )
     ax.hist(
-        true_meas["snr"][:, 1, 0].ravel().log10(),
+        true_snr[:, 1, 0].ravel().log10(),
         bins=bins,
         color="C1",
         histtype="step",
@@ -220,9 +277,6 @@ def main(n_images: int = 100, n_samples: int = 500, overwrite: bool = False):
     fig.savefig(out_dir / "snr_histogram.png")
     plt.close(fig)
 
-    im1 = ds["uncentered_sources"]
-    im2 = ds["uncentered_sources"].sum(dim=1)
-    bld = get_blendedness(im1, im2)
     assert bld.shape == (n_images, 2)
 
     # blendedness figure
@@ -247,59 +301,36 @@ def main(n_images: int = 100, n_samples: int = 500, overwrite: bool = False):
     fig.savefig(out_dir / "blendedness_histogram.png")
     plt.close(fig)
 
-    # lets get models
-    detection = DetectionEncoder().to(device).eval()
-    _ = detection.load_state_dict(
-        torch.load("models/detection_23_23.pt", map_location=device, weights_only=True)
-    )
-    detection = detection.requires_grad_(False).eval().to(device)
-
-    deblender = GalaxyEncoder(ae_fpath)
-    deblender.load_state_dict(torch.load(deblend_fpath, map_location=device, weights_only=True))
-    deblender = deblender.requires_grad_(False).to(device).eval()
-
-    # next part
-    # iterate over images in increasing order of blendedness of first source
-    sorted_indices = np.argsort(bld[:, 0].ravel())
-
-    if results_path.exists() and not overwrite:
-        print(f"Results already exist at {results_path}. Loading...")
-        outs = torch.load(results_path)
-        print("Results loaded successfully.")
-
-    else:
-        outs = get_sample_results(
-            sorted_indices=sorted_indices,
-            n_samples=n_samples,
-            detection=detection,
-            deblender=deblender,
-            images=ds["images"],
-            device=device,
-        )
-        # save results
-        torch.save(outs, results_path)
-
     # now we make figures across all images using the output
     # we will make a big PDF, one page per image containing 4 plots
     pdf_path = out_dir / "pair_sim_results.pdf"
     with PdfPages(pdf_path) as pdf:
-        for out in outs:
+        for out in tqdm(outs, desc="Generating figures"):
             fig, axes = plt.subplots(2, 3, figsize=(15, 10))
             ax1, ax2, ax3, ax4, ax5, ax6 = axes.flatten()
 
             # blendedness as global title
-            idx = out["idx"]
+            idx = out["idx"].item()
             blendedness = bld[idx, 0].item()
-            fig.suptitle(f"Blendedness: {blendedness:.4f}", fontsize=16)
+            snr1 = true_snr[idx, 0, 0].item()
+            snr2 = true_snr[idx, 1, 0].item()
+            dist = torch.norm(true_plocs[idx, 1, :] - torch.tensor([12.5, 12.5])).item()
+            fig.suptitle(
+                f"Blendedness: {blendedness:.4f}, \n SNR1: {snr1:.2f}, SNR2: {snr2:.2f} \n Distance: {dist:.2f} (pixels)",
+                fontsize=16,
+            )
 
             # Plot detection probability
-            im = ax1.imshow(out["det_prob"], cmap="viridis", origin="lower")
+            im = ax1.imshow(out["det_prob"], cmap="summer", origin="lower")
             divider = make_axes_locatable(ax)
             cax = divider.append_axes("right", size="5%", pad=0.05)
             fig.colorbar(im, cax=cax, orientation="vertical")
             ax1.set_title("Detection Probability")
             ax1.set_xlabel("Tile X Position")
             ax1.set_ylabel("Tile Y Position")
+            # add text to each matrix cell
+            for (i, j), val in np.ndenumerate(out["det_prob"]):
+                ax1.text(j, i, f"{val:.2f}", ha="center", va="center", color="black", fontsize=8)
 
             # Plot location samples in tile (x, y together)
             all_locs = out["nonzero_locs"]
@@ -317,10 +348,9 @@ def main(n_images: int = 100, n_samples: int = 500, overwrite: bool = False):
             ax2.legend()
 
             # Plot sample fluxes
-            idx = out["idx"]
             fluxes = out["sample_fluxes"]
             map_flux = out["map_flux"]
-            true_flux = true_meas["flux"][idx, 0, 0].item()
+            _tflux = true_flux[idx, 0, 0].item()
             ax3.hist(
                 fluxes.numpy(),
                 bins=31,
@@ -329,7 +359,7 @@ def main(n_images: int = 100, n_samples: int = 500, overwrite: bool = False):
                 histtype="step",
             )
             ax3.axvline(fluxes.nanmean().item(), color="red", linestyle="--", label="Mean Flux")
-            ax3.axvline(true_flux, color="k", linestyle="--", label="True Flux")
+            ax3.axvline(_tflux, color="k", linestyle="--", label="True Flux")
             ax3.axvline(map_flux, color="blue", linestyle="--", label="Map Flux")
             ax3.legend()
 
@@ -360,30 +390,33 @@ def main(n_images: int = 100, n_samples: int = 500, overwrite: bool = False):
             ax4.legend()
 
             # also plot image
-            ax5.imshow(ds["images"][out["idx"]].numpy().squeeze(), cmap="gray", origin="lower")
+            ax5.imshow(images[idx].numpy().squeeze(), cmap="gray", origin="lower")
             ax5.set_title("Original Image")
 
             # plot image with samples plocs and MAP plocs
             sample_x = out["sample_plocs"][:, 1].numpy() + 24 - 0.5
             sample_y = out["sample_plocs"][:, 0].numpy() + 24 - 0.5
-            ax6.imshow(ds["images"][out["idx"]].numpy().squeeze(), cmap="gray", origin="lower")
+            ax6.imshow(images[idx].numpy().squeeze(), cmap="gray", origin="lower")
             ax6.scatter(
                 sample_x, sample_y, color="red", s=20, alpha=0.2, label="Sampled Plocs", marker="x"
             )
-            ax6.scatter(
-                out["map_plocs"][:, 1] + 24 - 0.5,
-                out["map_plocs"][:, 0] + 24 - 0.5,
-                color="blue",
-                s=30,
-                alpha=1.0,
-                marker="+",
-                label="MAP Plocs",
-            )
+
+            if out["map_plocs"].numel() > 0:
+                ax6.scatter(
+                    out["map_plocs"][:, 1] + 24 - 0.5,
+                    out["map_plocs"][:, 0] + 24 - 0.5,
+                    color="blue",
+                    s=30,
+                    alpha=1.0,
+                    marker="+",
+                    label="MAP Plocs",
+                )
+
             # true plocs
-            true_plocs = truth.plocs[out["idx"]].numpy().squeeze()
+            _tplocs = true_plocs[idx].numpy()
             ax6.scatter(
-                true_plocs[:, 1] + 24 - 0.5,
-                true_plocs[:, 0] + 24 - 0.5,
+                _tplocs[:, 1] + 24 - 0.5,
+                _tplocs[:, 0] + 24 - 0.5,
                 color="k",
                 s=30,
                 alpha=1.0,
