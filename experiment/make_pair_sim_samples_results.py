@@ -170,7 +170,7 @@ def get_sample_results(
     return outs
 
 
-def main(seed: int = 42, n_images: int = 100, n_samples: int = 500, overwrite: bool = False):
+def main(seed: int = 42, n_images: int = 200, n_samples: int = 500, overwrite: bool = False):
     device = torch.device("cuda:0")
     out_dir = Path("figures/pair_sim")
     deblend_fpath = "models/deblender_23_22.pt"
