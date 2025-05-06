@@ -11,6 +11,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from tqdm import tqdm
 
+from bliss import DATASETS_DIR
 from bliss.catalog import FullCatalog, turn_samples_into_catalogs
 from bliss.datasets.central_sim import generate_central_sim_dataset
 from bliss.datasets.io import load_dataset_npz, save_dataset_npz
@@ -24,7 +25,7 @@ from bliss.reporting import (
 )
 
 
-def get_sample_results(
+def _get_sample_results(
     *,
     sorted_indices: np.ndarray,
     n_samples: int,
@@ -33,11 +34,12 @@ def get_sample_results(
     detection: DetectionEncoder,
     deblender: GalaxyEncoder,
     device: torch.device,
-    nth: int,  # number of tiles (width == height)
     slen: int,
     tile_slen: int,
     match_slack: float = 2.0,
 ) -> list[dict]:
+    nth = slen // tile_slen
+    assert nth * tile_slen == slen, "Tile size must evenly divide the image size."
     outs = []
     for ii in tqdm(sorted_indices, desc="Processing images"):
         out = {}
@@ -197,7 +199,7 @@ def main(
     ae_fpath = "models/autoencoder_42_42.pt"
     detection_fpath = "models/detection_23_23.pt"
     results_path = out_dir / f"central_sim_results{tag_txt}.pt"
-    dataset_path = out_dir / f"central_sim_dataset{tag_txt}.npz"
+    dataset_path = DATASETS_DIR / f"central_sim_dataset{tag_txt}.npz"
 
     if not dataset_path.exists() or overwrite_dataset:
         cat = prepare_final_galaxy_catalog()
@@ -239,6 +241,7 @@ def main(
             ds["images"],
             paddings=ds["paddings"],
             sources=ds["uncentered_sources"],
+            no_bar=False,
         )
         true_snr = true_meas["snr"]
 
@@ -255,10 +258,13 @@ def main(
 
         # iterate over images in increasing order of blendedness of first source
         sorted_indices = np.argsort(bld)
-        outs = get_sample_results(
+        outs = _get_sample_results(
             sorted_indices=sorted_indices,
             n_samples=n_samples,
             images=ds["images"],
+            paddings=ds["paddings"],
+            slen=slen,
+            tile_slen=5,
             detection=detection,
             deblender=deblender,
             device=device,
