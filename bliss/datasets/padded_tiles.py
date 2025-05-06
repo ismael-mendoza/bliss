@@ -159,7 +159,7 @@ def render_padded_image(
 
         is_galaxy = sample_bernoulli(galaxy_prob, 1).bool().item()
         if is_galaxy:
-            params, _ = sample_galaxy_params(catsim_table, 1, 1)
+            params, _ = sample_galaxy_params(catsim_table, n_galaxies=1, max_n_sources=1)
             assert params.shape == (1, 11)
             one_galaxy_params = params[0]
             galaxy = render_one_galaxy(one_galaxy_params, psf, size, offset)
