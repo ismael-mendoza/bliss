@@ -234,11 +234,18 @@ def add_loc_legend(ax: mpl.axes.Axes, labels: list, cmap1="cool", cmap2="bwr", s
     )
 
 
-def _bootstrap_quantiles(x, fnc, qs, n_boots=10000) -> float:
+def _bootstrap_quantiles(x, fnc, qs, n_boots=1000) -> float:
     """Return boostrap error of function `fnc` applied to array `x`."""
     x_boot = np.random.choice(x, size=(n_boots, len(x)), replace=True)
     x_hat = fnc(x_boot, axis=-1)
     return np.quantile(x_hat, qs[0]), np.quantile(x_hat, qs[1])
+
+
+def _bootstrap_sigma(x: np.ndarray, fnc, n_boots: int = 1000) -> float:
+    """Return boostrap error of function `fnc` applied to array `x`."""
+    x_boot = np.random.choice(x, size=(n_boots, len(x)), replace=True)
+    x_hat = fnc(x_boot, axis=-1)
+    return np.std(x_hat)
 
 
 def scatter_shade_plot(
@@ -291,7 +298,9 @@ def equal_sized_bin_statistic(
     if statistic not in ("mean", "median"):
         raise ValueError("Statistic not implemented.")
     assert x.ndim == 1 and y.ndim == 1
-    mask = (x >= xlims[0]) & (x <= xlims[1]) & (~torch.isnan(x)) & (~torch.isnan(y))
+    assert x.shape == y.shape, "x and y must have the same shape."
+    assert torch.isnan(x).sum() == 0 and torch.isnan(y).sum() == 0, "x and y must not contain NaNs."
+    mask = (x >= xlims[0]) & (x <= xlims[1])
     assert mask.any(), "No values in x within the specified limits."
     x_filtered = x[mask]
     y_filtered = y[mask]
@@ -300,19 +309,19 @@ def equal_sized_bin_statistic(
     bin_middles = (bin_edges[:-1] + bin_edges[1:]) / 2
     bin_stats = torch.zeros(n_bins)
     bin_errs = torch.zeros(n_bins)
+    counts = torch.zeros(n_bins, dtype=torch.int)
     for ii in range(n_bins):
         bin_mask = (x_filtered >= bin_edges[ii]) & (x_filtered < bin_edges[ii + 1])
         if bin_mask.sum() > 1:
             y_binned = y_filtered[bin_mask]
+            counts[ii] = bin_mask.sum().item()
             if statistic == "mean":
                 bin_stats[ii] = y_binned.mean()
                 bin_errs[ii] = y_binned.std() / torch.sqrt(bin_mask.sum().float())
             elif statistic == "median":
-                qs = 0.159, 0.841  # 1-sigma Gaussian quantiles
                 bin_stats[ii] = y_binned.median()
-                sigma = (torch.quantile(y_binned, qs[1]) - torch.quantile(y_binned, qs[0])) / 2
-                assert sigma >= 0
-                bin_errs[ii] = sigma / torch.sqrt(bin_mask.sum().float())
+                sigma = _bootstrap_sigma(y_binned.numpy(), np.median)
+                bin_errs[ii] = torch.tensor(sigma)
             else:
                 raise ValueError("Statistic not implemented.")
         else:
@@ -324,4 +333,5 @@ def equal_sized_bin_statistic(
         "edges": bin_edges,
         "stats": bin_stats,
         "errs": bin_errs,
+        "counts": counts,
     }
