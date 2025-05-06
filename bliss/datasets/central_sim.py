@@ -42,7 +42,7 @@ def _sample_source_params(
     _plocs = torch.zeros((max_n_sources, 2))
     for ii in range(n_sources):
         x, y = uniform_out_of_square(tile_slen, slen)
-        _plocs[ii] = torch.tensor([x, y])
+        _plocs[ii] = torch.tensor([y, x]) + slen / 2
 
     return {
         "n_sources": torch.tensor([n_sources]),
@@ -62,6 +62,7 @@ def create_central_sim_dataset(
     galaxy_density: float = GALAXY_DENSITY,  # counts / sq. arcmin
     tile_slen: int = 5,
     bp: int = 24,
+    mag_cut_central: float = 25.3,
 ) -> dict[str, Tensor]:
     assert max_n_sources > 1, "max_n_sources must be greater than 1 for central simulation."
     size = slen + 2 * bp
@@ -79,8 +80,9 @@ def create_central_sim_dataset(
 
     for _ in tqdm(range(n_samples)):
         # sample parameters of central source (always 1 galaxy)
+        mask_cat = catsim_table["i_ab"] < mag_cut_central
         plocs1 = torch.tensor([slen / 2, slen / 2]).view(1, 2)  # center of the tile
-        params1, _ = sample_galaxy_params(catsim_table, n_galaxies=1, max_n_sources=1)
+        params1, _ = sample_galaxy_params(catsim_table[mask_cat], n_galaxies=1, max_n_sources=1)
         assert params1.shape == (1, 11)
         assert plocs1.shape == (1, 2)
 
@@ -114,12 +116,15 @@ def create_central_sim_dataset(
             {
                 "n_sources": torch.tensor([n_sources]),
                 "plocs": plocs.unsqueeze(0),
-                "galaxy_bools": params2_dict["galaxy_bools"].unsqueeze(0),
+                "galaxy_bools": galaxy_bools.unsqueeze(0),
+                "galaxy_params": params.unsqueeze(0),
                 "star_bools": torch.zeros(1, max_n_sources, 1),
                 "star_fluxes": torch.zeros(1, max_n_sources, 1),
-                "galaxy_params": params.unsqueeze(0),
             },
         )
+        assert full_cat.n_sources.item() <= max_n_sources
+        assert full_cat.n_sources.item() == full_cat["galaxy_bools"].sum().item()
+
         central_noiseless, centered_noiseless, uncentered_noiseless = render_full_catalog(
             full_cat, psf, slen, bp
         )
@@ -148,7 +153,7 @@ def create_central_sim_dataset(
 
     return {
         "images": images,
-        "noiseless_images": noiseless_images,
+        "noiseless": noiseless_images,
         "paddings": paddings,
         "uncentered_sources": uncentered_sources,
         "centered_sources": centered_sources,
