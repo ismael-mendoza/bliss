@@ -53,7 +53,8 @@ def _sample_source_params(
     }
 
 
-def create_central_sim_dataset(
+def generate_central_sim_dataset(
+    *,
     n_samples: int,
     catsim_table: Table,
     psf: galsim.GSObject,
