@@ -11,6 +11,7 @@ from matplotlib import pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.pyplot import Axes
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from torch import Tensor
 
 CB_color_cycle = [
     "#377eb8",
@@ -281,3 +282,46 @@ def scatter_shade_plot(
 
     ax.plot(xs, ys, marker="o", c=color, linestyle="-", label=label)
     ax.fill_between(xs, yqs[:, 0], yqs[:, 1], color=color, alpha=alpha)
+
+
+def equal_sized_bin_statistic(
+    x: Tensor, y: Tensor, xlims: tuple[float, float], n_bins: int, statistic: str = "mean"
+) -> dict[str, Tensor]:
+    """Compute statistics of `y` in equal-sized bins of `x`."""
+    if statistic not in ("mean", "median"):
+        raise ValueError("Statistic not implemented.")
+    assert x.ndim == 1 and y.ndim == 1
+    mask = (x >= xlims[0]) & (x <= xlims[1]) & (~torch.isnan(x)) & (~torch.isnan(y))
+    assert mask.any(), "No values in x within the specified limits."
+    x_filtered = x[mask]
+    y_filtered = y[mask]
+    quantiles = torch.linspace(0, 1, n_bins + 1)
+    bin_edges = x_filtered.nanquantile(quantiles, interpolation="linear")
+    bin_middles = (bin_edges[:-1] + bin_edges[1:]) / 2
+    bin_stats = torch.zeros(n_bins)
+    bin_errs = torch.zeros(n_bins)
+    for ii in range(n_bins):
+        bin_mask = (x_filtered >= bin_edges[ii]) & (x_filtered < bin_edges[ii + 1])
+        if bin_mask.sum() > 1:
+            y_binned = y_filtered[bin_mask]
+            if statistic == "mean":
+                bin_stats[ii] = y_binned.mean()
+                bin_errs[ii] = y_binned.std() / torch.sqrt(bin_mask.sum().float())
+            elif statistic == "median":
+                qs = 0.159, 0.841  # 1-sigma Gaussian quantiles
+                bin_stats[ii] = y_binned.median()
+                sigma = (torch.quantile(y_binned, qs[1]) - torch.quantile(y_binned, qs[0])) / 2
+                assert sigma >= 0
+                bin_errs[ii] = sigma / torch.sqrt(bin_mask.sum().float())
+            else:
+                raise ValueError("Statistic not implemented.")
+        else:
+            bin_stats[ii] = torch.nan  # No data in this bin
+            bin_errs[ii] = torch.nan
+
+    return {
+        "middles": bin_middles,
+        "edges": bin_edges,
+        "stats": bin_stats,
+        "errs": bin_errs,
+    }
