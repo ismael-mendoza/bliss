@@ -351,7 +351,7 @@ def get_residual_measurements(
 
             # measure fluxes with sep
             f, ferr, _ = sep.sum_circle(
-                target_img, [x[jj]], [y[jj]], r=r, err=BACKGROUND.sqrt().item()
+                target_img, [x[jj]], [y[jj]], r=r, err=BACKGROUND.sqrt().item(), gain=1.0
             )
             _fluxes.append(f.item())
             _fluxerrs.append(ferr.item())
