@@ -381,7 +381,7 @@ def main(
                     ax3.set_title("# matched samples: " + str(_n_matched_samples))
                     ax3.hist(
                         fluxes.numpy(),
-                        bins=11,
+                        bins=21,
                         color="C0",
                         alpha=0.7,
                         histtype="step",
@@ -389,8 +389,8 @@ def main(
                     ax3.axvline(
                         fluxes.nanmean().item(), color="red", linestyle="--", label="Mean Flux"
                     )
-                    ax3.axvline(_tflux, color="k", linestyle="--", label="True Flux")
-                    ax3.axvline(map_flux, color="blue", linestyle="--", label="Map Flux")
+                    ax3.axvline(map_flux, color="blue", linestyle="-.", label="Map Flux")
+                    ax3.axvline(_tflux, color="k", linestyle="-", label="True Flux")
                     ax3.legend()
                 except ValueError as e:
                     print(f"Error plotting fluxes for index {idx}: {e}")
