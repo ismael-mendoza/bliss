@@ -213,7 +213,7 @@ def main(
             mag_cut_central=25.3,
         )
         save_dataset_npz(ds, dataset_path)
-    else:
+    elif overwrite or not results_path.exists():
         print(f"Dataset already exists at {dataset_path}. Loading...")
         ds = load_dataset_npz(dataset_path)
         print("Dataset loaded successfully.")
@@ -277,6 +277,7 @@ def main(
                 "true_snr": true_snr,
                 "true_flux": true_meas["flux"],
                 "true_plocs": truth.plocs,
+                "true_n_sources": truth.n_sources,
                 "images": ds["images"],
             },
             results_path,
@@ -288,6 +289,7 @@ def main(
     bld = results["bld"]
     true_snr = results["true_snr"]
     true_plocs = results["true_plocs"]
+    true_n_sources = results["true_n_sources"]
     true_flux = results["true_flux"]
     images = results["images"]
     print("Results loaded successfully.")
@@ -303,10 +305,10 @@ def main(
         label="SNR of galaxy 1",
     )
     ax.set_xlabel("log10(SNR)")
-    fig.savefig(out_dir / f"snr_histogram{tag_txt}.png")
+    fig.savefig(out_dir / f"snr_histogram_central{tag_txt}.png")
     plt.close(fig)
 
-    assert bld.shape == (n_images, 2)
+    assert bld.ndim == 1
 
     # blendedness figure
     fig, ax = plt.subplots(figsize=(8, 6))
@@ -320,14 +322,17 @@ def main(
     )
     ax.set_xlabel("Blendedness")
 
-    fig.savefig(out_dir / f"blendedness_histogram{tag}.png")
+    fig.savefig(out_dir / f"blendedness_histogram_central{tag}.png")
     plt.close(fig)
 
     # now we make figures across all images using the output
     # we will make a big PDF, one page per image containing 4 plots
-    pdf_path = out_dir / f"pair_sim_results{tag_txt}.pdf"
+    pdf_path = out_dir / f"central_sim_results{tag_txt}.pdf"
+    random_indices = np.random.choice(len(outs), size=min(len(outs), 1000), replace=False)
     with PdfPages(pdf_path) as pdf:
-        for out in tqdm(outs, desc="Generating figures"):
+        for jj in tqdm(random_indices, desc="Generating figures"):
+            out = outs[jj]
+
             fig, axes = plt.subplots(2, 3, figsize=(15, 10))
             ax1, ax2, ax3, ax4, ax5, ax6 = axes.flatten()
 
@@ -335,7 +340,9 @@ def main(
             idx = out["idx"].item()
             blendedness = bld[idx].item()
             snr1 = true_snr[idx, 0].item()
-            fig.suptitle(f"Blendedness: {blendedness:.4f}, \n SNR1: {snr1:.2f}", fontsize=16)
+            fig.suptitle(
+                f"Blendedness: {blendedness:.4f}, \n SNR1: {snr1:.2f} \n Index: {jj}", fontsize=16
+            )
 
             # Plot detection probability
             im = ax1.imshow(out["det_prob"], cmap="summer", origin="lower")
@@ -353,7 +360,7 @@ def main(
             all_locs = out["nonzero_locs"]
             ax2.hist(
                 all_locs.numpy(),
-                bins=50,
+                bins=21,
                 color="C0",
                 alpha=0.7,
                 histtype="step",
@@ -365,38 +372,46 @@ def main(
             ax2.legend()
 
             # Plot sample fluxes
-            fluxes = out["sample_fluxes"]
-            map_flux = out["map_flux"]
-            _tflux = true_flux[idx, 0, 0].item()
-            _n_matched_samples = torch.sum(~torch.isnan(fluxes)).item()
-            ax3.set_title("# matched samples: " + str(_n_matched_samples))
-            ax3.hist(
-                fluxes.numpy(),
-                bins=31,
-                color="C0",
-                alpha=0.7,
-                histtype="step",
-            )
-            ax3.axvline(fluxes.nanmean().item(), color="red", linestyle="--", label="Mean Flux")
-            ax3.axvline(_tflux, color="k", linestyle="--", label="True Flux")
-            ax3.axvline(map_flux, color="blue", linestyle="--", label="Map Flux")
-            ax3.legend()
+            if not out["sample_fluxes"].isnan().all():
+                try:
+                    fluxes = out["sample_fluxes"]
+                    map_flux = out["map_flux"]
+                    _tflux = true_flux[idx, 0, 0].item()
+                    _n_matched_samples = torch.sum(~torch.isnan(fluxes)).item()
+                    ax3.set_title("# matched samples: " + str(_n_matched_samples))
+                    ax3.hist(
+                        fluxes.numpy(),
+                        bins=11,
+                        color="C0",
+                        alpha=0.7,
+                        histtype="step",
+                    )
+                    ax3.axvline(
+                        fluxes.nanmean().item(), color="red", linestyle="--", label="Mean Flux"
+                    )
+                    ax3.axvline(_tflux, color="k", linestyle="--", label="True Flux")
+                    ax3.axvline(map_flux, color="blue", linestyle="--", label="Map Flux")
+                    ax3.legend()
+                except ValueError as e:
+                    print(f"Error plotting fluxes for index {idx}: {e}")
 
             # shade error on mean
             is_nan = torch.isnan(fluxes)
-            err = torch.std(fluxes[~is_nan]).item()
-            ax3.fill_between(
-                [fluxes.nanmean() - err, fluxes.nanmean() + err],
-                0,
-                ax3.get_ylim()[1],
-                color="red",
-                alpha=0.2,
-                label="Error on Mean",
-            )
+            if (~is_nan).sum() > 1:
+                err = torch.std(fluxes[~is_nan]).item()
+                ax3.fill_between(
+                    [fluxes.nanmean() - err, fluxes.nanmean() + err],
+                    0,
+                    ax3.get_ylim()[1],
+                    color="red",
+                    alpha=0.2,
+                    label="Error on Mean",
+                )
 
             # Plot number of sources sampled
             n_sources_samples = out["n_sources_samples"]
             n_sources_map = out["n_sources_map"]
+            n_sources = true_n_sources[idx].item()
             ax4.hist(
                 n_sources_samples.numpy(),
                 bins=np.arange(0, 10) - 0.5,
@@ -405,6 +420,7 @@ def main(
                 histtype="step",
             )
             ax4.axvline(n_sources_map, color="blue", linestyle="--", label="Map N Sources")
+            ax4.axvline(n_sources, color="black", linestyle="--", label="True N Sources")
             ax4.set_title("Number of Sources Sampled")
             ax4.legend()
 
@@ -438,7 +454,7 @@ def main(
             ax6.scatter(
                 _tplocs[:, 1] + 24 - 0.5,
                 _tplocs[:, 0] + 24 - 0.5,
-                color="k",
+                color="y",
                 s=30,
                 alpha=1.0,
                 marker="o",
