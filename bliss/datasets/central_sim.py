@@ -126,7 +126,7 @@ def generate_central_sim_dataset(
         assert full_cat.n_sources.item() <= max_n_sources
         assert full_cat.n_sources.item() == full_cat["galaxy_bools"].sum().item()
 
-        central_noiseless, centered_noiseless, uncentered_noiseless = render_full_catalog(
+        central_noiseless, uncentered_noiseless, centered_noiseless = render_full_catalog(
             full_cat, psf, slen, bp
         )
 
