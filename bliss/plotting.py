@@ -291,6 +291,48 @@ def scatter_shade_plot(
     ax.fill_between(xs, yqs[:, 0], yqs[:, 1], color=color, alpha=alpha)
 
 
+def binned_statistic(
+    *, bins: Tensor, x: Tensor, y: Tensor, statistic: str = "mean"
+) -> dict[str, Tensor]:
+    """Better than scipy, you can use your own bins."""
+    if statistic not in ("mean", "median"):
+        raise ValueError("Statistic not implemented.")
+    assert x.ndim == 1 and y.ndim == 1
+    assert x.shape == y.shape, "x and y must have the same shape."
+    assert torch.isnan(x).sum() == 0 and torch.isnan(y).sum() == 0, "x and y must not contain NaNs."
+    bin_middles = (bins[:-1] + bins[1:]) / 2
+    bin_stats = torch.zeros(bins.shape[0] - 1)
+    bin_errs = torch.zeros(bins.shape[0] - 1)
+    counts = torch.zeros(bins.shape[0] - 1, dtype=torch.int)
+
+    for ii in range(bins.shape[0] - 1):
+        bin_mask = (x >= bins[ii]) & (x < bins[ii + 1])
+        if bin_mask.sum() > 1:
+            y_binned = y[bin_mask]
+            counts[ii] = bin_mask.sum().item()
+            if statistic == "mean":
+                bin_stats[ii] = y_binned.mean()
+                bin_errs[ii] = y_binned.std() / torch.sqrt(bin_mask.sum().float())
+            elif statistic == "median":
+                bin_stats[ii] = y_binned.median()
+                sigma = _bootstrap_sigma(y_binned.numpy(), np.median)
+                bin_errs[ii] = torch.tensor(sigma)
+            else:
+                raise ValueError("Statistic not implemented.")
+        else:
+            bin_stats[ii] = torch.nan
+            bin_errs[ii] = torch.nan
+            counts[ii] = 0
+
+    return {
+        "middles": bin_middles,
+        "edges": bins,
+        "stats": bin_stats,
+        "errs": bin_errs,
+        "counts": counts,
+    }
+
+
 def equal_sized_bin_statistic(
     x: Tensor, y: Tensor, xlims: tuple[float, float], n_bins: int, statistic: str = "mean"
 ) -> dict[str, Tensor]:
