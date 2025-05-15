@@ -22,6 +22,7 @@ from bliss.reporting import (
     get_blendedness,
     get_deblended_reconstructions,
     get_residual_measurements,
+    get_sep_catalog,
 )
 
 
@@ -36,6 +37,7 @@ def _get_sample_results(
     device: torch.device,
     slen: int,
     tile_slen: int,
+    bp: int,
     match_slack: float = 2.0,
 ) -> list[dict]:
     nth = slen // tile_slen
@@ -99,6 +101,7 @@ def _get_sample_results(
 
         # pick fluxes that are within central tile only (i.e. that match with central galaxy)
         sample_fluxes = []
+        sample_fluxerrs = []
         for ss in range(n_samples):
             meas = residual_meas[ss]
             _plocs = sample_cats[ss].plocs
@@ -113,10 +116,13 @@ def _get_sample_results(
                 raise ValueError("More than one source within central tile found.")
             elif len(indices) == 0:
                 sample_fluxes.append(torch.nan)
+                sample_fluxerrs.append(torch.nan)
             else:
                 _idx = indices.item()
                 sample_fluxes.append(meas["flux"][0, _idx, 0].item())
+                sample_fluxerrs.append(meas["fluxerr"][0, _idx, 0].item())
         sample_fluxes = torch.tensor(sample_fluxes)
+        sample_fluxerrs = torch.tensor(sample_fluxerrs)
 
         n_sources_samples = torch.tensor([cat.n_sources.item() for cat in sample_cats])
 
@@ -132,6 +138,7 @@ def _get_sample_results(
         out["n_sources_samples"] = n_sources_samples
         out["det_prob"] = det_prob.reshape(nth, nth).cpu()
         out["sample_fluxes"] = sample_fluxes
+        out["sample_fluxerrs"] = sample_fluxerrs
         out["idx"] = ii
 
         # get map prediction too
@@ -141,14 +148,14 @@ def _get_sample_results(
         map_galaxy_params = deblender.variational_mode(
             image.to(device), map_tile_cat.locs.to(device)
         )
-        map_tile_cat["galaxy_params"] = map_galaxy_params
+        map_tile_cat["galaxy_params"] = map_galaxy_params * map_galaxy_bools
         map_tile_cat = map_tile_cat.to("cpu")
-
         map_cat = map_tile_cat.to_full_params()
         map_reconstructions = get_deblended_reconstructions(
             map_cat,
             deblender._dec,
             slen=slen,
+            bp=bp,
             device=device,
         )
         map_residual_meas = get_residual_measurements(
@@ -158,24 +165,75 @@ def _get_sample_results(
             sources=map_reconstructions,
         )
 
+        # finally get sep prediction, using BLISS for deblending
+        sep_cat = get_sep_catalog(image, slen=slen, bp=bp)
+
+        # now we get intermediate based on these locations so that we decide which locs
+        # to keep in each tile, no deblending should be fine for this purpose
+        # this could be technically done in the `get_sep_catalog` function
+        _size = slen + 2 * bp
+        _dummy_images = torch.zeros(1, sep_cat.max_n_sources, 1, _size, _size)
+        sep_cat["fluxes"] = get_residual_measurements(
+            sep_cat, image, paddings=padding, sources=_dummy_images
+        )["flux"]
+        sep_tile_cat = sep_cat.to_tile_params(tile_slen, ignore_extra_sources=True)
+        sep_galaxy_bools = rearrange(sep_tile_cat.n_sources, "n nth ntw-> n nth ntw 1")
+        sep_tile_cat["galaxy_bools"] = sep_galaxy_bools.float()
+        sep_galaxy_params = deblender.variational_mode(
+            image.to(device), sep_tile_cat.locs.to(device)
+        ).to("cpu")
+        sep_tile_cat["galaxy_params"] = sep_galaxy_params * sep_galaxy_bools
+        sep_tile_cat = sep_tile_cat.to("cpu")
+        sep_tile_cat.pop("fluxes")  # we don't need this anymore
+        sep_cat = sep_tile_cat.to_full_params()
+        sep_reconstructions = get_deblended_reconstructions(
+            sep_cat,
+            deblender._dec,
+            slen=slen,
+            bp=bp,
+            device=device,
+        )
+        sep_residual_meas = get_residual_measurements(
+            sep_cat,
+            image,
+            paddings=padding,
+            sources=sep_reconstructions,
+        )
+
         # skip if no sources found to avoid crashes
         if map_cat.n_sources.item() == 0:
             out["map_flux"] = torch.nan
+            out["map_fluxerr"] = torch.nan
             out["n_sources_map"] = 0
             out["map_plocs"] = torch.tensor([])
-            outs.append(out)
-            continue
 
         else:
-            # get clost sampled location index
             map_dist = torch.norm(
                 map_cat.plocs[0] - torch.tensor([slen / 2, slen / 2]).reshape(1, 2), dim=-1
             )
             map_idx = torch.argmin(map_dist).item()
             out["n_sources_map"] = map_cat.n_sources.item()
             out["map_flux"] = map_residual_meas["flux"][:, map_idx, 0].item()
+            out["map_fluxerr"] = map_residual_meas["fluxerr"][:, map_idx, 0].item()
             out["map_plocs"] = map_cat.plocs[0]
-            outs.append(out)
+
+        if sep_cat.n_sources.item() == 0:
+            out["sep_flux"] = torch.nan
+            out["sep_fluxerr"] = torch.nan
+            out["n_sources_sep"] = 0
+            out["sep_plocs"] = torch.tensor([])
+
+        else:
+            sep_dist = torch.norm(
+                sep_cat.plocs[0] - torch.tensor([slen / 2, slen / 2]).reshape(1, 2), dim=-1
+            )
+            sep_idx = torch.argmin(sep_dist).item()
+            out["n_sources_sep"] = sep_cat.n_sources.item()
+            out["sep_flux"] = sep_residual_meas["flux"][:, sep_idx, 0].item()
+            out["sep_fluxerr"] = sep_residual_meas["fluxerr"][:, sep_idx, 0].item()
+            out["sep_plocs"] = sep_cat.plocs[0]
+
+        outs.append(out)
 
     return outs
 
@@ -186,6 +244,7 @@ def main(
     n_images: int = 10_000,
     n_samples: int = 100,
     slen: int = 35,
+    bp: int = 24,
     max_n_sources: int = 10,
     overwrite: bool = False,
     overwrite_dataset: bool = False,
@@ -211,6 +270,7 @@ def main(
             slen=slen,
             max_n_sources=10,
             mag_cut_central=25.3,
+            bp=24,
         )
         save_dataset_npz(ds, dataset_path)
     elif overwrite or not results_path.exists():
@@ -235,6 +295,7 @@ def main(
         assert blendedness.shape == (n_images, max_n_sources)
         bld = blendedness[:, 0]  # only keep central galaxy for now
         assert bld.ndim == 1
+        assert bld.shape == (n_images,)
 
         true_meas = get_residual_measurements(
             truth,
@@ -265,6 +326,7 @@ def main(
             paddings=ds["paddings"],
             slen=slen,
             tile_slen=5,
+            bp=bp,
             detection=detection,
             deblender=deblender,
             device=device,
@@ -293,6 +355,7 @@ def main(
     true_flux = results["true_flux"]
     images = results["images"]
     print("Results loaded successfully.")
+    print("Number of images:", len(outs))
 
     # easy figures
     # snr figure
@@ -376,6 +439,7 @@ def main(
                 try:
                     fluxes = out["sample_fluxes"]
                     map_flux = out["map_flux"]
+                    sep_flux = out["sep_flux"]
                     _tflux = true_flux[idx, 0, 0].item()
                     _n_matched_samples = torch.sum(~torch.isnan(fluxes)).item()
                     ax3.set_title("# matched samples: " + str(_n_matched_samples))
@@ -390,6 +454,7 @@ def main(
                         fluxes.nanmean().item(), color="red", linestyle="--", label="Mean Flux"
                     )
                     ax3.axvline(map_flux, color="blue", linestyle="-.", label="Map Flux")
+                    ax3.axvline(sep_flux, color="green", linestyle="-.", label="SEP Flux")
                     ax3.axvline(_tflux, color="k", linestyle="-", label="True Flux")
                     ax3.legend()
                 except ValueError as e:
@@ -411,6 +476,7 @@ def main(
             # Plot number of sources sampled
             n_sources_samples = out["n_sources_samples"]
             n_sources_map = out["n_sources_map"]
+            n_sources_sep = out["n_sources_sep"]
             n_sources = true_n_sources[idx].item()
             ax4.hist(
                 n_sources_samples.numpy(),
@@ -421,6 +487,7 @@ def main(
             )
             ax4.axvline(n_sources_map, color="blue", linestyle="--", label="Map N Sources")
             ax4.axvline(n_sources, color="black", linestyle="--", label="True N Sources")
+            ax4.axvline(n_sources_sep, color="green", linestyle="--", label="SEP N Sources")
             ax4.set_title("Number of Sources Sampled")
             ax4.legend()
 
@@ -447,6 +514,18 @@ def main(
                     alpha=1.0,
                     marker="+",
                     label="MAP Plocs",
+                )
+
+            # sep plocs
+            if out["sep_plocs"].numel() > 0:
+                ax6.scatter(
+                    out["sep_plocs"][:, 1] + 24 - 0.5,
+                    out["sep_plocs"][:, 0] + 24 - 0.5,
+                    color="green",
+                    s=30,
+                    alpha=1.0,
+                    marker="*",
+                    label="SEP Plocs",
                 )
 
             # true plocs
