@@ -412,7 +412,7 @@ def turn_samples_into_catalogs(
     # remove locs that fall outside tile
     n_sources = samples["n_sources"]
     locs = samples["locs"]
-    mask_xy = locs.ge(0.0001) * locs.le(1 - 0.0001)
+    mask_xy = locs.ge(tol) * locs.le(1 - tol)
     mask = mask_xy[..., 0].bitwise_and(mask_xy[..., 1])
     new_locs = locs * rearrange(mask, "n nt -> n nt 1")
     new_n_sources = n_sources * mask
