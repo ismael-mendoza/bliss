@@ -241,6 +241,7 @@ def _get_sample_results(
 def main(
     seed: int = 42,
     tag: str = typer.Option(),
+    indices_fname: str = typer.Option(),
     n_images: int = 10_000,
     n_samples: int = 100,
     slen: int = 35,
@@ -259,13 +260,18 @@ def main(
     detection_fpath = "models/detection_23_23.pt"
     results_path = out_dir / f"central_sim_results{tag_txt}.pt"
     dataset_path = DATASETS_DIR / f"central_sim_dataset{tag_txt}.npz"
+    indices_fpath = DATASETS_DIR / indices_fname
+    assert indices_fpath.exists()
+    indices_dict = np.load(indices_fpath)
+    test_indices = indices_dict["test"]
 
     if not dataset_path.exists() or overwrite_dataset:
         cat = prepare_final_galaxy_catalog()
         psf = get_default_lsst_psf()
+        print(f"Number of test galaxies: {len(cat[test_indices])}")
         ds = generate_central_sim_dataset(
             n_samples=n_images,
-            catsim_table=cat,
+            catsim_table=cat[test_indices],
             psf=psf,
             slen=slen,
             max_n_sources=10,
