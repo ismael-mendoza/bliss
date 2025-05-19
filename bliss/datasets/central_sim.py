@@ -79,11 +79,12 @@ def generate_central_sim_dataset(
     paddings = []
     all_params = []
 
+    mask_cat = catsim_table["i_ab"] < mag_cut_central
+    bright_cat = catsim_table[mask_cat]
     for _ in tqdm(range(n_samples)):
         # sample parameters of central source (always 1 galaxy)
-        mask_cat = catsim_table["i_ab"] < mag_cut_central
         plocs1 = torch.tensor([slen / 2, slen / 2]).view(1, 2)  # center of the tile
-        params1, _ = sample_galaxy_params(catsim_table[mask_cat], n_galaxies=1, max_n_sources=1)
+        params1, _ = sample_galaxy_params(bright_cat, n_galaxies=1, max_n_sources=1)
         assert params1.shape == (1, 11)
         assert plocs1.shape == (1, 2)
 
