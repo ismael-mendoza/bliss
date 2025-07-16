@@ -72,7 +72,7 @@ def match_by_grade(
     slack: float = 2.0,
     background: float = APERTURE_BACKGROUND,
 ):
-    """Match objects baseed on centroids and flux."""
+    """Match objects based on centroids and flux."""
     assert locs1.ndim == locs2.ndim == 2
     assert locs1.shape[-1] == locs2.shape[-1] == 2
     assert fluxes1.ndim == fluxes2.ndim == 1
@@ -449,107 +449,3 @@ def get_sep_catalog(images: torch.Tensor, *, slen: float, bp: float) -> FullCata
         plocs[jj, :n, 1] = torch.from_numpy(x) - bp + 0.5
 
     return FullCatalog(slen, slen, {"n_sources": n_sources, "plocs": plocs})
-
-
-def get_sep_catalog_deblended(images: torch.Tensor, *, slen: float, bp: float) -> FullCatalog:
-    max_n_sources = 0
-    all_sep_params = []
-
-    weight = 1 / np.full(images[0, 0].shape, BACKGROUND.item())
-
-    rms = np.zeros_like(weight)
-    mask_rms = np.ones_like(weight)
-    m = np.where(weight > 0)
-    rms[m] = np.sqrt(1 / weight[m])
-    mask_rms[m] = 0
-
-    for ii in range(images.shape[0]):
-        im = images[ii, 0].numpy()
-        cat, seg = sep.extract(
-            im,
-            err=BACKGROUND.sqrt().item(),
-            thresh=1.5,
-            minarea=5,
-            deblend_nthresh=32,
-            deblend_cont=0.005,
-            segmentation_map=True,
-        )
-        n_obj = len(cat)
-        seg_id = np.arange(1, n_obj + 1, dtype=np.int32)
-        kronrads, _ = sep.kron_radius(
-            im,
-            cat["x"],
-            cat["y"],
-            cat["a"],
-            cat["b"],
-            cat["theta"],
-            6.0,
-            seg_id=seg_id,
-            segmap=seg,
-            mask=mask_rms,
-        )
-
-        fluxes1 = np.full((n_obj,), np.nan)
-        fluxerrs = np.full((n_obj,), np.nan)
-        snr1 = np.full((n_obj,), np.nan)
-
-        good_flux = (
-            (kronrads > 0)
-            & (cat["b"] > 0)
-            & (cat["a"] >= cat["b"])
-            & (cat["theta"] >= -np.pi / 2)
-            & (cat["theta"] <= np.pi / 2)
-        )
-
-        fluxes1[good_flux], fluxerrs[good_flux], _ = sep.sum_ellipse(
-            im,
-            cat["x"][good_flux],
-            cat["y"][good_flux],
-            cat["a"][good_flux],
-            cat["b"][good_flux],
-            cat["theta"][good_flux],
-            2.5 * kronrads[good_flux],
-            err=rms,
-            subpix=1,
-            seg_id=seg_id[good_flux],
-            segmap=seg,
-            mask=mask_rms,
-        )
-
-        good_snr = (fluxes1 > 0) & (fluxerrs > 0)
-        snr1[good_snr] = fluxes1[good_snr] / fluxerrs[good_snr]
-
-        x1 = cat["x"]
-        y1 = cat["y"]
-        assert x1.ndim == 1 and x1.shape[0] == n_obj
-
-        # need to ignore detected sources that are in the padding
-        in_padding = (
-            (x1 < bp - 0.5) | (x1 > bp + slen - 0.5) | (y1 < bp - 0.5) | (y1 > bp + slen - 0.5)
-        )
-
-        x = x1[np.logical_not(in_padding)]
-        y = y1[np.logical_not(in_padding)]
-        snr = snr1[np.logical_not(in_padding)]
-        fluxes = fluxes1[np.logical_not(in_padding)]
-
-        max_n_sources = max(n_obj, max_n_sources)
-
-        all_sep_params.append((n_obj, x, y, fluxes, snr))
-
-    n_sources = torch.zeros((images.shape[0],)).long()
-    plocs = torch.zeros((images.shape[0], max_n_sources, 2))
-    fluxes = torch.zeros((images.shape[0], max_n_sources, 1))
-    snrs = torch.zeros((images.shape[0], max_n_sources, 1))
-
-    for jj in range(images.shape[0]):
-        n, x, y, f, _snr = all_sep_params[jj]
-        n_sources[jj] = n
-        plocs[jj, :n, 0] = torch.from_numpy(y) - bp + 0.5
-        plocs[jj, :n, 1] = torch.from_numpy(x) - bp + 0.5
-        fluxes[jj, :n, 0] = torch.from_numpy(f)
-        snrs[jj, :n, 0] = torch.from_numpy(_snr)
-
-    return FullCatalog(
-        slen, slen, {"n_sources": n_sources, "plocs": plocs, "fluxes": fluxes, "snr": snrs}
-    )
