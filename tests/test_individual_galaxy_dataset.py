@@ -2,7 +2,6 @@ from pathlib import Path
 
 import numpy as np
 import torch
-from astropy.table import Table
 from einops import reduce
 
 from bliss.datasets.generate_individual import generate_individual_dataset
