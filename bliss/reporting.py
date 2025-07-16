@@ -20,7 +20,6 @@ from bliss.encoders.autoencoder import CenteredGalaxyDecoder
 from bliss.render_tiles import reconstruct_image_from_ptiles, render_galaxy_ptiles
 
 
-# example: HSC -> 3 pixels for matching (Yr3 Li et al. ~2021)
 def match_by_locs(locs1: Tensor, locs2: Tensor, *, slack: float = 2.0):
     """Match true and estimated locations and returned indices to match.
 
