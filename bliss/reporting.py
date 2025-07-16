@@ -21,7 +21,7 @@ from bliss.render_tiles import reconstruct_image_from_ptiles, render_galaxy_ptil
 
 
 # example: HSC -> 3 pixels for matching (Yr3 Li et al. ~2021)
-def match_by_locs(locs1: Tensor, locs2: Tensor, slack: float = 2.0):
+def match_by_locs(locs1: Tensor, locs2: Tensor, *, slack: float = 2.0):
     """Match true and estimated locations and returned indices to match.
 
     Automatically discards matches where at least one location has coordinates **exactly** (0, 0).
@@ -103,7 +103,10 @@ def match_by_grade(
 
 
 def compute_batch_tp_fp(
-    truth: FullCatalog, est: FullCatalog, *, slack: float
+    truth: FullCatalog,
+    est: FullCatalog,
+    *,
+    slack: float = 2.0,
 ) -> Tuple[Tensor, Tensor, Tensor]:
     """Separate purpose from `DetectionMetrics`, since here we don't aggregate over batches."""
     all_tp = torch.zeros(truth.batch_size)
@@ -137,6 +140,8 @@ def compute_tp_fp_per_bin(
     est: FullCatalog,
     param: str,
     bins: Tensor,
+    *,
+    slack: float = 2.0,
     only_recall: bool = False,
 ) -> Dict[str, Tensor]:
     counts_per_bin: DefaultDict[str, Tensor] = defaultdict(
@@ -146,13 +151,13 @@ def compute_tp_fp_per_bin(
         if not only_recall:
             # precision
             eparams = est.apply_param_bin(param, b1, b2)
-            tp, fp, _ = compute_batch_tp_fp(truth, eparams)
+            tp, fp, _ = compute_batch_tp_fp(truth, eparams, slack=slack)
             counts_per_bin["tp_precision"][ii] = tp
             counts_per_bin["fp_precision"][ii] = fp
 
         # recall
         tparams = truth.apply_param_bin(param, b1, b2)
-        tp, _, ntrue = compute_batch_tp_fp(tparams, est)
+        tp, _, ntrue = compute_batch_tp_fp(tparams, est, slack=slack)
         counts_per_bin["tp_recall"][ii] = tp
         counts_per_bin["ntrue"][ii] = ntrue
 
