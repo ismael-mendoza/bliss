@@ -1,7 +1,5 @@
 """Script to create detection encoder related figures."""
 
-import math
-
 import torch
 from einops import rearrange, reduce
 from matplotlib import pyplot as plt
