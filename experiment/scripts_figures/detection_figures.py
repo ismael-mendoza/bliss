@@ -16,16 +16,6 @@ from bliss.reporting import (
     get_sep_catalog,
 )
 
-# these two expressions are assume each quantity to be independent
-# not sure if true for the recall in particular
-# def _get_poisson_precision_error(tp: int, fp: int) -> float:
-#     r = tp / (fp + tp)
-#     return math.sqrt(r * (1 - r) / (tp + fp))
-
-# def _get_poisson_recall_error(tp: int, n_true: int) -> float:
-#     s = tp / n_true
-#     return math.sqrt(s * (1 + s) / n_true)
-
 
 class BlendDetectionFigures(BlissFigure):
     def __init__(
