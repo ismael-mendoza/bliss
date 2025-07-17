@@ -5,7 +5,7 @@ This directory the scripts required to reproduce results from the upcoming publi
 ## Steps to reproduce results
 
 0. First you need to set the paths where you want to save various intermediate outputs like datasets
-and models. The paths can be set manually in `config/__init__.py`.
+and models. The paths can be set manually in the `__init__.py`.
 
 The random seed used for all the steps below can also be set here. The default is `52`.
 
@@ -25,7 +25,7 @@ Individual datasets can be created:
 ./make_datasets.py --central
 ```
 
-as described in the paper. Datasets are saved in the path specified in the `DATASETS_DIR` from the `config/__init__.py`.
+as described in the paper. Datasets are saved in the path specified in the `DATASETS_DIR` from the `__init__.py`.
 
 2. **Training models**: There is a set of pre-trained models already provided in the `models` folder, but the
 models can also be reproduced by running:
@@ -42,6 +42,6 @@ A GPU is required for training the models in a reasonable amount of time. The mo
 ./train_models.py --deblend
 ```
 
-Models are saved in the path specified in the `MODELS_DIR` from the `config/__init__.py`.
+Models are saved in the path specified in the `MODELS_DIR` from the `__init__.py`.
 
 3. Get results...

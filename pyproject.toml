@@ -38,7 +38,7 @@ dependencies = [
 ]
 
 [tool.setuptools]
-packages = ["bliss", "bliss.datasets", "bliss.encoders", "experiment.config"]
+packages = ["bliss", "bliss.datasets", "bliss.encoders", "experiment"]
 
 [build-system]
 requires      = ["setuptools >= 61.0"]
