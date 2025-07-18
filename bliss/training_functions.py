@@ -6,14 +6,9 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader, Dataset
 
-from bliss import HOME_DIR
 from bliss.datasets.saved_datasets import SavedGalsimBlends, SavedPtiles
 
 NUM_WORKERS = 0
-
-MODELS_DIR = HOME_DIR / "experiment/models"
-LOG_FILE = HOME_DIR / "experiment/log.txt"
-LOG_FILE_LONG = HOME_DIR / "experiment/log_long.txt"
 
 
 def setup_training_objects(
@@ -64,26 +59,25 @@ def setup_training_objects(
 
 
 def run_encoder_training(
+    *,
     seed: int,
     train_file: str,
     val_file: str,
     batch_size: int,
     n_epochs: int,
-    model,
+    model,  # model object ready to train
     model_name: str,
     validate_every_n_epoch: int,
     val_check_interval: float,
     log_every_n_steps: int,
-    log_info_dict: dict,
     is_deblender=False,
     extra_callbacks: list | None = None,  # list of additional callbacks to include
+    version: int | str | None = None,  # sometimes specifying version is useful
 ):
     assert model_name in {"detection", "binary", "deblender"}
 
     L.seed_everything(seed)
 
-    ds_seed = log_info_dict["ds_seed"]
-    assert not (MODELS_DIR / f"{model_name}_{ds_seed}_{seed}.pt").exists(), "model exists."
     if not Path(train_file).exists() or not Path(val_file).exists():
         raise IOError("Training datasets do not exists")
 
@@ -94,7 +88,7 @@ def run_encoder_training(
         train_ds = SavedGalsimBlends(train_file)
         val_ds = SavedGalsimBlends(val_file)
 
-    train_dl, val_dl, trainer, vnum = setup_training_objects(
+    train_dl, val_dl, trainer, _ = setup_training_objects(
         train_ds=train_ds,
         val_ds=val_ds,
         batch_size=batch_size,
@@ -105,11 +99,8 @@ def run_encoder_training(
         model_name=model_name,
         log_every_n_steps=log_every_n_steps,
         extra_callbacks=extra_callbacks,
+        version=version,
     )
-
-    # logging
-    log_info_dict.update({"version": vnum})
-    _log_info(seed, model_name, log_info_dict)
 
     # fit!
     trainer.fit(model=model, train_dataloaders=train_dl, val_dataloaders=val_dl)

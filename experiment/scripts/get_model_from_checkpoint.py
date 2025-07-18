@@ -1,16 +1,12 @@
 #!/usr/bin/env python3
 
-import datetime
 from pathlib import Path
 
 import numpy as np
 import torch
 import typer
 
-from bliss import HOME_DIR
-
-MODELS_DIR = HOME_DIR / "experiment/models"
-LOG_FILE = HOME_DIR / "experiment/log.txt"
+from experiment import MODELS_DIR
 
 
 def _find_best_checkpoint(checkpoint_dir: str):
@@ -40,21 +36,13 @@ def _save_weights(weight_save_path: str, model_checkpoint_path: str):
 def main(
     model: str = typer.Option(),
     seed: int = typer.Option(),
-    ds_seed: int = typer.Option(),
     checkpoint_dir: str = typer.Option(),
 ):
     """Save weights from model checkpoint."""
-    weight_path = MODELS_DIR / f"{model}_{ds_seed}_{seed}.pt"
+    weight_path = MODELS_DIR / f"{model}_{seed}.pt"
 
     checkpoint_path = _find_best_checkpoint(checkpoint_dir)
     _save_weights(weight_path, checkpoint_path)
-
-    with open(LOG_FILE, "a", encoding="utf-8") as f:
-        now = datetime.datetime.now()
-        print(
-            f"\n Saved checkpoint '{checkpoint_path}' as weights {weight_path} at {now}",
-            file=f,
-        )
 
 
 if __name__ == "__main__":

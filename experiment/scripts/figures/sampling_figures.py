@@ -11,14 +11,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from tqdm import tqdm
 
-from bliss import CACHE_DIR, DATASETS_DIR
 from bliss.catalog import FullCatalog, turn_samples_into_catalogs
-from bliss.datasets.central_sim import generate_central_sim_dataset
-from bliss.datasets.io import load_dataset_npz, save_dataset_npz
-from bliss.datasets.lsst import (
-    get_default_lsst_psf,
-    prepare_final_galaxy_catalog,
-)
+from bliss.datasets.io import load_dataset_npz
 from bliss.encoders.deblend import GalaxyEncoder
 from bliss.encoders.detection import DetectionEncoder
 from bliss.plotting import CLR_CYCLE, binned_statistic, equal_sized_bin_statistic, set_rc_params
@@ -28,6 +22,7 @@ from bliss.reporting import (
     get_residual_measurements,
     get_sep_catalog,
 )
+from experiment import CACHE_DIR, DATASETS_DIR, FIGURE_DIR, MODELS_DIR
 
 
 def _get_sample_results(
@@ -609,56 +604,29 @@ def _make_final_results_figures(*, out_dir: Path, rslts: dict) -> None:
 
 
 def main(
-    seed: int = 42,
-    tag: str = typer.Option(),
-    indices_fname: str = typer.Option(),
+    seed: int = typer.Option(),
     n_images: int = 10_000,
     n_samples: int = 100,
-    slen: int = 35,
     bp: int = 24,
     max_n_sources: int = 10,
     overwrite: bool = False,
-    overwrite_dataset: bool = False,
     do_diagnostics: bool = False,
 ):
     pl.seed_everything(seed)
 
-    tag_txt = f"_{tag}" if (tag and not tag.startswith("_")) else tag
     device = torch.device("cuda:0")
-    deblend_fpath = "models/deblender_23_22.pt"
-    ae_fpath = "models/autoencoder_42_42.pt"
-    detection_fpath = "models/detection_23_23.pt"
-    indices_fpath = DATASETS_DIR / indices_fname
-    dataset_path = DATASETS_DIR / f"central_sim_dataset{tag_txt}.npz"
-    results_path = CACHE_DIR / f"central_sim_results{tag_txt}.pt"
-    assert indices_fpath.exists()
-    diagnostics_fpath = CACHE_DIR / "diagnostics_central_sims"
-    figures_fpath = Path(f"figures/{tag}")
-    figures_fpath.mkdir(exist_ok=True)
-    indices_dict = np.load(indices_fpath)
-    test_indices = indices_dict["test"]
+    detection_fpath = MODELS_DIR / f"detection_{seed}.pt"
+    ae_fpath = MODELS_DIR / f"autoencoder_{seed}.pt"
+    deblend_fpath = MODELS_DIR / f"deblender_{seed}.pt"
+    dataset_path = DATASETS_DIR / f"central_ds_{seed}.npz"
+    results_path = CACHE_DIR / f"central_samples_results_{seed}.pt"
 
-    if not dataset_path.exists() or overwrite_dataset:
-        cat = prepare_final_galaxy_catalog()
-        psf = get_default_lsst_psf()
-        print(f"Number of test galaxies: {len(cat[test_indices])}")
-        ds = generate_central_sim_dataset(
-            n_samples=n_images,
-            catsim_table=cat[test_indices],
-            psf=psf,
-            slen=slen,
-            max_n_sources=10,
-            mag_cut_central=25.3,
-            bp=24,
-        )
-        save_dataset_npz(ds, dataset_path)
-
-    elif overwrite or not results_path.exists():
+    if overwrite or not results_path.exists():
         print(f"Dataset already exists at {dataset_path}. Loading...")
         ds = load_dataset_npz(dataset_path)
         print("Dataset loaded successfully.")
+        slen = ds["images"].shape[-1] - 2 * bp
 
-    if not results_path.exists() or overwrite:
         truth = FullCatalog(
             slen,
             slen,
@@ -731,9 +699,9 @@ def main(
     print("Number of images:", len(results["outs"]))
 
     if do_diagnostics:
-        _get_diagnostic_figures(diagnostics_fpath, results, tag_txt)
+        _get_diagnostic_figures(FIGURE_DIR, results, f"_{seed}")
 
-    _make_final_results_figures(out_dir=figures_fpath, rslts=results)
+    _make_final_results_figures(out_dir=FIGURE_DIR, rslts=results)
 
 
 if __name__ == "__main__":

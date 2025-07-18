@@ -6,7 +6,6 @@ import numpy as np
 import pytorch_lightning as L
 import typer
 
-from bliss import DATASETS_DIR, HOME_DIR
 from bliss.datasets.generate_blends import generate_dataset
 from bliss.datasets.io import save_dataset_npz
 from bliss.datasets.lsst import (
@@ -16,16 +15,12 @@ from bliss.datasets.lsst import (
     prepare_final_galaxy_catalog,
     prepare_final_star_catalog,
 )
-
-LOG_FILE = HOME_DIR / "experiment/log.txt"
+from experiment import DATASETS_DIR
 
 CATSIM_CAT = prepare_final_galaxy_catalog()
 STAR_MAGS = prepare_final_star_catalog()
 
 PSF = get_default_lsst_psf()
-
-
-assert LOG_FILE.exists()
 
 
 def main(
@@ -47,7 +42,7 @@ def main(
 
     # disjointed tables with different galaxies
     indices_fpath = DATASETS_DIR / indices_fname
-    assert indices_fpath.exists()
+    assert indices_fpath.exists(), "indices file does not exist."
     indices_dict = np.load(indices_fpath)
     train_indices = indices_dict["train"]
     val_indices = indices_dict["val"]

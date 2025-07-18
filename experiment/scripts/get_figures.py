@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
+import subprocess
 import warnings
 from pathlib import Path
 
-import pytorch_lightning as pl
+import pytorch_lightning as L
 import torch
 import typer
-from scripts_figures.binary_figures import BinaryFigures
-from scripts_figures.deblend_figures import DeblendingFigures
-from scripts_figures.detection_figures import BlendDetectionFigures
-from scripts_figures.toy_figures import ToySeparationFigure
-from scripts_figures.toy_sampling_figures import ToySamplingFigure
 
 from bliss.encoders.binary import BinaryEncoder
 from bliss.encoders.deblend import GalaxyEncoder
 from bliss.encoders.detection import DetectionEncoder
+from experiment import CACHE_DIR, DATASETS_DIR, FIGURE_DIR, MODELS_DIR, SEED
+from experiment.scripts.figures.binary_figures import BinaryFigures
+from experiment.scripts.figures.deblend_figures import DeblendingFigures
+from experiment.scripts.figures.detection_figures import BlendDetectionFigures
+from experiment.scripts.figures.toy_figures import ToySeparationFigure
+from experiment.scripts.figures.toy_sampling_figures import ToySamplingFigure
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-ALL_FIGS = ("detection", "binary", "deblend", "toy", "toy_samples")
-CACHEDIR = "/nfs/turbo/lsa-regier/scratch/ismael/cache/"
+ALL_FIGS = ("detection", "binary", "deblend", "toy", "toy_samples", "samples")
 
 
 def _load_models(fpaths: dict[str, str], model: str, device):
@@ -64,9 +65,9 @@ def _make_detection_figure(
     print("INFO: Creating figures for detection encoder performance on simulated blended galaxies.")
     _init_kwargs = {
         "overwrite": overwrite,
-        "figdir": "figures",
+        "figdir": FIGURE_DIR,
         "suffix": suffix,
-        "cachedir": CACHEDIR,
+        "cachedir": CACHE_DIR,
         "aperture": aperture,
     }
     detection = _load_models(fpaths, "detection", device)
@@ -85,9 +86,9 @@ def _make_deblend_figures(
     print("INFO: Creating figures for deblender performance on simulated blended galaxies.")
     _init_kwargs = {
         "overwrite": overwrite,
-        "figdir": "figures",
+        "figdir": FIGURE_DIR,
         "suffix": suffix,
-        "cachedir": CACHEDIR,
+        "cachedir": FIGURE_DIR,
         "aperture": aperture,
     }
     deblend = _load_models(fpaths, "deblend", device)
@@ -106,9 +107,9 @@ def _make_binary_figures(
     print("INFO: Creating figures for binary encoder performance on simulated blended galaxies.")
     _init_kwargs = {
         "overwrite": overwrite,
-        "figdir": "figures",
+        "figdir": FIGURE_DIR,
         "suffix": suffix,
-        "cachedir": CACHEDIR,
+        "cachedir": CACHE_DIR,
         "aperture": aperture,
     }
     binary = _load_models(fpaths, "binary", device)
@@ -125,9 +126,9 @@ def _make_toy_figures(
     print("INFO: Creating figures for toy experiment.")
     _init_kwargs = {
         "overwrite": overwrite,
-        "figdir": "figures",
+        "figdir": FIGURE_DIR,
         "suffix": suffix,
-        "cachedir": CACHEDIR,
+        "cachedir": CACHE_DIR,
     }
     detection = _load_models(fpaths, "detection", device)
     deblender = _load_models(fpaths, "deblend", device)
@@ -148,7 +149,7 @@ def _make_toy_sampling_figure(
         "overwrite": overwrite,
         "figdir": "figures",
         "suffix": suffix,
-        "cachedir": CACHEDIR,
+        "cachedir": CACHE_DIR,
         "aperture": aperture,
         "n_samples": 100,
     }
@@ -160,85 +161,72 @@ def _make_toy_sampling_figure(
 
 
 def main(
-    mode: str,
-    suffix: str,
-    seed: int = 42,
+    mode: str = typer.Option(),
     aperture: float = 5.0,
-    test_file_single: str = "",
-    test_file_blends: str = "",
-    detection_fpath: str = "",
-    deblend_fpath: str = "",
-    binary_fpath: str = "",
-    ae_fpath: str = "",
     overwrite: bool = False,
 ):
     assert mode in ALL_FIGS
 
     device = torch.device("cuda:0")
-    pl.seed_everything(seed)
+    L.seed_everything(SEED)
 
     fpaths = {
-        "detection": detection_fpath,
-        "binary": binary_fpath,
-        "deblend": deblend_fpath,
-        "ae": ae_fpath,
+        "ae": MODELS_DIR / f"autoencoder_{SEED}.pt",
+        "detection": MODELS_DIR / f"detection_{SEED}.pt",
+        "binary": MODELS_DIR / f"binary_{SEED}.pt",
+        "deblend": MODELS_DIR / f"deblender_{SEED}.pt",
+        "test_ds": DATASETS_DIR / f"test_ds_{SEED}.npz",
     }
 
+    for _, path in fpaths.item():
+        assert path.exists(), "Path does not exist."
+
     if mode == "detection":
-        assert test_file_blends and Path(test_file_blends).exists()
-        assert detection_fpath and Path(detection_fpath).exists()
         _make_detection_figure(
             fpaths,
-            test_file_blends,
-            suffix=suffix,
+            fpaths["test_ds"],
+            suffix=SEED,
             overwrite=overwrite,
             aperture=aperture,
             device=device,
         )
 
     elif mode == "deblend":
-        assert test_file_blends and Path(test_file_blends).exists()
-        assert deblend_fpath and Path(deblend_fpath).exists()
-        assert ae_fpath and Path(ae_fpath).exists(), "Need to provide AE when deblending."
         _make_deblend_figures(
             fpaths,
-            test_file_blends,
-            suffix=suffix,
+            fpaths["test_ds"],
+            suffix=SEED,
             overwrite=overwrite,
             aperture=aperture,
             device=device,
         )
 
     elif mode == "binary":
-        assert test_file_blends and Path(test_file_blends).exists()
-        assert binary_fpath and Path(binary_fpath).exists()
         _make_binary_figures(
             fpaths,
-            test_file_blends,
-            suffix=suffix,
+            fpaths["test_ds"],
+            suffix=SEED,
             overwrite=overwrite,
             aperture=aperture,
             device=device,
         )
 
     elif mode == "toy":
-        assert detection_fpath and Path(detection_fpath).exists()
-        assert deblend_fpath and Path(deblend_fpath).exists()
-        assert ae_fpath and Path(ae_fpath).exists(), "Need to provide AE when deblending."
-        _make_toy_figures(fpaths, suffix=suffix, overwrite=overwrite, device=device)
+        _make_toy_figures(fpaths, suffix=SEED, overwrite=overwrite, device=device)
 
     elif mode == "toy_samples":
-        assert detection_fpath and Path(detection_fpath).exists()
-        assert deblend_fpath and Path(deblend_fpath).exists()
-        assert ae_fpath and Path(ae_fpath).exists(), "Need to provide AE when deblending."
         _make_toy_sampling_figure(
             fpaths,
-            suffix=suffix,
+            suffix=SEED,
             overwrite=overwrite,
             device=device,
             aperture=aperture,
-            toy_cache_fpath=f"data/cache/toy_separation_{suffix}.pt",
+            toy_cache_fpath=CACHE_DIR / f"toy_separation_{SEED}.pt",
         )
+
+    elif mode == "samples":
+        cmd = f"./scripts/figures/sampling_figures.py --seed {SEED} --overwrite {overwrite}"
+        subprocess.check_call(cmd, shell=True)
 
     else:
         raise NotImplementedError("The requred figure has not been implemented.")
