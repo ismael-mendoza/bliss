@@ -12,7 +12,7 @@ def main(
     single: bool = False,
     blends: bool = False,
     tiles: bool = False,
-    central: bool = False,
+    centrals: bool = False,
     all: bool = False,
 ):
     L.seed_everything(SEED)
@@ -33,7 +33,7 @@ def main(
         )
         subprocess.check_call(cmd, shell=True)
 
-    if central or all:
+    if centrals or all:
         cmd = f"./scripts/datasets/get_centrals_dataset.py --seed {SEED} --indices-fname {indices_fname}"
         subprocess.check_call(cmd, shell=True)
 
