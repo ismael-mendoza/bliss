@@ -5,10 +5,10 @@ import numpy as np
 import pytorch_lightning as L
 import typer
 
-from bliss import DATASETS_DIR
 from bliss.datasets.generate_individual import generate_individual_dataset
 from bliss.datasets.io import save_dataset_npz
 from bliss.datasets.lsst import get_default_lsst_psf, prepare_final_galaxy_catalog
+from experiment import DATASETS_DIR
 
 NUM_WORKERS = 0
 
