@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import subprocess
 import warnings
-from pathlib import Path
 
 import pytorch_lightning as L
 import torch
