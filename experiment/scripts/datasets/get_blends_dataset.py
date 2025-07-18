@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import datetime
 
 import numpy as np
 import pytorch_lightning as L
@@ -67,14 +66,6 @@ def main(
             max_shift=0.5,
         )
         save_dataset_npz(ds, fpath)
-
-    # logging
-    with open(LOG_FILE, "a", encoding="utf-8") as f:
-        now = datetime.datetime.now()
-        log_msg = f"""\nBlend data generation with seed {seed} at {now}.
-        Galaxy density {galaxy_density}, star_density {star_density}, and n_samples {n_samples}.
-        """
-        print(log_msg, file=f)
 
 
 if __name__ == "__main__":
