@@ -9,7 +9,7 @@ from experiment import DATASETS_DIR, MODELS_DIR, SEED, TORCH_DIR
 
 
 def _save_model(*, model: str, version: int):
-    ckpt_dir = TORCH_DIR / "autoencoder" / f"version_{version}" / "checkpoints"
+    ckpt_dir = TORCH_DIR / model / f"version_{version}" / "checkpoints"
     save_cmd = f"./scripts/get_model_from_checkpoint.py --model {model} --seed {SEED} --checkpoint-dir {ckpt_dir}"
     subprocess.check_call(save_cmd, shell=True)
 
