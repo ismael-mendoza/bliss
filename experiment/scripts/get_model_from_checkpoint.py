@@ -40,7 +40,6 @@ def main(
 ):
     """Save weights from model checkpoint."""
     weight_path = MODELS_DIR / f"{model}_{seed}.pt"
-
     checkpoint_path = _find_best_checkpoint(checkpoint_dir)
     _save_weights(weight_path, checkpoint_path)
 

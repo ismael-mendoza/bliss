@@ -1,4 +1,3 @@
-import datetime
 from pathlib import Path
 
 import pytorch_lightning as L
@@ -7,6 +6,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader, Dataset
 
 from bliss.datasets.saved_datasets import SavedGalsimBlends, SavedPtiles
+from experiment import TORCH_DIR
 
 NUM_WORKERS = 0
 
@@ -38,7 +38,7 @@ def setup_training_objects(
     )
 
     logger = TensorBoardLogger(
-        save_dir="out", name=model_name, default_hp_metric=False, version=version
+        save_dir=TORCH_DIR, name=model_name, default_hp_metric=False, version=version
     )
 
     callbacks = [mckp, *extra_callbacks] if extra_callbacks else [mckp]
@@ -104,40 +104,3 @@ def run_encoder_training(
 
     # fit!
     trainer.fit(model=model, train_dataloaders=train_dl, val_dataloaders=val_dl)
-
-
-def _log_info(seed: int, model: str, info: dict):
-    now = datetime.datetime.now()
-
-    ds_seed = info["ds_seed"]
-    validate_every_n_epoch = info["validate_every_n_epoch"]
-    val_check_interval = info["val_check_interval"]
-    batch_size = info["batch_size"]
-    n_epochs = info["n_epochs"]
-    lr = info["lr"]
-    train_file = info["train_file"]
-    val_file = info["val_file"]
-    vnum = info["version"]
-
-    log_msg_short = (
-        f"\nTraining {model} with seed {seed}, ds_seed {ds_seed}, version {vnum} at {now}."
-    )
-    log_msg_long = f"""{log_msg_short}
-    validate_every_n_epoch {validate_every_n_epoch},
-    val_check_interval {val_check_interval}, batch_size {batch_size}, n_epochs {n_epochs}.
-    lr: {lr}
-
-    Using datasets: {train_file}, {val_file}
-    """
-
-    ae_path_msg = f"\nAE path: {info['ae_path']}" if model == "deblender" else ""
-
-    log_msg_short += ae_path_msg
-    log_msg_long += ae_path_msg
-
-    with open(LOG_FILE, "a", encoding="utf-8") as f:
-        print(log_msg_short, file=f)
-
-    with open(LOG_FILE_LONG, "a", encoding="utf-8") as f:
-        print("", file=f)
-        print(log_msg_long, file=f)
