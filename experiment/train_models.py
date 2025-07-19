@@ -29,22 +29,22 @@ def main(
     TORCH_DIR.mkdir(exist_ok=True)
 
     if autoencoder or all:
-        train_ds_path = DATASETS_DIR / f"train_ae_ds_{SEED}.pt"
-        val_ds_path = DATASETS_DIR / f"val_ae_ds_{SEED}.pt"
+        train_ds_path = DATASETS_DIR / f"train_ae_ds_{SEED}.npz"
+        val_ds_path = DATASETS_DIR / f"val_ae_ds_{SEED}.npz"
         cmd = f"./scripts/train/run_autoencoder_train.py --seed {SEED} --train-file {train_ds_path} --val-file {val_ds_path} --version {version}"
         subprocess.check_call(cmd, shell=True)
         _save_model(model="autoencoder", version=version)
 
     if detection or all:
-        train_ds_path = DATASETS_DIR / f"train_ds_{SEED}.pt"
-        val_ds_path = DATASETS_DIR / f"val_ds_{SEED}.pt"
+        train_ds_path = DATASETS_DIR / f"train_ds_{SEED}.npz"
+        val_ds_path = DATASETS_DIR / f"val_ds_{SEED}.npz"
         cmd = f"./scripts/train/run_detection_train.py --seed {SEED} --train-file {train_ds_path} --val-file {val_ds_path} --version {version}"
         subprocess.check_call(cmd, shell=True)
         _save_model(model="detection", version=version)
 
     if binary or all:
-        train_ds_path = DATASETS_DIR / f"train_ds_{SEED}.pt"
-        val_ds_path = DATASETS_DIR / f"val_ds_{SEED}.pt"
+        train_ds_path = DATASETS_DIR / f"train_ds_{SEED}.npz"
+        val_ds_path = DATASETS_DIR / f"val_ds_{SEED}.npz"
         cmd = f"./scripts/train/run_binary_train.py --seed {SEED} --train-file {train_ds_path} --val-file {val_ds_path} --version {version}"
         subprocess.check_call(cmd, shell=True)
         _save_model(model="binary", version=version)
