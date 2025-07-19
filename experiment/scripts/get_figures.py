@@ -177,46 +177,54 @@ def main(
         "test_ds": DATASETS_DIR / f"test_ds_{SEED}.npz",
     }
 
-    for _, path in fpaths.items():
-        assert path.exists(), "Path does not exist."
+    # for _, path in fpaths.items():
+    # assert path.exists(), "Path does not exist."
 
     if mode == "detection":
+        assert fpaths["detection"].exists()
+        assert fpaths["test_ds"].exists()
         _make_detection_figure(
             fpaths,
             fpaths["test_ds"],
-            suffix=SEED,
+            suffix=str(SEED),
             overwrite=overwrite,
             aperture=aperture,
             device=device,
         )
 
     elif mode == "deblend":
+        assert fpaths["detection"].exists()
+        assert fpaths["test_ds"].exists()
         _make_deblend_figures(
             fpaths,
             fpaths["test_ds"],
-            suffix=SEED,
+            suffix=str(SEED),
             overwrite=overwrite,
             aperture=aperture,
             device=device,
         )
 
     elif mode == "binary":
+        assert fpaths["binary"].exists()
+        assert fpaths["test_ds"].exists()
         _make_binary_figures(
             fpaths,
             fpaths["test_ds"],
-            suffix=SEED,
+            suffix=str(SEED),
             overwrite=overwrite,
             aperture=aperture,
             device=device,
         )
 
     elif mode == "toy":
-        _make_toy_figures(fpaths, suffix=SEED, overwrite=overwrite, device=device)
+        assert fpaths["detection"].exists()
+        assert fpaths["deblend"].exists()
+        _make_toy_figures(fpaths, suffix=str(SEED), overwrite=overwrite, device=device)
 
     elif mode == "toy_samples":
         _make_toy_sampling_figure(
             fpaths,
-            suffix=SEED,
+            suffix=str(SEED),
             overwrite=overwrite,
             device=device,
             aperture=aperture,
