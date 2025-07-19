@@ -35,3 +35,4 @@ venv
 bliss.egg-info
 experiment/figures/pair_sim
 **/OneDegSq.fits
+notebooks/
