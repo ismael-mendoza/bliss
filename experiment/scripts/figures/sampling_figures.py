@@ -621,6 +621,11 @@ def main(
     dataset_path = DATASETS_DIR / f"central_ds_{seed}.npz"
     results_path = CACHE_DIR / f"central_samples_results_{seed}.pt"
 
+    assert dataset_path.exists()
+    assert ae_fpath.exists()
+    assert deblend_fpath.exists()
+    assert detection_fpath.exists()
+
     if overwrite or not results_path.exists():
         print(f"Dataset already exists at {dataset_path}. Loading...")
         ds = load_dataset_npz(dataset_path)
