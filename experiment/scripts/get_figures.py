@@ -177,7 +177,7 @@ def main(
         "test_ds": DATASETS_DIR / f"test_ds_{SEED}.npz",
     }
 
-    for _, path in fpaths.item():
+    for _, path in fpaths.items():
         assert path.exists(), "Path does not exist."
 
     if mode == "detection":
