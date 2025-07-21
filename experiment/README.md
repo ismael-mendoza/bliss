@@ -2,6 +2,29 @@ Experiment
 ========
 This directory the scripts required to reproduce results from the upcoming publication "Simulation-Based Inference for Probabilistic Galaxy Detection and Deblending".
 
+## Downloading data
+
+The `data` folder included in the repository includes some of the data needed to reproduce experiments:
+
+- `stars_med_june2018.fits`
+
+- `stellar_density_lsst.fits.gz`
+
+Both of this come from Erin Sheldon's simulation input data in `https://github.com/LSSTDESC/descwl-shear-sims`. One of the data products is not included in this repository due to size, please download by running:
+
+```bash
+wget https://www.cosmo.bnl.gov/www/esheldon/data/catsim.tar.gz
+tar xvfz catsim.tar.gz
+```
+
+Then take out the `OneSqDeg.fits` file and put into the `data` folder along with the other input data.
+
+Finally, an environment variable has to be set pointing to this folder (absolute path):
+
+```bash
+export BLISS_DATA_DIR=/path/to/data/folder/
+```
+
 ## Steps to reproduce results
 
 0. First you need to set the paths where you want to save various intermediate outputs like datasets
