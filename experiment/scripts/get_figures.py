@@ -87,7 +87,7 @@ def _make_deblend_figures(
         "overwrite": overwrite,
         "figdir": FIGURE_DIR,
         "suffix": suffix,
-        "cachedir": FIGURE_DIR,
+        "cachedir": CACHE_DIR,
         "aperture": aperture,
     }
     deblend = _load_models(fpaths, "deblend", device)
