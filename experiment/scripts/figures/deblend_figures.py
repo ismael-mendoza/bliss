@@ -96,7 +96,6 @@ class DeblendingFigures(BlissFigure):
         # metadata
         bp = deblend.bp
         tile_slen = deblend.tile_slen
-        ptile_slen = deblend.ptile_slen
 
         # read dataset
         dataset = load_dataset_npz(ds_path)
