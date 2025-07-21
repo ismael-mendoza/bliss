@@ -232,7 +232,8 @@ def main(
         )
 
     elif mode == "samples":
-        cmd = f"./scripts/figures/sampling_figures.py --seed {SEED} --overwrite {overwrite}"
+        overwrite_txt = "--overwrite" if overwrite else "--no-overwrite"
+        cmd = f"./scripts/figures/sampling_figures.py --seed {SEED} --overwrite {overwrite_txt}"
         subprocess.check_call(cmd, shell=True)
 
     else:
