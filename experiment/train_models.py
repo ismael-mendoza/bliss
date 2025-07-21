@@ -53,6 +53,7 @@ def main(
         train_ds_path = DATASETS_DIR / f"train_ds_deblend_{SEED}.npz"
         val_ds_path = DATASETS_DIR / f"val_ds_deblend_{SEED}.npz"
         ae_fpath = MODELS_DIR / f"autoencoder_{SEED}.pt"
+        assert ae_fpath.exists()
         cmd = f"./scripts/train/run_deblender_train.py --seed {SEED} --ae-model-path {ae_fpath} --train-file {train_ds_path} --val-file {val_ds_path} --version {version}"
         subprocess.check_call(cmd, shell=True)
         _save_model(model="deblender", version=version)
