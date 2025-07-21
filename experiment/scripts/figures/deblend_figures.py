@@ -173,10 +173,9 @@ class DeblendingFigures(BlissFigure):
         recon_uncentered = get_deblended_reconstructions(
             est,
             deblend._dec,
-            slen=slen,
-            ptile_slen=ptile_slen,
-            tile_slen=tile_slen,
             device=deblend.device,
+            slen=slen,
+            tile_slen=tile_slen,
             bp=bp,
             no_bar=False,
         )
