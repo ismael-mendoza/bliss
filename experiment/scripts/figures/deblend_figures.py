@@ -12,7 +12,7 @@ from tqdm import tqdm
 from bliss.catalog import FullCatalog, TileCatalog
 from bliss.datasets.io import load_dataset_npz
 from bliss.encoders.deblend import GalaxyEncoder
-from bliss.plotting import CLR_CYCLE, BlissFigure
+from bliss.plotting import CLR_CYCLE, BlissFigure, equal_sized_bin_statistic
 from bliss.reporting import (
     get_blendedness,
     get_deblended_reconstructions,
@@ -77,6 +77,13 @@ class DeblendingFigures(BlissFigure):
                 "major_tick_width": 1.2,
                 "minor_tick_width": 0.8,
             },
+            "deblend_bins_medians": {
+                "fontsize": 36,
+                "major_tick_size": 11,
+                "minor_tick_size": 7,
+                "major_tick_width": 1.2,
+                "minor_tick_width": 0.8,
+            },
         }
 
     @property
@@ -90,6 +97,7 @@ class DeblendingFigures(BlissFigure):
             "deblend_size_scatter",
             "deblend_ellips_scatter",
             "deblend_bins",
+            "deblend_bins_medians",
         )
 
     def compute_data(self, ds_path: str, deblend: GalaxyEncoder):
@@ -358,6 +366,206 @@ class DeblendingFigures(BlissFigure):
 
         return fig
 
+    def _get_individual_deblending_plot(
+        self,
+        *,
+        ax,
+        x,
+        y1,
+        y2,
+        xlims,
+        n_bins,
+        c1,
+        c2,
+        alpha=0.25,
+        ylabel=None,
+        ylims_plot=None,
+        ticks=False,
+        legend=False,
+    ):
+        x = torch.from_numpy(x)
+        y1 = torch.from_numpy(y1)
+        y2 = torch.from_numpy(y2)
+        out1 = equal_sized_bin_statistic(x=x, y=y1, n_bins=n_bins, xlims=xlims, statistic="median")
+        out2 = equal_sized_bin_statistic(x=x, y=y2, n_bins=n_bins, xlims=xlims, statistic="median")
+
+        ax.plot(out1["middles"], out1["stats"], marker="o", color=c1, label=r"\rm No Deblending")
+        ax.fill_between(
+            out1["middles"],
+            out1["stats"] - out1["errs"],
+            out1["stats"] + out1["errs"],
+            color=c1,
+            alpha=alpha,
+        )
+
+        ax.plot(out2["middles"], out2["stats"], marker="o", color=c2, label=r"\rm Deblending")
+        ax.fill_between(
+            out2["middles"],
+            out2["stats"] - out2["errs"],
+            out2["stats"] + out2["errs"],
+            color=c2,
+            alpha=alpha,
+        )
+
+        ax.set_xscale("log")
+        ax.axhline(0.0, linestyle="--", color="gray")
+
+        if ticks:
+            ax.axes.xaxis.set_ticklabels([])
+
+        if ylabel:
+            ax.set_ylabel(ylabel)
+
+        if ylims_plot:
+            ax.set_ylim(ylims_plot)
+
+        if legend:
+            ax.legend()
+
+    def _get_deblending_results_bin_medians(self, data):
+        fig, axes = plt.subplots(4, 2, figsize=(20, 35))
+
+        _data = _get_masked_data(data)
+
+        snr = _data["snr"]
+        bld = _data["bld"]
+        fluxes = _data["truth"]["flux"]
+        bld_fluxes = _data["blended"]["flux"]
+        debld_fluxes = _data["deblended"]["flux"]
+        sizes = _data["truth"]["sigma"]
+        bld_sizes = _data["blended"]["sigma"]
+        debld_sizes = _data["deblended"]["sigma"]
+        e1 = _data["truth"]["e1"]
+        bld_e1 = _data["blended"]["e1"]
+        debld_e1 = _data["deblended"]["e1"]
+        e2 = _data["truth"]["e2"]
+        bld_e2 = _data["blended"]["e2"]
+        debld_e2 = _data["deblended"]["e2"]
+
+        # fluxes
+        snr_lims = (3, 1000)
+        bld_lims = (1e-2, 1)
+
+        c1 = CLR_CYCLE[0]
+        c2 = CLR_CYCLE[1]
+        _alpha = 0.2
+
+        res1 = (bld_fluxes - fluxes) / fluxes
+        res2 = (debld_fluxes - fluxes) / fluxes
+        self._get_individual_deblending_plot(
+            ax=axes[0, 0],
+            x=snr,
+            y1=res1,
+            y2=res2,
+            xlims=snr_lims,
+            n_bins=10,
+            c1=c1,
+            c2=c2,
+            alpha=_alpha,
+            ylabel=r"$ (f_{\rm pred} - f_{\rm true}) / f_{\rm true}$",
+        )
+
+        self._get_individual_deblending_plot(
+            ax=axes[0, 1],
+            x=bld,
+            y1=res1,
+            y2=res2,
+            xlims=bld_lims,
+            n_bins=12,
+            c1=c1,
+            c2=c2,
+            alpha=_alpha,
+            legend=True,
+        )
+
+        # sizes
+        res1 = (bld_sizes - sizes) / sizes
+        res2 = (debld_sizes - sizes) / sizes
+        self._get_individual_deblending_plot(
+            ax=axes[1, 0],
+            x=snr,
+            y1=res1,
+            y2=res2,
+            xlims=snr_lims,
+            n_bins=10,
+            c1=c1,
+            c2=c2,
+            alpha=_alpha,
+            ylabel=r"$ (T_{\rm pred} - T_{\rm true}) / T_{\rm true}$",
+        )
+        self._get_individual_deblending_plot(
+            ax=axes[1, 1],
+            x=bld,
+            y1=res1,
+            y2=res2,
+            xlims=bld_lims,
+            n_bins=12,
+            c1=c1,
+            c2=c2,
+            alpha=_alpha,
+        )
+        # ellipticities
+        res1 = bld_e1 - e1
+        res2 = debld_e1 - e1
+        self._get_individual_deblending_plot(
+            ax=axes[2, 0],
+            x=snr,
+            y1=res1,
+            y2=res2,
+            xlims=snr_lims,
+            n_bins=10,
+            c1=c1,
+            c2=c2,
+            alpha=_alpha,
+            ylabel=r"$e_{1,\rm{pred}} -  e_{1,\rm{true}}$",
+        )
+        self._get_individual_deblending_plot(
+            ax=axes[2, 1],
+            x=bld,
+            y1=res1,
+            y2=res2,
+            xlims=bld_lims,
+            n_bins=12,
+            c1=c1,
+            c2=c2,
+            alpha=_alpha,
+        )
+
+        res1 = bld_e2 - e2
+        res2 = debld_e2 - e2
+        self._get_individual_deblending_plot(
+            ax=axes[3, 0],
+            x=snr,
+            y1=res1,
+            y2=res2,
+            xlims=snr_lims,
+            n_bins=10,
+            c1=c1,
+            c2=c2,
+            alpha=_alpha,
+            ylabel=r"$e_{2,\rm{pred}} -  e_{2,\rm{true}}$",
+            ticks=True,
+        )
+        self._get_individual_deblending_plot(
+            ax=axes[3, 1],
+            x=bld,
+            y1=res1,
+            y2=res2,
+            xlims=bld_lims,
+            n_bins=12,
+            c1=c1,
+            c2=c2,
+            alpha=_alpha,
+            ticks=True,
+        )
+
+        axes[3, 0].set_xlabel(r"\rm SNR")
+        axes[3, 1].set_xlabel(r"\rm Blendedness")
+
+        plt.tight_layout()
+
+        return fig
+
     def _get_deblending_results_bin(self, data):
         fig, axes = plt.subplots(4, 2, figsize=(20, 35))
 
@@ -529,4 +737,6 @@ class DeblendingFigures(BlissFigure):
             return self._get_deblending_ellips_scatter(data)
         if fname == "deblend_bins":
             return self._get_deblending_results_bin(data)
+        if fname == "deblend_bins_medians":
+            return self._get_deblending_results_bin_medians(data)
         raise ValueError(f"Unknown figure name: {fname}")
