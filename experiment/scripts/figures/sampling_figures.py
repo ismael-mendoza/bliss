@@ -704,9 +704,9 @@ def main(
     print("Number of images:", len(results["outs"]))
 
     if do_diagnostics:
-        _get_diagnostic_figures(FIGURE_DIR, results, f"_{seed}")
+        _get_diagnostic_figures(FIGURE_DIR / str(seed), results, f"_{seed}")
 
-    _make_final_results_figures(out_dir=FIGURE_DIR, rslts=results)
+    _make_final_results_figures(out_dir=FIGURE_DIR / str(seed), rslts=results)
 
 
 if __name__ == "__main__":
