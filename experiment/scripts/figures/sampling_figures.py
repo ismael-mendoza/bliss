@@ -482,6 +482,8 @@ def _make_final_results_figures(*, out_dir: Path, rslts: dict) -> None:
         & ~torch.isnan(sep_fluxes)
     )
 
+    print("# of discarded NaN objects (non-detections):", len(mask_all) - sum(mask_all))
+
     res1 = res1[mask_all]
     res2 = res2[mask_all]
     res3 = res3[mask_all]
@@ -494,7 +496,7 @@ def _make_final_results_figures(*, out_dir: Path, rslts: dict) -> None:
     set_rc_params()
 
     # now snr
-    n_bins = 21
+    n_bins = 10
     out1 = equal_sized_bin_statistic(
         x=true_snr.log10(), y=res1, n_bins=n_bins, xlims=(0.5, 3), statistic="median"
     )
@@ -541,9 +543,8 @@ def _make_final_results_figures(*, out_dir: Path, rslts: dict) -> None:
     fig.savefig(out_dir / "samples_snr_res.png", dpi=500, bbox_inches="tight")
 
     # as a function of blendedness
-
     # first define bins (as described in paper)
-    qs = torch.linspace(0.12, 0.99, 31)
+    qs = torch.linspace(0.12, 0.99, 21)
     edges = bld.quantile(qs)
     bins = torch.tensor([0.0, *edges[1:-1], 1.0])
 
