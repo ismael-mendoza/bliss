@@ -705,7 +705,9 @@ def main(
     print("Number of images:", len(results["outs"]))
 
     if do_diagnostics:
-        _get_diagnostic_figures(FIGURE_DIR / str(seed), results, f"_{seed}")
+        diagnostics_dir = FIGURE_DIR / str(seed) / "diagnostics"
+        diagnostics_dir.mkdir(exist_ok=True)
+        _get_diagnostic_figures(out_dir=diagnostics_dir, results=results, tag_txt=f"_{seed}")
 
     _make_final_results_figures(out_dir=FIGURE_DIR / str(seed), rslts=results)
 
