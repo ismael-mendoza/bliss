@@ -1,5 +1,3 @@
-"""Methods to save datasets using h5py."""
-
 # useful resource: https://gist.github.com/gilliss/7e1d451b42441e77ae33a8b790eeeb73
 
 from pathlib import Path

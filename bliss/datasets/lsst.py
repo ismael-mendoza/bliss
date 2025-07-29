@@ -3,15 +3,15 @@
 import os
 from pathlib import Path
 
-import galcheat
 import galsim
 import numpy as np
+import surveycodex
 import torch
 from astropy import units as u
 from astropy.table import Table
 from btk.survey import get_surveys
 from einops import rearrange
-from galcheat.utilities import mag2counts, mean_sky_level
+from surveycodex.utilities import mag2counts, mean_sky_level
 from torch import Tensor
 
 from bliss.datasets.table_utils import column_to_tensor
@@ -37,7 +37,7 @@ def convert_mag_to_flux(mag: Tensor) -> Tensor:
 
 
 def convert_flux_to_mag(counts: Tensor) -> Tensor:
-    i_band = galcheat.get_survey("LSST").get_filter("i")
+    i_band = surveycodex.get_survey("LSST").get_filter("i")
 
     flux = counts.numpy() * u.electron / i_band.full_exposure_time  # pylint: disable=no-member
     mag = flux.to(u.mag(u.electron / u.s)) + i_band.zeropoint  # pylint: disable=no-member
