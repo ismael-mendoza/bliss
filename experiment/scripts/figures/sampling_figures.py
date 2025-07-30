@@ -448,49 +448,30 @@ def _make_final_results_figures(*, out_dir: Path, rslts: dict) -> None:
     map_fluxes = torch.tensor([out["map_flux"] for out in rslts["outs"]])
     sep_fluxes = torch.tensor([out["sep_flux"] for out in rslts["outs"]])
 
-    mask = ~torch.isnan(samples_fluxes).all(dim=1) & (true_snr > 0)  # only single galaxy snr < 0
+    # only found 1 galaxy with snr < 0
+    mask = (
+        ~torch.isnan(true_snr)
+        & (true_snr > 0)
+        & ~torch.isnan(bld)
+        & ~torch.isnan(samples_fluxes).all(dim=1)
+        & ~torch.isnan(map_fluxes)
+        & ~torch.isnan(sep_fluxes)
+        & ~torch.isnan(true_fluxes)
+    )
+
     samples_fluxes = samples_fluxes[mask]
-    map_fluxes = map_fluxes[mask]
-    sep_fluxes = sep_fluxes[mask]
     true_fluxes = true_fluxes[mask]
-    true_snr = true_snr[mask]
+    sep_fluxes = sep_fluxes[mask]
+    map_fluxes = map_fluxes[mask]
     bld = bld[mask]
+    true_snr = true_snr[mask]
 
     res1 = (samples_fluxes.nanmean(dim=1) - true_fluxes) / true_fluxes
     res2 = (map_fluxes - true_fluxes) / true_fluxes
     res3 = (sep_fluxes - true_fluxes) / true_fluxes
 
-    stds = []
-    for ii in range(len(samples_fluxes)):
-        mask = ~torch.isnan(samples_fluxes[ii])
-        if mask.sum() > 1:
-            stds.append(torch.std(samples_fluxes[ii][mask]).item())
-        else:
-            stds.append(torch.nan)
-    stds = torch.tensor(stds)
-
-    z_score = (samples_fluxes.nanmean(dim=1) - true_fluxes) / stds
-
-    mask_all = (
-        ~torch.isnan(true_snr)
-        & (true_snr > 0)
-        & ~torch.isnan(bld)
-        & ~torch.isnan(res1)
-        & ~torch.isnan(res2)
-        & ~torch.isnan(z_score)
-        & ~torch.isnan(stds)
-        & ~torch.isnan(sep_fluxes)
-    )
-
-    print("# of discarded NaN objects (non-detections):", len(mask_all) - sum(mask_all))
-
-    res1 = res1[mask_all]
-    res2 = res2[mask_all]
-    res3 = res3[mask_all]
-    z_score = z_score[mask_all]
-    bld = bld[mask_all]
-    true_snr = true_snr[mask_all]
-    stds = stds[mask_all]
+    print("# of images used:", sum(mask))
+    print("# of discarded images (non-detections):", len(mask) - sum(mask))
 
     # get snr figure
     set_rc_params()
