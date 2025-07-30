@@ -16,7 +16,7 @@ from experiment import DATASETS_DIR
 def main(
     seed: int = typer.Option(),
     indices_fname: str = typer.Option(),
-    n_images: int = 10000,
+    n_images: int = 10_000,
     slen: int = 35,
 ):
     L.seed_everything(seed)
