@@ -238,6 +238,7 @@ class BinaryFigures(BlissFigure):
         ax.legend(markerscale=6, fontsize=28)
         ax.set_xlabel(r"\rm SNR")
         ax.set_ylabel(r"\rm Galaxy Classification Probability")
+        ax.set_xlim(1e-2, 1e4)
 
         return fig
 
