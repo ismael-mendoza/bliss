@@ -477,7 +477,7 @@ def _make_final_results_figures(*, out_dir: Path, rslts: dict) -> None:
     set_rc_params()
 
     # now snr
-    n_bins = 10
+    n_bins = 20
     out1 = equal_sized_bin_statistic(
         x=true_snr.log10(), y=res1, n_bins=n_bins, xlims=(0.5, 3), statistic="median"
     )
