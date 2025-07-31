@@ -619,7 +619,7 @@ class DeblendingFigures(BlissFigure):
         ax.plot(10**snr_middle, meds2, marker="o", color=c2, label=r"\rm Deblending")
         ax.fill_between(10**snr_middle, qs21, qs22, color=c2, alpha=_alpha)
         ax.set_xscale("log")
-        ax.set_ylim(-0.15, 0.2)
+        ax.set_ylim(-0.075, 0.2)
         ax.set_ylabel(r"$ (f_{\rm pred} - f_{\rm true}) / f_{\rm true}$")
         ax.axhline(0.0, linestyle="--", color=c_zero)
         ax.axes.xaxis.set_ticklabels([])
