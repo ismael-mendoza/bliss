@@ -1,17 +1,19 @@
 """Utilites for calculating LSST survey related quantities."""
 
-import galcheat
+import os
+from pathlib import Path
+
 import galsim
 import numpy as np
+import surveycodex
 import torch
 from astropy import units as u
 from astropy.table import Table
 from btk.survey import get_surveys
 from einops import rearrange
-from galcheat.utilities import mag2counts, mean_sky_level
+from surveycodex.utilities import mag2counts, mean_sky_level
 from torch import Tensor
 
-from bliss import HOME_DIR
 from bliss.datasets.table_utils import column_to_tensor
 
 PIXEL_SCALE = 0.2  # arcsecs / pixel
@@ -26,8 +28,7 @@ MIN_STAR_MAG = 20.0  # stars with lower magnitude have > 1000 SNR
 GALAXY_DENSITY = 160  # arcmin^{-2}, with mag cut above
 STAR_DENSITY = 15.5  # arcmin^{-2}
 
-
-DATA_DIR = HOME_DIR / "data"
+DATA_DIR = Path(os.getenv("BLISS_DATA_DIR"))
 
 
 def convert_mag_to_flux(mag: Tensor) -> Tensor:
@@ -36,7 +37,7 @@ def convert_mag_to_flux(mag: Tensor) -> Tensor:
 
 
 def convert_flux_to_mag(counts: Tensor) -> Tensor:
-    i_band = galcheat.get_survey("LSST").get_filter("i")
+    i_band = surveycodex.get_survey("LSST").get_filter("i")
 
     flux = counts.numpy() * u.electron / i_band.full_exposure_time  # pylint: disable=no-member
     mag = flux.to(u.mag(u.electron / u.s)) + i_band.zeropoint  # pylint: disable=no-member

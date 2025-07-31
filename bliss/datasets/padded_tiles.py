@@ -36,10 +36,7 @@ def generate_padded_tiles(
     p_source_in: float | None = None,
     galaxy_prob: float | None = None,
 ):
-    """Generated padded tiles with sources in the padding for training of ML models.
-
-    At most 1 source is allowed in each padded tile for simplicity.
-    """
+    """Generated padded tiles with sources in the padding for training of ML models."""
     size = slen + bp * 2
 
     ptiles = []

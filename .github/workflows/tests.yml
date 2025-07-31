@@ -42,4 +42,5 @@ jobs:
 
       - name: Run Tests
         run: |
+          export BLISS_DATA_DIR="/home/runner/work/bliss/bliss/data/"
           uv run pytest tests
