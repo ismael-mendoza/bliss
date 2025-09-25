@@ -238,7 +238,7 @@ class BinaryFigures(BlissFigure):
         ax.legend(markerscale=6, fontsize=28)
         ax.set_xlabel(r"\rm SNR")
         ax.set_ylabel(r"\rm Galaxy Classification Probability")
-        ax.set_xlim(1e-2, 1e4)
+        ax.set_xlim(1, 1e3)
 
         return fig
 
@@ -250,7 +250,7 @@ class BinaryFigures(BlissFigure):
         egbools = data[0.5]["egbools"]
         esbools = data[0.5]["esbools"]
 
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10))
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 20))
 
         c1 = CLR_CYCLE[0]
         c2 = CLR_CYCLE[1]
