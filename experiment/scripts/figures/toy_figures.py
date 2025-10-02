@@ -165,7 +165,7 @@ class ToySeparationFigure(BlissFigure):
         assert recon_ptiles.shape[-1] == recon_ptiles.shape[-2] == ptile_slen
         recon = reconstruct_image_from_ptiles(recon_ptiles, tile_slen)
         recon = recon.detach().cpu()
-        residuals = (recon - images) / (recon + bg).sqrt()
+        residuals = (recon - images) / torch.sqrt(bg)
 
         # now we need to obtain pred. plocs, prob. of detection in tile and std. of plocs
         # for each source
@@ -302,6 +302,17 @@ class ToySeparationFigure(BlissFigure):
         pad = 6.0
         fig, axes = plt.subplots(nrows=n_examples, ncols=3, figsize=(11, 18))
 
+        vmin, vmax = torch.inf, -torch.inf
+        vmin_res, vmax_res = torch.inf, -torch.inf
+        for ii in range(n_examples):
+            vmin = min(images[ii].min().item(), recons[ii].min().item(), vmin)
+            vmax = max(images[ii].max().item(), recons[ii].min().item(), vmax)
+            vmin_res = min(residuals[ii].min().item(), vmin_res)
+            vmax_res = max(residuals[ii].max().item(), vmax_res)
+
+        vres = max(abs(vmin_res), abs(vmax_res))
+
+        # vres = max(abs(vmin_res), abs(vmax_res))
         for i in range(n_examples):
             ax_true = axes[i, 0]
             ax_recon = axes[i, 1]
@@ -312,7 +323,7 @@ class ToySeparationFigure(BlissFigure):
                 ax_true.set_title(r"\rm Images $x$", pad=pad)
                 ax_recon.set_title(r"\rm Reconstruction $\tilde{x}$", pad=pad)
                 ax_res.set_title(
-                    r"\rm Residual $\left(\tilde{x} - x\right) / \sqrt{\tilde{x} + b}$",
+                    r"\rm Residual $\left(\tilde{x} - x\right) / \sqrt{b}$",
                     pad=pad,
                     fontsize=18,
                 )
@@ -352,12 +363,6 @@ class ToySeparationFigure(BlissFigure):
             image = images[i]
             recon = recons[i]
             res = residuals[i]
-
-            vmin = min(image.min().item(), recon.min().item())
-            vmax = max(image.max().item(), recon.max().item())
-            vmin_res = res.min().item()
-            vmax_res = res.max().item()
-            vres = max(abs(vmin_res), abs(vmax_res))
 
             # plot images
             plot_image(fig, ax_true, image, vrange=(vmin, vmax))
