@@ -7,6 +7,7 @@ import numpy as np
 import torch
 from einops import rearrange, reduce
 from matplotlib import pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from tqdm import tqdm
 
 from bliss.catalog import FullCatalog, TileCatalog
@@ -80,6 +81,7 @@ class BinaryFigures(BlissFigure):
         return {
             "binary_scatter": {"fontsize": 34},
             "binary_curves": {"fontsize": 36, "major_tick_size": 12, "minor_tick_size": 7},
+            "binary_contours": {"fontsize": 34},
         }
 
     @property
@@ -88,7 +90,7 @@ class BinaryFigures(BlissFigure):
 
     @property
     def fignames(self) -> tuple[str, ...]:
-        return ("binary_scatter", "binary_curves")
+        return ("binary_scatter", "binary_curves", "binary_contours")
 
     def compute_data(self, ds_path: str, binary: BinaryEncoder):
         # metadata
@@ -287,9 +289,60 @@ class BinaryFigures(BlissFigure):
 
         return fig
 
+    def _get_binary_contours(self, data: dict):
+        snr = data["snr"]
+        probs = data["probs"]
+        tgbools = data["tgbools"]
+        tsbools = data["tsbools"]
+
+        galaxy_mask = tgbools.astype(bool) & (snr > 0)
+        star_mask = tsbools.astype(bool) & (snr > 0)
+
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10), sharey=True)
+
+        ax1.hist2d(
+            np.log10(snr[galaxy_mask]),
+            probs[galaxy_mask],
+            bins=20,
+            range=[[0, 3], [0, 1]],
+            cmap="YlGn",
+            norm="log",
+            vmin=1,
+            vmax=2e4,
+        )
+        _xticks = [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
+        _xticks_labels = [f"$10^{int(x)}$" if x in [0.0, 1.0, 2.0, 3.0] else "" for x in _xticks]
+        ax1.set_xticks(ticks=_xticks, labels=_xticks_labels)
+        ax1.set_xlabel(r"\rm SNR")
+        ax1.set_ylabel(r"\rm Galaxy Classification Probability")
+
+        _, _, _, pcm = ax2.hist2d(
+            np.log10(snr[star_mask]),
+            probs[star_mask],
+            bins=20,
+            range=[[0, 3], [0, 1]],
+            cmap="YlGn",
+            norm="log",
+            vmin=1,
+            vmax=2e4,
+        )
+        ax2.set_xticks(ticks=_xticks, labels=_xticks_labels)
+        ax2.set_xlabel(r"\rm SNR")
+
+        divider = make_axes_locatable(ax2)
+        cax = divider.append_axes("right", size="5%", pad=0.05)
+
+        fig.colorbar(pcm, cax=cax, orientation="vertical")
+
+        plt.tight_layout()
+
+        return fig
+
     def create_figure(self, fname: str, data):
         if fname == "binary_scatter":
             return self._get_binary_scatter_figure(data)
         if fname == "binary_curves":
             return self._get_binary_curves(data)
+        if fname == "binary_contours":
+            return self._get_binary_contours(data)
         raise ValueError(f"Unknown figure name: {fname}")
