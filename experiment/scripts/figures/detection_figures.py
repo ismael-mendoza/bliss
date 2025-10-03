@@ -309,7 +309,7 @@ class BlendDetectionFigures(BlissFigure):
         return fig
 
     def _get_blendedness_detection_figure(self, data):
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+        fig, ax1 = plt.subplots(1, 1, figsize=(6, 6))
         ds = data["blendedness"]
         bld_bins = ds["bld_bins"]
         bld_middle = bld_bins.mean(axis=-1)
@@ -328,13 +328,13 @@ class BlendDetectionFigures(BlissFigure):
         ax1.legend()
 
         # blendedness histogram
-        true_bld = data["truth"]["bld"].flatten()
-        _bld = true_bld[true_bld > 0]
-        # bld_bins = data["blendedness"]["bld_bins"]
-        # _bins = [x.item() for x in bld_bins[:, 0]] + [bld_bins[-1, 1].item()]
-        ax2.hist(_bld, bins=21, histtype="step")
-        # ax2.set_xscale("log")
-        ax2.set_xlabel(r"\rm Blendedness")
+        # true_bld = data["truth"]["bld"].flatten()
+        # _bld = true_bld[true_bld > 0]
+        # # bld_bins = data["blendedness"]["bld_bins"]
+        # # _bins = [x.item() for x in bld_bins[:, 0]] + [bld_bins[-1, 1].item()]
+        # ax2.hist(_bld, bins=21, histtype="step")
+        # # ax2.set_xscale("log")
+        # ax2.set_xlabel(r"\rm Blendedness")
 
         plt.tight_layout()
         return fig
