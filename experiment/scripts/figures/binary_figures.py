@@ -305,7 +305,7 @@ class BinaryFigures(BlissFigure):
             probs[galaxy_mask],
             bins=20,
             range=[[0, 3], [0, 1]],
-            cmap="YlGn",
+            cmap="PuBu",
             norm="log",
             vmin=1,
             vmax=2e4,
@@ -315,19 +315,21 @@ class BinaryFigures(BlissFigure):
         ax1.set_xticks(ticks=_xticks, labels=_xticks_labels)
         ax1.set_xlabel(r"\rm SNR")
         ax1.set_ylabel(r"\rm Galaxy Classification Probability")
+        ax1.set_title(r"\rm Galaxies")
 
         _, _, _, pcm = ax2.hist2d(
             np.log10(snr[star_mask]),
             probs[star_mask],
             bins=20,
             range=[[0, 3], [0, 1]],
-            cmap="YlGn",
+            cmap="PuBu",
             norm="log",
             vmin=1,
             vmax=2e4,
         )
         ax2.set_xticks(ticks=_xticks, labels=_xticks_labels)
         ax2.set_xlabel(r"\rm SNR")
+        ax2.set_title(r"\rm Stars")
 
         divider = make_axes_locatable(ax2)
         cax = divider.append_axes("right", size="5%", pad=0.05)
