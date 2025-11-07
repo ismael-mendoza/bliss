@@ -1,5 +1,6 @@
 """Script to create detection encoder related figures."""
 
+import numpy as np
 import torch
 from einops import rearrange, reduce
 from matplotlib import pyplot as plt
@@ -244,13 +245,14 @@ class BlendDetectionFigures(BlissFigure):
         return {
             "snr": snr_dict,
             "blendedness": bld_dict,
+            "truth": {"snr": truth["snr"], "bld": truth["bld"]},
         }
 
     def _get_snr_detection_figure(self, data):
         # make a 3 column figure with precision, recall, f1 for all thresholds + sep
         # colors for thresholds hsould go from blue (low) to red (high) threshold
 
-        fig, axs = plt.subplots(1, 3, figsize=(30, 10))
+        fig, axs = plt.subplots(2, 2, figsize=(20, 20))
         axs = axs.flatten()
         ds = data["snr"]
 
@@ -290,12 +292,24 @@ class BlendDetectionFigures(BlissFigure):
         ax.set_ylim(0, 1.02)
         ax.legend()
 
+        # snr distribution
+        ax = axs[3]
+        snr_bins = ds["snr_bins"]
+        true_snr = data["truth"]["snr"].flatten()
+        _snr = true_snr[true_snr > 0]
+        _bins = [x.item() for x in snr_bins[:, 0]] + [snr_bins[-1, 1].item()]
+        # _, bins = np.histogram(np.log10(_snr), bins=_bins, range=(1, 1000))
+        # logbins = np.logspace(np.log10(bins[0]), np.log10(bins[-1]), len(bins))
+        ax.hist(_snr, bins=_bins, histtype="step")
+        ax.set_xscale("log")
+        ax.set_xlabel(r"\rm SNR")
+
         plt.tight_layout()
 
         return fig
 
     def _get_blendedness_detection_figure(self, data):
-        fig, ax = plt.subplots(figsize=(6, 6))
+        fig, ax1 = plt.subplots(1, 1, figsize=(6, 6))
         ds = data["blendedness"]
         bld_bins = ds["bld_bins"]
         bld_middle = bld_bins.mean(axis=-1)
@@ -303,15 +317,24 @@ class BlendDetectionFigures(BlissFigure):
         # recall
         for tsh, out in ds["thresh_out"].items():
             color = plt.cm.coolwarm(tsh)
-            ax.plot(bld_middle, out["recall"], c=color, label=f"${tsh:.2f}$")
-        ax.plot(bld_middle, ds["sep"]["recall"], "--k", lw=2, label=r"\rm SEP")
-        ax.set_xlabel(r"\rm Blendedness")
-        ax.set_ylabel(r"\rm Recall")
-        ax.set_ylim(0, 1.02)
-        ax.set_xlim(1e-2, 1)
-        ax.set_xticks([1e-2, 1e-1, 1])
-        ax.set_xscale("log")
-        ax.legend()
+            ax1.plot(bld_middle, out["recall"], c=color, label=f"${tsh:.2f}$")
+        ax1.plot(bld_middle, ds["sep"]["recall"], "--k", lw=2, label=r"\rm SEP")
+        ax1.set_xlabel(r"\rm Blendedness")
+        ax1.set_ylabel(r"\rm Recall")
+        ax1.set_ylim(0, 1.02)
+        ax1.set_xlim(1e-2, 1)
+        ax1.set_xticks([1e-2, 1e-1, 1])
+        ax1.set_xscale("log")
+        ax1.legend()
+
+        # blendedness histogram
+        # true_bld = data["truth"]["bld"].flatten()
+        # _bld = true_bld[true_bld > 0]
+        # # bld_bins = data["blendedness"]["bld_bins"]
+        # # _bins = [x.item() for x in bld_bins[:, 0]] + [bld_bins[-1, 1].item()]
+        # ax2.hist(_bld, bins=21, histtype="step")
+        # # ax2.set_xscale("log")
+        # ax2.set_xlabel(r"\rm Blendedness")
 
         plt.tight_layout()
         return fig

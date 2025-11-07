@@ -438,6 +438,8 @@ def _get_diagnostic_figures(*, out_dir: Path, results: dict, tag_txt: str):
 
 
 def _make_final_results_figures(*, out_dir: Path, rslts: dict) -> None:
+    n_bins = 11
+
     # need to sort things first!!!!
     sorted_indices = [out["idx"] for out in rslts["outs"]]
     true_fluxes = rslts["true_flux"][sorted_indices][:, 0, 0]
@@ -470,14 +472,13 @@ def _make_final_results_figures(*, out_dir: Path, rslts: dict) -> None:
     res2 = (map_fluxes - true_fluxes) / true_fluxes
     res3 = (sep_fluxes - true_fluxes) / true_fluxes
 
-    print("# of images used:", sum(mask))
-    print("# of discarded images (non-detections):", len(mask) - sum(mask))
+    print("# of images used:", int(sum(mask)))
+    print("# of discarded images (non-detections):", int(len(mask) - sum(mask)))
 
     # get snr figure
     set_rc_params()
 
     # now snr
-    n_bins = 20
     out1 = equal_sized_bin_statistic(
         x=true_snr.log10(), y=res1, n_bins=n_bins, xlims=(0.5, 3), statistic="median"
     )
@@ -491,32 +492,32 @@ def _make_final_results_figures(*, out_dir: Path, rslts: dict) -> None:
     x = 10 ** out1["middles"]
 
     fig, ax = plt.subplots(1, 1, figsize=(8, 6))
-    ax.plot(x, out3["stats"], label=r"\rm SEP", marker="", color=CLR_CYCLE[2])
+    ax.plot(x, np.abs(out3["stats"]), label=r"\rm SEP", marker="", color=CLR_CYCLE[2])
     ax.fill_between(
         x,
-        out3["stats"] - out3["errs"],
-        out3["stats"] + out3["errs"],
+        np.abs(out3["stats"]) - out3["errs"],
+        np.abs(out3["stats"]) + out3["errs"],
         alpha=0.2,
         color=CLR_CYCLE[2],
     )
-    ax.plot(x, out2["stats"], label=r"\rm MAP", marker="", color=CLR_CYCLE[0])
+    ax.plot(x, np.abs(out2["stats"]), label=r"\rm MAP", marker="", color=CLR_CYCLE[0])
     ax.fill_between(
         x,
-        out2["stats"] - out2["errs"],
-        out2["stats"] + out2["errs"],
+        np.abs(out2["stats"]) - out2["errs"],
+        np.abs(out2["stats"]) + out2["errs"],
         alpha=0.2,
         color=CLR_CYCLE[0],
     )
-    ax.plot(x, out1["stats"], label=r"\rm Samples", marker="", color=CLR_CYCLE[1])
+    ax.plot(x, np.abs(out1["stats"]), label=r"\rm Samples", marker="", color=CLR_CYCLE[1])
     ax.fill_between(
         x,
-        out1["stats"] - out1["errs"],
-        out1["stats"] + out1["errs"],
+        np.abs(out1["stats"]) - out1["errs"],
+        np.abs(out1["stats"]) + out1["errs"],
         alpha=0.2,
         color=CLR_CYCLE[1],
     )
     ax.set_xlabel(r"\rm SNR", fontsize=28)
-    ax.set_ylabel(r"$\frac{f_{\rm pred} - f_{\rm true}}{f_{\rm true}}$", fontsize=32)
+    ax.set_ylabel(r"$\lvert \frac{f_{\rm pred} - f_{\rm true}}{f_{\rm true}} \rvert$", fontsize=32)
     ax.axhline(0, color="k", linestyle="--", label=r"\rm Zero Residual")
     ax.legend()
     ax.set_xlim(5, 1000)
@@ -525,58 +526,48 @@ def _make_final_results_figures(*, out_dir: Path, rslts: dict) -> None:
 
     # as a function of blendedness
     # first define bins (as described in paper)
+    n_bins = 21
     qs = torch.linspace(0.12, 0.99, 21)
     edges = bld.quantile(qs)
     bins = torch.tensor([0.0, *edges[1:-1], 1.0])
+    print(f"Edge BLD 1: {edges[1]:.10f}")
+    print(f"Edge BLD -2: {edges[-2]:.10f}")
 
-    out1 = binned_statistic(
-        x=bld,
-        y=res1,
-        bins=bins,
-        statistic="median",
-    )
-    out2 = binned_statistic(
-        x=bld,
-        y=res2,
-        bins=bins,
-        statistic="median",
-    )
-    out3 = binned_statistic(
-        x=bld,
-        y=res3,
-        bins=bins,
-        statistic="median",
-    )
+    out1 = binned_statistic(x=bld, y=res1, bins=bins, statistic="median")
+    out2 = binned_statistic(x=bld, y=res2, bins=bins, statistic="median")
+    out3 = binned_statistic(x=bld, y=res3, bins=bins, statistic="median")
 
     fig, ax = plt.subplots(1, 1, figsize=(8, 6))
-    ax.plot(out3["middles"], out3["stats"], label=r"\rm SEP", marker="", color=CLR_CYCLE[2])
+    ax.plot(out3["middles"], np.abs(out3["stats"]), label=r"\rm SEP", marker="", color=CLR_CYCLE[2])
     ax.fill_between(
         out3["middles"],
-        out3["stats"] - out3["errs"],
-        out3["stats"] + out3["errs"],
+        np.abs(out3["stats"]) - out3["errs"],
+        np.abs(out3["stats"]) + out3["errs"],
         alpha=0.2,
         color=CLR_CYCLE[2],
     )
-    ax.plot(out2["middles"], out2["stats"], label=r"\rm MAP", marker="", color=CLR_CYCLE[0])
+    ax.plot(out2["middles"], np.abs(out2["stats"]), label=r"\rm MAP", marker="", color=CLR_CYCLE[0])
     ax.fill_between(
         out2["middles"],
-        out2["stats"] - out2["errs"],
-        out2["stats"] + out2["errs"],
+        np.abs(out2["stats"]) - out2["errs"],
+        np.abs(out2["stats"]) + out2["errs"],
         alpha=0.2,
         color=CLR_CYCLE[0],
     )
-    ax.plot(out1["middles"], out1["stats"], label=r"\rm Samples", marker="", color=CLR_CYCLE[1])
+    ax.plot(
+        out1["middles"], np.abs(out1["stats"]), label=r"\rm Samples", marker="", color=CLR_CYCLE[1]
+    )
     ax.fill_between(
         out1["middles"],
-        out1["stats"] - out1["errs"],
-        out1["stats"] + out1["errs"],
+        np.abs(out1["stats"]) - out1["errs"],
+        np.abs(out1["stats"]) + out1["errs"],
         alpha=0.2,
         color=CLR_CYCLE[1],
     )
     ax.set_xlabel(r"\rm Blendedness", fontsize=28)
-    ax.set_ylabel(r"$\frac{f_{\rm pred} - f_{\rm true}}{f_{\rm true}}$", fontsize=32)
+    ax.set_ylabel(r"$\lvert \frac{f_{\rm pred} - f_{\rm true}}{f_{\rm true}} \rvert$", fontsize=32)
     ax.set_yscale("log")
-    ax.set_ylim(0.004, 10)
+    ax.set_ylim(0.004, 20)
     ax.legend(prop={"size": 22})
     fig.savefig(out_dir / "samples_bld_res.png", dpi=500, bbox_inches="tight")
 
@@ -639,7 +630,6 @@ def main(
             sources=ds["uncentered_sources"],
             no_bar=False,
         )
-        true_snr = true_meas["snr"]
 
         # lets get models
         detection = DetectionEncoder().to(device).eval()
@@ -671,7 +661,7 @@ def main(
             {
                 "outs": outs,
                 "bld": bld,
-                "true_snr": true_snr,
+                "true_snr": true_meas["snr"],
                 "true_flux": true_meas["flux"],
                 "true_plocs": truth.plocs,
                 "true_n_sources": truth.n_sources,
