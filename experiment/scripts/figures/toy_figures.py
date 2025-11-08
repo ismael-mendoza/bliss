@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pytorch_lightning as pl
 import torch
 from einops import rearrange
 from matplotlib.figure import Figure
@@ -69,6 +70,9 @@ class ToySeparationFigure(BlissFigure):
         return [5, 10, 15]
 
     def compute_data(self, detection: DetectionEncoder, deblender: GalaxyEncoder):
+        # match previous noise realization that used a different seed
+        pl.seed_everything(43)
+
         # first, decide image size
         slen = 55
         bp = detection.bp
@@ -165,7 +169,7 @@ class ToySeparationFigure(BlissFigure):
         assert recon_ptiles.shape[-1] == recon_ptiles.shape[-2] == ptile_slen
         recon = reconstruct_image_from_ptiles(recon_ptiles, tile_slen)
         recon = recon.detach().cpu()
-        residuals = (recon - images) / torch.sqrt(bg)
+        residuals = (recon - images) / np.sqrt(bg)
 
         # now we need to obtain pred. plocs, prob. of detection in tile and std. of plocs
         # for each source
