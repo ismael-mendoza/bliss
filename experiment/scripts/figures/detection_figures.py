@@ -317,8 +317,8 @@ class BlendDetectionFigures(BlissFigure):
         # recall
         for tsh, out in ds["thresh_out"].items():
             color = plt.cm.coolwarm(tsh)
-            ax1.plot(bld_middle, out["recall"], c=color, label=f"${tsh:.2f}$")
-        ax1.plot(bld_middle, ds["sep"]["recall"], "--k", lw=2, label=r"\rm SEP")
+            ax1.plot(bld_middle, out["recall"], "-o", c=color, label=f"${tsh:.2f}$")
+        ax1.plot(bld_middle, ds["sep"]["recall"], "--ok", lw=2, label=r"\rm SEP")
         ax1.set_xlabel(r"\rm Blendedness")
         ax1.set_ylabel(r"\rm Recall")
         ax1.set_ylim(0, 1.02)
